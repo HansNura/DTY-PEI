@@ -1,0 +1,31 @@
+# Folder dan file yang wajib dilewati agent.
+# Agent boleh membacanya hanya jika benar-benar diperlukan untuk diagnosis,
+# tetapi tidak boleh mengubahnya.
+
+# Dependensi pihak ketiga
+/vendor/
+/node_modules/
+
+# Artefak build dan cache
+/public/build/
+/public/hot
+/bootstrap/cache/
+/storage/
+*.log
+
+# Database lokal dan kredensial
+/database/*.sqlite
+/database/*.sqlite-journal
+/database/*.sqlite-wal
+/database/*.sqlite-shm
+.env
+.env.backup
+.env.production
+
+# Kontrol versi dan konfigurasi tool
+/.git/
+/.commandcode/
+
+# Cache alat
+/.phpunit.cache/
+/.phpunit.result.cache
