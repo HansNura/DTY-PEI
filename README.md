@@ -2,7 +2,7 @@
 
 Aplikasi pelacakan rol benang DTY dari gudang sampai pelanggan: master data rol, QR code, surat jalan, validasi muatan, status perjalanan, bukti terima digital, laporan, dan audit.
 
-Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) sudah selesai.
+Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) serta Sprint 2 (master data, QR, pelanggan, dan armada) sudah selesai.
 
 ## Stack
 
@@ -10,6 +10,7 @@ Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d
 - Blade + Alpine.js + Tailwind CSS 4 (TALL ringan)
 - SQLite untuk lokal; siap dipindah ke MySQL/PostgreSQL untuk produksi
 - Vite 7
+- `qrcode` untuk membuat QR label secara lokal di browser
 - PHPUnit 11 + Laravel Pint
 
 ## Menjalankan di lokal
@@ -56,7 +57,7 @@ npm run dev                        # Vite dev server
 composer run dev                   # server + queue + log + Vite
 ```
 
-## Struktur fitur Sprint 1
+## Fitur
 
 - Autentikasi session dengan throttle login.
 - Empat peran: `admin`, `admin_gudang`, `logistik`, `driver`.
@@ -65,6 +66,9 @@ composer run dev                   # server + queue + log + Vite
 - Profil: ubah nama, email, dan kata sandi.
 - Dashboard ringkas per peran.
 - Security header dasar pada semua respons.
+- Admin Gudang dapat mengelola gulungan DTY beserta denier, filamen, berat, dan nomor lot; kode rol serta token QR unik dibuat otomatis dan label thermal 50 × 30 mm dapat dicetak.
+- Tim Logistik dapat mengelola pelanggan dengan kontak penerima dan koordinat maps, serta armada dengan jenis kendaraan, kapasitas, dan pengemudi utama.
+- Gulungan dibatalkan dan pelanggan/armada dinonaktifkan tanpa menghapus riwayat data.
 
 ## Kontribusi tim
 
@@ -85,7 +89,7 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 | Sprint | Tiket | Status |
 | --- | --- | --- |
 | 1 | DTY-001 Auth & User | Selesai |
-| 2 | DTY-002 s/d DTY-005 | Belum dimulai |
+| 2 | DTY-002 s/d DTY-005 | Selesai |
 | 3 | DTY-006 s/d DTY-007 | Belum dimulai |
 | 4 | DTY-008 s/d DTY-009 | Belum dimulai |
 | 5 | DTY-010 s/d DTY-011 | Belum dimulai |

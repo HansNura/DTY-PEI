@@ -38,11 +38,12 @@ Dokumen ini menjadi acuan skema basis data lintas sprint. Implementasi aktual di
 | berat_gram | decimal(10,2) | Berat bersih |
 | nomor_lot | varchar(50) index | Nomor lot produksi |
 | qr_token | varchar(64) unique | Payload QR code |
-| status | varchar(20) index | `in_stock`, `allocated`, `loaded`, `delivered` |
+| status | varchar(20) index | `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled` |
 | created_by | bigint FK users | Admin gudang pencatat |
 | created_at / updated_at | timestamp | |
 
 Relasi: `created_by` → `users.id`. Satu rol memiliki satu QR unik.
+`kode_rol` dan `qr_token` dibuat otomatis dan unik. QR membawa token acak 256-bit; gulungan hanya dapat dibatalkan saat masih `in_stock`, tanpa menghapus riwayatnya.
 
 ### `customers`
 
@@ -58,6 +59,8 @@ Relasi: `created_by` → `users.id`. Satu rol memiliki satu QR unik.
 | is_active | boolean | |
 | created_at / updated_at | timestamp | |
 
+Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk relasi pengiriman.
+
 ### `fleets`
 
 | Kolom | Tipe | Keterangan |
@@ -71,6 +74,7 @@ Relasi: `created_by` → `users.id`. Satu rol memiliki satu QR unik.
 | created_at / updated_at | timestamp | |
 
 Relasi: `driver_id` → `users.id` (role `driver`).
+Armada dinonaktifkan melalui `is_active`; pengemudi yang dapat dipilih harus memiliki akun driver aktif.
 
 ## Sprint 3 — Surat Jalan & Scanner Muatan
 

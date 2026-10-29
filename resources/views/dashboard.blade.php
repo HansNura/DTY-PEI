@@ -10,13 +10,13 @@
                 ['DTY-012', 'Audit & History', 'Sprint 6', 'Mendatang'],
             ],
             \App\Enums\UserRole::AdminGudang => [
-                ['DTY-002', 'Master Data DTY', 'Sprint 2', 'Mendatang'],
-                ['DTY-003', 'QR Code Engine', 'Sprint 2', 'Mendatang'],
+                ['DTY-002', 'Master Data DTY', 'Sprint 2', 'Tersedia'],
+                ['DTY-003', 'QR Code Engine', 'Sprint 2', 'Tersedia'],
                 ['DTY-007', 'Scanner Muatan', 'Sprint 3', 'Mendatang'],
             ],
             \App\Enums\UserRole::Logistik => [
-                ['DTY-004', 'Master Pelanggan', 'Sprint 2', 'Mendatang'],
-                ['DTY-005', 'Master Armada', 'Sprint 2', 'Mendatang'],
+                ['DTY-004', 'Master Pelanggan', 'Sprint 2', 'Tersedia'],
+                ['DTY-005', 'Master Armada', 'Sprint 2', 'Tersedia'],
                 ['DTY-006', 'Surat Jalan (DO)', 'Sprint 3', 'Mendatang'],
                 ['DTY-009', 'Live Tracking', 'Sprint 4', 'Mendatang'],
                 ['DTY-011', 'Laporan Pengiriman', 'Sprint 5', 'Mendatang'],
@@ -150,7 +150,7 @@
                             <p class="text-sm font-medium text-slate-900">{{ $module }}</p>
                             <p class="text-xs text-slate-500">{{ $ticket }} &middot; {{ $sprint }}</p>
                         </div>
-                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $state === 'Selesai' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-50 text-slate-600 ring-slate-200' }}">
+                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ in_array($state, ['Selesai', 'Tersedia'], true) ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-50 text-slate-600 ring-slate-200' }}">
                             {{ $state }}
                         </span>
                     </li>

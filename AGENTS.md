@@ -12,7 +12,7 @@ PMT adalah sistem pelacakan rol benang DTY dari gudang sampai pelanggan: master 
 
 Backlog berasal dari `Rencana Kerja Tim PMT.xlsx` (13 tiket `DTY-001` s/d `DTY-013`, Sprint 1–6). Rancangan data lintas sprint ada di `docs/ERD.md`.
 
-Status saat ini: **Sprint 1 selesai** (auth + manajemen pengguna/RBAC). Sprint 2 belum dimulai.
+Status saat ini: **Sprint 1 dan Sprint 2 selesai** (auth/RBAC, master gulungan DTY dan QR, pelanggan, armada). Sprint 3 belum dimulai.
 
 ## Stack
 
