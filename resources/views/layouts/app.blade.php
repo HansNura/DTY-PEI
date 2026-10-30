@@ -32,9 +32,15 @@
                         <a href="{{ route('warehouse.rolls.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('warehouse.rolls.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
                             Gulungan DTY
                         </a>
+                        <a href="{{ route('warehouse.scans.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('warehouse.scans.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
+                            Scanner Muatan
+                        </a>
                     @endif
 
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::Logistik))
+                        <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.orders.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
+                            Surat Jalan
+                        </a>
                         <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.customers.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
                             Pelanggan
                         </a>
@@ -82,9 +88,11 @@
 
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::AdminGudang))
                         <a href="{{ route('warehouse.rolls.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Gulungan DTY</a>
+                        <a href="{{ route('warehouse.scans.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Scanner Muatan</a>
                     @endif
 
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::Logistik))
+                        <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Surat Jalan</a>
                         <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Pelanggan</a>
                         <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Armada</a>
                     @endif
@@ -129,7 +137,7 @@
     <footer class="border-t border-slate-200 bg-white">
         <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p>&copy; {{ date('Y') }} PMT. Sistem pelacakan rol benang DTY.</p>
-            <p>Sprint 2 &mdash; Master Data, QR, Pelanggan &amp; Armada.</p>
+            <p>Sprint 3 &mdash; Surat Jalan &amp; Scanner Muatan.</p>
         </div>
     </footer>
 </body>

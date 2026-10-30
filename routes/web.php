@@ -5,8 +5,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\DtyRollController;
 use App\Http\Controllers\Logistics\CustomerController;
+use App\Http\Controllers\Logistics\DeliveryOrderController;
 use App\Http\Controllers\Logistics\FleetController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Warehouse\LoadScanController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -51,6 +53,10 @@ Route::middleware(['auth', 'role:admin_gudang'])
         Route::put('/rolls/{roll}', [DtyRollController::class, 'update'])->name('rolls.update');
         Route::patch('/rolls/{roll}/cancel', [DtyRollController::class, 'cancel'])->name('rolls.cancel');
         Route::get('/rolls/{roll}/label', [DtyRollController::class, 'label'])->name('rolls.label');
+
+        Route::get('/scans', [LoadScanController::class, 'index'])->name('scans.index');
+        Route::get('/scans/{order}/scanner', [LoadScanController::class, 'scanner'])->name('scans.scanner');
+        Route::post('/scans/{order}/scan', [LoadScanController::class, 'scan'])->name('scans.scan');
     });
 
 Route::middleware(['auth', 'role:logistik'])
@@ -70,4 +76,11 @@ Route::middleware(['auth', 'role:logistik'])
         Route::get('/fleets/{fleet}/edit', [FleetController::class, 'edit'])->name('fleets.edit');
         Route::put('/fleets/{fleet}', [FleetController::class, 'update'])->name('fleets.update');
         Route::patch('/fleets/{fleet}/status', [FleetController::class, 'toggleActive'])->name('fleets.toggle-active');
+
+        Route::get('/orders', [DeliveryOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/create', [DeliveryOrderController::class, 'create'])->name('orders.create');
+        Route::post('/orders', [DeliveryOrderController::class, 'store'])->name('orders.store');
+        Route::get('/orders/{order}', [DeliveryOrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/print', [DeliveryOrderController::class, 'print'])->name('orders.print');
+        Route::patch('/orders/{order}/cancel', [DeliveryOrderController::class, 'cancel'])->name('orders.cancel');
     });

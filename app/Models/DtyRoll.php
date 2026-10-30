@@ -6,6 +6,8 @@ use App\Enums\RollStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DtyRoll extends Model
 {
@@ -33,5 +35,15 @@ class DtyRoll extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function deliveryOrderItem(): HasOne
+    {
+        return $this->hasOne(DeliveryOrderItem::class);
+    }
+
+    public function loadScans(): HasMany
+    {
+        return $this->hasMany(LoadScan::class);
     }
 }
