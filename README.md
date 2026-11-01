@@ -2,7 +2,7 @@
 
 Aplikasi pelacakan rol benang DTY dari gudang sampai pelanggan: master data rol, QR code, surat jalan, validasi muatan, status perjalanan, bukti terima digital, laporan, dan audit.
 
-Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) serta Sprint 2 (master data, QR, pelanggan, dan armada) sudah selesai.
+Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) sampai Sprint 4 (driver interface dan live tracking) sudah selesai.
 
 ## Stack
 
@@ -11,6 +11,7 @@ Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d
 - SQLite untuk lokal; siap dipindah ke MySQL/PostgreSQL untuk produksi
 - Vite 7
 - `qrcode` untuk membuat QR label secara lokal di browser
+- `leaflet` + OpenStreetMap untuk peta live tracking
 - PHPUnit 11 + Laravel Pint
 
 ## Menjalankan di lokal
@@ -68,6 +69,11 @@ composer run dev                   # server + queue + log + Vite
 - Security header dasar pada semua respons.
 - Admin Gudang dapat mengelola gulungan DTY beserta denier, filamen, berat, dan nomor lot; kode rol serta token QR unik dibuat otomatis dan label thermal 50 × 30 mm dapat dicetak.
 - Tim Logistik dapat mengelola pelanggan dengan kontak penerima dan koordinat maps, serta armada dengan jenis kendaraan, kapasitas, dan pengemudi utama.
+- Tim Logistik dapat menerbitkan Surat Jalan dengan alokasi rol, mencetaknya, dan membatalkannya sebelum armada berangkat.
+- Checker gudang dapat memindai QR rol (kamera, scanner USB, atau input manual) untuk memvalidasi muatan; salah DO, duplikat, dan kode tak dikenal ditolak.
+- Validasi kapasitas armada terhadap total berat rol saat penerbitan DO.
+- Driver memiliki halaman mobile-first untuk melihat perjalanan dan memperbarui status Berangkat, Dalam Perjalanan, dan Tiba beserta koordinat GPS.
+- Tim Logistik memiliki dashboard live tracking berisi peta posisi terakhir, status armada, dan riwayat perjalanan per DO.
 - Gulungan dibatalkan dan pelanggan/armada dinonaktifkan tanpa menghapus riwayat data.
 
 ## Kontribusi tim
@@ -79,6 +85,9 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — panduan kolaborasi GitHub dan serah terima sprint.
 - [`docs/ERD.md`](docs/ERD.md) — rancangan skema data lintas sprint.
 - [`docs/sprint-1.md`](docs/sprint-1.md) — laporan, kriteria penerimaan, dan bukti uji Sprint 1.
+- [`docs/sprint-2.md`](docs/sprint-2.md) — master data, QR, pelanggan, dan armada.
+- [`docs/sprint-3.md`](docs/sprint-3.md) — surat jalan, scanner, dan hasil perbaikan review.
+- [`docs/sprint-4.md`](docs/sprint-4.md) — driver interface dan live tracking.
 - [`Rencana Kerja Tim PMT.xlsx`](Rencana%20Kerja%20Tim%20PMT.xlsx) — backlog dan target sprint.
 - [`AGENTS.md`](AGENTS.md) — panduan kerja seluruh AI agent.
 - [`.ai/rules/`](.ai/rules/) — aturan arsitektur, database, dan UI.
@@ -90,7 +99,7 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 | --- | --- | --- |
 | 1 | DTY-001 Auth & User | Selesai |
 | 2 | DTY-002 s/d DTY-005 | Selesai |
-| 3 | DTY-006 s/d DTY-007 | Belum dimulai |
-| 4 | DTY-008 s/d DTY-009 | Belum dimulai |
+| 3 | DTY-006 s/d DTY-007 | Selesai |
+| 4 | DTY-008 s/d DTY-009 | Selesai |
 | 5 | DTY-010 s/d DTY-011 | Belum dimulai |
 | 6 | DTY-012 s/d DTY-013 | Belum dimulai |

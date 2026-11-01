@@ -18,6 +18,7 @@ use Tests\TestCase;
 class LoadScanTest extends TestCase
 {
     use RefreshDatabase;
+
     private function warehouseUser(): User
     {
         return User::factory()->create(['role' => UserRole::AdminGudang]);
@@ -164,5 +165,50 @@ class LoadScanTest extends TestCase
             ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => ''])
             ->assertStatus(422)
             ->assertJsonValidationErrors('qr_token');
+    }
+
+    public function test_cancelled_order_cannot_be_scanned(): void
+    {
+        $checker = $this->warehouseUser();
+        [$order, $rolls] = $this->makeOrderWithRolls(1);
+        $roll = $rolls->first();
+
+        $order->update(['status' => DeliveryOrderStatus::Cancelled]);
+        $roll->update(['status' => RollStatus::InStock]);
+
+        $response = $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false, 'result' => LoadScanResult::InvalidOrder->value]);
+
+        $this->assertSame(RollStatus::InStock->value, $roll->fresh()->status->value);
+        $this->assertDatabaseCount('load_scans', 0);
+    }
+
+    public function test_scanner_page_is_forbidden_for_closed_order(): void
+    {
+        [$order] = $this->makeOrderWithRolls(1);
+        $order->update(['status' => DeliveryOrderStatus::Cancelled]);
+
+        $this->actingAs($this->warehouseUser())
+            ->get(route('warehouse.scans.scanner', $order))
+            ->assertForbidden();
+    }
+
+    public function test_roll_with_invalid_status_is_not_loaded(): void
+    {
+        $checker = $this->warehouseUser();
+        [$order, $rolls] = $this->makeOrderWithRolls(1);
+        $roll = $rolls->first();
+        $roll->update(['status' => RollStatus::Cancelled]);
+
+        $response = $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false, 'result' => LoadScanResult::WrongDo->value]);
+
+        $this->assertSame(RollStatus::Cancelled->value, $roll->fresh()->status->value);
     }
 }

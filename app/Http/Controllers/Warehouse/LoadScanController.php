@@ -35,6 +35,12 @@ class LoadScanController extends Controller
 
     public function scanner(DeliveryOrder $order): View
     {
+        abort_unless(
+            in_array($order->status, [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading], true),
+            403,
+            'Surat Jalan ini sudah tidak dalam tahap pemuatan.',
+        );
+
         $order->load(['customer', 'fleet', 'driver', 'items.dtyRoll', 'loadScans.scanner', 'loadScans.dtyRoll']);
 
         return view('warehouse.scans.scanner', compact('order'));

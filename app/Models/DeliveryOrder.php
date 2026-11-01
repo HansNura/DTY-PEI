@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DeliveryOrder extends Model
 {
@@ -73,6 +74,16 @@ class DeliveryOrder extends Model
     public function loadScans(): HasMany
     {
         return $this->hasMany(LoadScan::class);
+    }
+
+    public function trackingEvents(): HasMany
+    {
+        return $this->hasMany(DeliveryTrackingEvent::class)->orderBy('recorded_at');
+    }
+
+    public function latestTrackingEvent(): HasOne
+    {
+        return $this->hasOne(DeliveryTrackingEvent::class)->latestOfMany('recorded_at');
     }
 
     public function getTotalBeratKgAttribute(): float

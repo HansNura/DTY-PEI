@@ -10,12 +10,14 @@ use App\Models\DeliveryOrder;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class DeliveryOrderTest extends TestCase
 {
     use RefreshDatabase;
+
     private function logistikUser(): User
     {
         return User::factory()->create(['role' => UserRole::Logistik]);
@@ -26,7 +28,7 @@ class DeliveryOrderTest extends TestCase
         return User::factory()->create(['role' => UserRole::AdminGudang]);
     }
 
-    private function makeRolls(int $count = 2, ?User $creator = null): \Illuminate\Database\Eloquent\Collection
+    private function makeRolls(int $count = 2, ?User $creator = null): Collection
     {
         $creator ??= $this->warehouseUser();
 
@@ -177,5 +179,30 @@ class DeliveryOrderTest extends TestCase
             'tanggal' => now()->toDateString(),
             'rolls' => [99999],
         ])->assertSessionHasErrors('rolls.*');
+    }
+
+    public function test_delivery_order_rejects_load_exceeding_fleet_capacity(): void
+    {
+        $user = $this->logistikUser();
+        $customer = Customer::factory()->create(['is_active' => true]);
+        $fleet = Fleet::factory()->create(['is_active' => true, 'kapasitas_kg' => 1]);
+        $driver = User::factory()->create(['role' => UserRole::Driver, 'is_active' => true]);
+        $creator = $this->warehouseUser();
+
+        $rolls = DtyRoll::factory(2)->create([
+            'status' => RollStatus::InStock,
+            'berat_gram' => 800,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('logistics.orders.store'), $this->basePayload($customer, $fleet, $driver, $rolls->pluck('id')->toArray()))
+            ->assertSessionHasErrors('rolls');
+
+        $this->assertDatabaseCount('delivery_orders', 0);
+
+        foreach ($rolls as $roll) {
+            $this->assertSame(RollStatus::InStock->value, $roll->fresh()->status->value);
+        }
     }
 }

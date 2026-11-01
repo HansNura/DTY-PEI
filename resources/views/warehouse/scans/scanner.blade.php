@@ -9,8 +9,13 @@
         loading: false,
         lastResult: null,
         history: [],
-        loadedCount: {{ $order->loadScans->where('result.value', 'valid')->count() ?? $order->items->filter(fn($i) => $i->dtyRoll?->status?->value === 'loaded')->count() }},
+        loadedCount: {{ $order->items->filter(fn ($item) => $item->dtyRoll?->status === \App\Enums\RollStatus::Loaded)->count() }},
         totalRol: {{ $order->items->count() }},
+        cameraActive: false,
+        cameraError: null,
+        stream: null,
+        detector: null,
+        cameraTimer: null,
 
         async submitToken(token) {
             if (this.loading || !token.trim()) return;
@@ -45,12 +50,68 @@
             }
         },
 
+        async startCamera() {
+            this.cameraError = null;
+
+            if (! ('BarcodeDetector' in window)) {
+                this.cameraError = 'Browser ini belum mendukung pemindaian kamera. Gunakan scanner USB atau ketik token manual.';
+                return;
+            }
+
+            try {
+                this.detector = new BarcodeDetector({ formats: ['qr_code'] });
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false,
+                });
+                this.$refs.camera.srcObject = this.stream;
+                await this.$refs.camera.play();
+                this.cameraActive = true;
+                this.cameraTimer = setInterval(() => this.detectFrame(), 500);
+            } catch (error) {
+                this.cameraError = 'Kamera tidak dapat diakses. Periksa izin kamera atau gunakan scanner manual.';
+                this.stopCamera();
+            }
+        },
+
+        async detectFrame() {
+            if (! this.cameraActive || this.loading || ! this.detector || ! this.$refs.camera) return;
+            if (this.$refs.camera.readyState < 2) return;
+
+            try {
+                const codes = await this.detector.detect(this.$refs.camera);
+
+                if (codes.length > 0) {
+                    const token = codes[0].rawValue;
+                    this.stopCamera();
+                    await this.submitToken(token);
+                }
+            } catch (error) {
+                // Biarkan frame berikutnya mencoba lagi.
+            }
+        },
+
+        stopCamera() {
+            if (this.cameraTimer) {
+                clearInterval(this.cameraTimer);
+                this.cameraTimer = null;
+            }
+
+            if (this.stream) {
+                this.stream.getTracks().forEach((track) => track.stop());
+                this.stream = null;
+            }
+
+            this.cameraActive = false;
+        },
+
         resultClass(result) {
             const map = {
                 valid: 'bg-emerald-50 border-emerald-300 text-emerald-800',
                 wrong_do: 'bg-rose-50 border-rose-300 text-rose-800',
                 duplicate: 'bg-amber-50 border-amber-300 text-amber-800',
                 unknown: 'bg-slate-50 border-slate-300 text-slate-700',
+                invalid_order: 'bg-rose-50 border-rose-300 text-rose-800',
             };
             return map[result] ?? map.unknown;
         },
@@ -61,10 +122,12 @@
                 wrong_do: 'bg-rose-100 text-rose-800 ring-rose-200',
                 duplicate: 'bg-amber-100 text-amber-800 ring-amber-200',
                 unknown: 'bg-slate-100 text-slate-700 ring-slate-200',
+                invalid_order: 'bg-rose-100 text-rose-800 ring-rose-200',
             };
             return map[result] ?? map.unknown;
         }
-     }">
+     }"
+     x-on:beforeunload.window="stopCamera()">
 
     {{-- Header --}}
     <div class="flex flex-wrap items-start justify-between gap-4">
@@ -112,7 +175,7 @@
     {{-- Input Scanner --}}
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
         <h2 class="text-base font-semibold text-slate-800">Pindai QR Code</h2>
-        <p class="text-sm text-slate-500">Arahkan kamera scanner ke QR code pada label gulungan, atau ketik token QR secara manual lalu tekan Enter.</p>
+        <p class="text-sm text-slate-500">Gunakan kamera perangkat, scanner QR USB, atau ketik token QR secara manual lalu tekan Enter.</p>
 
         <form x-on:submit.prevent="submitToken($refs.tokenInput.value)" class="flex gap-3">
             <input x-ref="tokenInput" type="text" placeholder="Token QR akan terisi otomatis saat dipindai..." autofocus
@@ -123,6 +186,26 @@
                 <span x-show="loading" x-cloak>Memproses...</span>
             </button>
         </form>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <button type="button" x-show="!cameraActive" x-on:click="startCamera()"
+                    class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                Aktifkan kamera
+            </button>
+            <button type="button" x-show="cameraActive" x-cloak x-on:click="stopCamera()"
+                    class="rounded-lg border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
+                Matikan kamera
+            </button>
+            <span class="text-xs text-slate-500">Kamera hanya aktif di HTTPS atau localhost.</span>
+        </div>
+
+        <template x-if="cameraError">
+            <p class="text-sm text-rose-700" x-text="cameraError"></p>
+        </template>
+
+        <div x-show="cameraActive" x-cloak>
+            <video x-ref="camera" class="w-full max-w-md rounded-xl border border-slate-200 bg-black" playsinline muted></video>
+        </div>
 
         {{-- Hasil Scan Terbaru --}}
         <template x-if="lastResult">

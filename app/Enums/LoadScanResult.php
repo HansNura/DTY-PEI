@@ -8,6 +8,7 @@ enum LoadScanResult: string
     case WrongDo = 'wrong_do';
     case Duplicate = 'duplicate';
     case Unknown = 'unknown';
+    case InvalidOrder = 'invalid_order';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum LoadScanResult: string
             self::WrongDo => 'Salah Surat Jalan',
             self::Duplicate => 'Sudah Dipindai',
             self::Unknown => 'Kode QR Tidak Dikenal',
+            self::InvalidOrder => 'Surat Jalan Tidak Aktif',
         };
     }
 
@@ -26,6 +28,7 @@ enum LoadScanResult: string
             self::WrongDo => 'bg-rose-100 text-rose-800',
             self::Duplicate => 'bg-amber-100 text-amber-800',
             self::Unknown => 'bg-slate-100 text-slate-700',
+            self::InvalidOrder => 'bg-rose-100 text-rose-800',
         };
     }
 }

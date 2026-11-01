@@ -1,6 +1,6 @@
 # ERD Roadmap — Sistem Pelacakan DTY (PMT)
 
-Dokumen ini menjadi acuan skema basis data lintas sprint. Implementasi aktual dilakukan bertahap: Sprint 1 sudah dimigrasikan, tabel sprint berikutnya ditambahkan saat tiket terkait dikerjakan.
+Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint 4 sudah dimigrasikan; tabel Sprint 5–6 masih berupa rancangan dan ditambahkan saat tiket terkait dikerjakan.
 
 ## Konvensi
 
@@ -25,7 +25,7 @@ Dokumen ini menjadi acuan skema basis data lintas sprint. Implementasi aktual di
 | remember_token | varchar(100) nullable | |
 | created_at / updated_at | timestamp | |
 
-## Sprint 2 — Master Data, QR, Pelanggan, Armada
+## Sprint 2 — Master Data, QR, Pelanggan, Armada (sudah diimplementasikan)
 
 ### `dty_rolls`
 
@@ -76,7 +76,7 @@ Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk 
 Relasi: `driver_id` → `users.id` (role `driver`).
 Armada dinonaktifkan melalui `is_active`; pengemudi yang dapat dipilih harus memiliki akun driver aktif.
 
-## Sprint 3 — Surat Jalan & Scanner Muatan
+## Sprint 3 — Surat Jalan & Scanner Muatan (sudah diimplementasikan)
 
 ### `delivery_orders`
 
@@ -117,7 +117,7 @@ Constraint unik: (`delivery_order_id`, `dty_roll_id`) untuk mencegah duplikasi a
 | scanned_at | timestamp | |
 | created_at / updated_at | timestamp | |
 
-## Sprint 4 — Driver Interface & Live Tracking
+## Sprint 4 — Driver Interface & Live Tracking (sudah diimplementasikan)
 
 ### `delivery_tracking_events`
 
@@ -134,7 +134,7 @@ Constraint unik: (`delivery_order_id`, `dty_roll_id`) untuk mencegah duplikasi a
 
 Posisi terakhir armada = event terbaru per `delivery_order_id`.
 
-## Sprint 5 — Bukti Terima & Laporan
+## Sprint 5 — Bukti Terima & Laporan (rancangan)
 
 ### `proof_of_deliveries`
 
@@ -152,7 +152,7 @@ Posisi terakhir armada = event terbaru per `delivery_order_id`.
 
 Laporan pengiriman diturunkan dari `delivery_orders`, `delivery_order_items`, `delivery_tracking_events`, dan `proof_of_deliveries` — tidak memerlukan tabel rekap terpisah.
 
-## Sprint 6 — Audit & Riwayat
+## Sprint 6 — Audit & Riwayat (rancangan)
 
 ### `audit_logs`
 

@@ -41,11 +41,20 @@
                         <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.orders.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
                             Surat Jalan
                         </a>
+                        <a href="{{ route('logistics.tracking.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.tracking.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
+                            Live Tracking
+                        </a>
                         <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.customers.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
                             Pelanggan
                         </a>
                         <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.fleets.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
                             Armada
+                        </a>
+                    @endif
+
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Driver))
+                        <a href="{{ route('driver.deliveries.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('driver.deliveries.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
+                            Perjalanan
                         </a>
                     @endif
 
@@ -93,8 +102,13 @@
 
                     @if (auth()->user()->hasRole(\App\Enums\UserRole::Logistik))
                         <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Surat Jalan</a>
+                        <a href="{{ route('logistics.tracking.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Live Tracking</a>
                         <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Pelanggan</a>
                         <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Armada</a>
+                    @endif
+
+                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Driver))
+                        <a href="{{ route('driver.deliveries.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Perjalanan</a>
                     @endif
 
                     <a href="{{ route('profile.edit') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Profil</a>
@@ -137,8 +151,9 @@
     <footer class="border-t border-slate-200 bg-white">
         <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p>&copy; {{ date('Y') }} PMT. Sistem pelacakan rol benang DTY.</p>
-            <p>Sprint 3 &mdash; Surat Jalan &amp; Scanner Muatan.</p>
+            <p>Sprint 4 &mdash; Driver Interface &amp; Live Tracking.</p>
         </div>
     </footer>
+    @stack('scripts')
 </body>
 </html>

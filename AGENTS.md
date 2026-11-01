@@ -12,7 +12,7 @@ PMT adalah sistem pelacakan rol benang DTY dari gudang sampai pelanggan: master 
 
 Backlog berasal dari `Rencana Kerja Tim PMT.xlsx` (13 tiket `DTY-001` s/d `DTY-013`, Sprint 1–6). Rancangan data lintas sprint ada di `docs/ERD.md`.
 
-Status saat ini: **Sprint 1 dan Sprint 2 selesai** (auth/RBAC, master gulungan DTY dan QR, pelanggan, armada). Sprint 3 belum dimulai.
+Status saat ini: **Sprint 1 sampai Sprint 4 selesai** (auth/RBAC, master data dan QR, pelanggan/armada, surat jalan, scanner muatan, driver interface, live tracking). Sprint 5 belum dimulai.
 
 ## Stack
 
@@ -20,6 +20,7 @@ Status saat ini: **Sprint 1 dan Sprint 2 selesai** (auth/RBAC, master gulungan D
 - Blade + Alpine.js + Tailwind CSS 4 + Vite 7
 - SQLite untuk lokal; target produksi MySQL/PostgreSQL
 - PHPUnit 11, Laravel Pint
+- `qrcode` untuk label QR, `leaflet` untuk peta live tracking
 
 ## Perintah wajib
 
@@ -49,20 +50,27 @@ php artisan route:list
 ## Peta direktori penting
 
 ```text
-app/Enums/                  enum domain (UserRole)
+app/Enums/                  enum domain (UserRole, RollStatus, DeliveryOrderStatus, TrackingStatus)
 app/Http/Controllers/       controller tipis
 app/Http/Controllers/Admin/ area khusus admin
+app/Http/Controllers/Driver/ antarmuka driver (status perjalanan)
+app/Http/Controllers/Inventory/ gulungan DTY
+app/Http/Controllers/Logistics/ pelanggan, armada, surat jalan, tracking
+app/Http/Controllers/Warehouse/ scanner muatan
 app/Http/Middleware/        role, EnsureUserIsActive, SecurityHeaders
 app/Http/Requests/          validasi FormRequest
 app/Models/                 model Eloquent
+app/Services/               logika domain (QR, surat jalan, scan, tracking)
 database/migrations/        skema
 database/seeders/           data awal & akun demo
 docs/                       ERD dan laporan sprint
 resources/views/            Blade
-resources/js/app.js         entry Alpine
+resources/js/app.js         entry Alpine + QR label
+resources/js/tracking-map.js peta Leaflet live tracking
 resources/css/app.css       entry Tailwind
 routes/web.php              route web
 tests/Feature/              test perilaku
+tests/bootstrap.php         isolasi environment test
 .ai/                        aturan & skrip agent
 ```
 

@@ -27,6 +27,20 @@ class LoadScanService
     public function scan(DeliveryOrder $order, string $qrToken, User $checker): array
     {
         return DB::transaction(function () use ($order, $qrToken, $checker) {
+            $order = DeliveryOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($order->status, [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading], true)) {
+                return [
+                    'success' => false,
+                    'result' => LoadScanResult::InvalidOrder,
+                    'message' => "Surat Jalan {$order->nomor_do} sudah tidak dalam tahap pemuatan (status: {$order->status->label()}).",
+                    'roll' => null,
+                    'loaded_count' => $order->loaded_count,
+                    'total_rol' => $order->total_rol,
+                    'is_complete' => false,
+                ];
+            }
+
             $trimmedToken = trim($qrToken);
             $roll = DtyRoll::where('qr_token', $trimmedToken)->lockForUpdate()->first();
 
@@ -65,6 +79,26 @@ class LoadScanService
                     'success' => false,
                     'result' => LoadScanResult::WrongDo,
                     'message' => "PERINGATAN: Rol {$roll->kode_rol} (Lot {$roll->nomor_lot}) bukan alokasi untuk Surat Jalan ini!",
+                    'roll' => $roll,
+                    'loaded_count' => $order->loaded_count,
+                    'total_rol' => $order->total_rol,
+                    'is_complete' => false,
+                ];
+            }
+
+            if (! in_array($roll->status, [RollStatus::Allocated, RollStatus::Loaded], true)) {
+                LoadScan::create([
+                    'delivery_order_id' => $order->id,
+                    'dty_roll_id' => $roll->id,
+                    'scanned_by' => $checker->id,
+                    'result' => LoadScanResult::WrongDo,
+                    'scanned_at' => now(),
+                ]);
+
+                return [
+                    'success' => false,
+                    'result' => LoadScanResult::WrongDo,
+                    'message' => "Rol {$roll->kode_rol} berstatus {$roll->status->label()} dan tidak siap dimuat.",
                     'roll' => $roll,
                     'loaded_count' => $order->loaded_count,
                     'total_rol' => $order->total_rol,

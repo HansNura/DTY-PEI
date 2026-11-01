@@ -3,10 +3,12 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Driver\DeliveryController as DriverDeliveryController;
 use App\Http\Controllers\Inventory\DtyRollController;
 use App\Http\Controllers\Logistics\CustomerController;
 use App\Http\Controllers\Logistics\DeliveryOrderController;
 use App\Http\Controllers\Logistics\FleetController;
+use App\Http\Controllers\Logistics\TrackingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Warehouse\LoadScanController;
 use Illuminate\Support\Facades\Route;
@@ -83,4 +85,16 @@ Route::middleware(['auth', 'role:logistik'])
         Route::get('/orders/{order}', [DeliveryOrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/print', [DeliveryOrderController::class, 'print'])->name('orders.print');
         Route::patch('/orders/{order}/cancel', [DeliveryOrderController::class, 'cancel'])->name('orders.cancel');
+
+        Route::get('/tracking', [TrackingController::class, 'index'])->name('tracking.index');
+        Route::get('/tracking/{order}', [TrackingController::class, 'show'])->name('tracking.show');
+    });
+
+Route::middleware(['auth', 'role:driver'])
+    ->prefix('driver')
+    ->name('driver.')
+    ->group(function () {
+        Route::get('/deliveries', [DriverDeliveryController::class, 'index'])->name('deliveries.index');
+        Route::get('/deliveries/{order}', [DriverDeliveryController::class, 'show'])->name('deliveries.show');
+        Route::post('/deliveries/{order}/status', [DriverDeliveryController::class, 'updateStatus'])->name('deliveries.status');
     });

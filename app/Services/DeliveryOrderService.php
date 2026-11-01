@@ -7,6 +7,7 @@ use App\Enums\RollStatus;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
 use App\Models\DtyRoll;
+use App\Models\Fleet;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -50,6 +51,20 @@ class DeliveryOrderService
                         'rolls' => "Rol {$roll->kode_rol} tidak lagi berstatus tersedia dalam stok.",
                     ]);
                 }
+            }
+
+            $fleet = Fleet::whereKey($data['fleet_id'])->lockForUpdate()->first();
+            $totalKg = round($rolls->sum(fn (DtyRoll $roll): float => (float) $roll->berat_gram / 1000), 2);
+
+            if ($fleet && (float) $fleet->kapasitas_kg > 0 && $totalKg > (float) $fleet->kapasitas_kg) {
+                throw ValidationException::withMessages([
+                    'rolls' => sprintf(
+                        'Total berat %.2f kg melebihi kapasitas armada %s (%.2f kg).',
+                        $totalKg,
+                        $fleet->nomor_polisi,
+                        (float) $fleet->kapasitas_kg,
+                    ),
+                ]);
             }
 
             $order = DeliveryOrder::create([

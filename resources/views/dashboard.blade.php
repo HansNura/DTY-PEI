@@ -6,24 +6,24 @@
     @php
         $modules = match ($user->role) {
             \App\Enums\UserRole::Admin => [
-                ['DTY-001', 'Auth & User', 'Sprint 1', 'Selesai'],
-                ['DTY-012', 'Audit & History', 'Sprint 6', 'Mendatang'],
+                ['DTY-001', 'Auth & User', 'Sprint 1', 'Selesai', null],
+                ['DTY-012', 'Audit & History', 'Sprint 6', 'Mendatang', null],
             ],
             \App\Enums\UserRole::AdminGudang => [
-                ['DTY-002', 'Master Data DTY', 'Sprint 2', 'Tersedia'],
-                ['DTY-003', 'QR Code Engine', 'Sprint 2', 'Tersedia'],
-                ['DTY-007', 'Scanner Muatan', 'Sprint 3', 'Mendatang'],
+                ['DTY-002', 'Master Data DTY', 'Sprint 2', 'Selesai', route('warehouse.rolls.index')],
+                ['DTY-003', 'QR Code Engine', 'Sprint 2', 'Selesai', route('warehouse.rolls.create')],
+                ['DTY-007', 'Scanner Muatan', 'Sprint 3', 'Selesai', route('warehouse.scans.index')],
             ],
             \App\Enums\UserRole::Logistik => [
-                ['DTY-004', 'Master Pelanggan', 'Sprint 2', 'Tersedia'],
-                ['DTY-005', 'Master Armada', 'Sprint 2', 'Tersedia'],
-                ['DTY-006', 'Surat Jalan (DO)', 'Sprint 3', 'Mendatang'],
-                ['DTY-009', 'Live Tracking', 'Sprint 4', 'Mendatang'],
-                ['DTY-011', 'Laporan Pengiriman', 'Sprint 5', 'Mendatang'],
+                ['DTY-004', 'Master Pelanggan', 'Sprint 2', 'Selesai', route('logistics.customers.index')],
+                ['DTY-005', 'Master Armada', 'Sprint 2', 'Selesai', route('logistics.fleets.index')],
+                ['DTY-006', 'Surat Jalan (DO)', 'Sprint 3', 'Selesai', route('logistics.orders.index')],
+                ['DTY-009', 'Live Tracking', 'Sprint 4', 'Selesai', route('logistics.tracking.index')],
+                ['DTY-011', 'Laporan Pengiriman', 'Sprint 5', 'Mendatang', null],
             ],
             \App\Enums\UserRole::Driver => [
-                ['DTY-008', 'Driver Interface', 'Sprint 4', 'Mendatang'],
-                ['DTY-010', 'Bukti Terima (POD)', 'Sprint 5', 'Mendatang'],
+                ['DTY-008', 'Driver Interface', 'Sprint 4', 'Selesai', route('driver.deliveries.index')],
+                ['DTY-010', 'Bukti Terima (POD)', 'Sprint 5', 'Mendatang', null],
             ],
         };
     @endphp
@@ -144,15 +144,20 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-sm font-semibold text-slate-900">Modul terkait peran Anda</h2>
             <ul class="mt-4 divide-y divide-slate-100">
-                @foreach ($modules as [$ticket, $module, $sprint, $state])
+                @foreach ($modules as [$ticket, $module, $sprint, $state, $url])
                     <li class="flex items-center justify-between gap-3 py-3">
                         <div>
                             <p class="text-sm font-medium text-slate-900">{{ $module }}</p>
                             <p class="text-xs text-slate-500">{{ $ticket }} &middot; {{ $sprint }}</p>
                         </div>
-                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ in_array($state, ['Selesai', 'Tersedia'], true) ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-50 text-slate-600 ring-slate-200' }}">
-                            {{ $state }}
-                        </span>
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ in_array($state, ['Selesai', 'Tersedia'], true) ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-50 text-slate-600 ring-slate-200' }}">
+                                {{ $state }}
+                            </span>
+                            @if ($url)
+                                <a href="{{ $url }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-900">Buka</a>
+                            @endif
+                        </div>
                     </li>
                 @endforeach
             </ul>
