@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class DeliveryOrder extends Model
 {
@@ -73,6 +74,25 @@ class DeliveryOrder extends Model
     public function loadScans(): HasMany
     {
         return $this->hasMany(LoadScan::class);
+    }
+
+    public function trackingEvents(): HasMany
+    {
+        return $this->hasMany(DeliveryTrackingEvent::class);
+    }
+
+    public function proofOfDelivery(): HasOne
+    {
+        return $this->hasOne(ProofOfDelivery::class);
+    }
+
+    public function totalWeightInKg(): string
+    {
+        $hundredthsOfKg = $this->items->sum(
+            fn (DeliveryOrderItem $item): int => (int) str_replace('.', '', (string) $item->berat_kg)
+        );
+
+        return intdiv($hundredthsOfKg, 100).'.'.str_pad((string) ($hundredthsOfKg % 100), 2, '0', STR_PAD_LEFT);
     }
 
     public function getTotalBeratKgAttribute(): float

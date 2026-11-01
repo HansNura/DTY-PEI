@@ -11,6 +11,7 @@ Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d
 - SQLite untuk lokal; siap dipindah ke MySQL/PostgreSQL untuk produksi
 - Vite 7
 - `qrcode` untuk membuat QR label secara lokal di browser
+- `@zxing/browser` untuk scan QR lewat kamera, Dompdf untuk PDF, dan PhpSpreadsheet untuk Excel
 - PHPUnit 11 + Laravel Pint
 
 ## Menjalankan di lokal
@@ -68,6 +69,9 @@ composer run dev                   # server + queue + log + Vite
 - Security header dasar pada semua respons.
 - Admin Gudang dapat mengelola gulungan DTY beserta denier, filamen, berat, dan nomor lot; kode rol serta token QR unik dibuat otomatis dan label thermal 50 × 30 mm dapat dicetak.
 - Tim Logistik dapat mengelola pelanggan dengan kontak penerima dan koordinat maps, serta armada dengan jenis kendaraan, kapasitas, dan pengemudi utama.
+- Tim Logistik dapat menerbitkan surat jalan dari stok tersedia dengan validasi kapasitas, lalu mengunduh dokumen resmi PDF.
+- Driver dapat memperbarui status perjalanan; saat tiba, pelanggan memindai seluruh QR yang dialokasikan dan menandatangani bukti terima pada perangkat driver.
+- Rekap pengiriman dapat difilter menurut periode, nomor lot, dan armada, lalu diunduh sebagai PDF atau XLSX.
 - Gulungan dibatalkan dan pelanggan/armada dinonaktifkan tanpa menghapus riwayat data.
 
 ## Kontribusi tim
@@ -90,7 +94,7 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 | --- | --- | --- |
 | 1 | DTY-001 Auth & User | Selesai |
 | 2 | DTY-002 s/d DTY-005 | Selesai |
-| 3 | DTY-006 s/d DTY-007 | Belum dimulai |
-| 4 | DTY-008 s/d DTY-009 | Belum dimulai |
-| 5 | DTY-010 s/d DTY-011 | Belum dimulai |
+| 3 | DTY-006 s/d DTY-007 | DTY-006 selesai; DTY-007 belum dimulai |
+| 4 | DTY-008 s/d DTY-009 | DTY-008 sebagian; DTY-009 belum dimulai |
+| 5 | DTY-010 s/d DTY-011 | Selesai |
 | 6 | DTY-012 s/d DTY-013 | Belum dimulai |

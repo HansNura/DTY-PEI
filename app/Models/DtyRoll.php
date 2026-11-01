@@ -46,4 +46,11 @@ class DtyRoll extends Model
     {
         return $this->hasMany(LoadScan::class);
     }
+
+    public function weightInKg(): string
+    {
+        $hundredthsOfKg = intdiv((int) str_replace('.', '', (string) $this->berat_gram) + 500, 1000);
+
+        return intdiv($hundredthsOfKg, 100).'.'.str_pad((string) ($hundredthsOfKg % 100), 2, '0', STR_PAD_LEFT);
+    }
 }

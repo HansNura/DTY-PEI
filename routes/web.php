@@ -3,9 +3,12 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeliverySignatureController;
+use App\Http\Controllers\Driver\DeliveryController as DriverDeliveryController;
 use App\Http\Controllers\Inventory\DtyRollController;
 use App\Http\Controllers\Logistics\CustomerController;
 use App\Http\Controllers\Logistics\DeliveryOrderController;
+use App\Http\Controllers\Logistics\DeliveryReportController;
 use App\Http\Controllers\Logistics\FleetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Warehouse\LoadScanController;
@@ -28,6 +31,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    Route::get('/deliveries/{deliveryOrder}/signature', DeliverySignatureController::class)
+        ->middleware('role:logistik,driver')
+        ->name('deliveries.signature');
 });
 
 Route::middleware(['auth', 'role:admin'])
@@ -82,5 +89,20 @@ Route::middleware(['auth', 'role:logistik'])
         Route::post('/orders', [DeliveryOrderController::class, 'store'])->name('orders.store');
         Route::get('/orders/{order}', [DeliveryOrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{order}/print', [DeliveryOrderController::class, 'print'])->name('orders.print');
+        Route::get('/orders/{order}/pdf', [DeliveryOrderController::class, 'pdf'])->name('orders.pdf');
         Route::patch('/orders/{order}/cancel', [DeliveryOrderController::class, 'cancel'])->name('orders.cancel');
+
+        Route::get('/reports/deliveries', [DeliveryReportController::class, 'index'])->name('reports.deliveries');
+        Route::get('/reports/deliveries/pdf', [DeliveryReportController::class, 'pdf'])->name('reports.deliveries.pdf');
+        Route::get('/reports/deliveries/excel', [DeliveryReportController::class, 'excel'])->name('reports.deliveries.excel');
+    });
+
+Route::middleware(['auth', 'role:driver'])
+    ->prefix('driver')
+    ->name('driver.')
+    ->group(function () {
+        Route::get('/deliveries', [DriverDeliveryController::class, 'index'])->name('deliveries.index');
+        Route::get('/deliveries/{deliveryOrder}', [DriverDeliveryController::class, 'show'])->name('deliveries.show');
+        Route::patch('/deliveries/{deliveryOrder}/status', [DriverDeliveryController::class, 'updateStatus'])->name('deliveries.status');
+        Route::post('/deliveries/{deliveryOrder}/confirm', [DriverDeliveryController::class, 'confirm'])->name('deliveries.confirm');
     });

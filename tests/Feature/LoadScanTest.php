@@ -18,6 +18,7 @@ use Tests\TestCase;
 class LoadScanTest extends TestCase
 {
     use RefreshDatabase;
+
     private function warehouseUser(): User
     {
         return User::factory()->create(['role' => UserRole::AdminGudang]);

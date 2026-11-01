@@ -10,12 +10,14 @@ use App\Models\DeliveryOrder;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class DeliveryOrderTest extends TestCase
 {
     use RefreshDatabase;
+
     private function logistikUser(): User
     {
         return User::factory()->create(['role' => UserRole::Logistik]);
@@ -26,7 +28,7 @@ class DeliveryOrderTest extends TestCase
         return User::factory()->create(['role' => UserRole::AdminGudang]);
     }
 
-    private function makeRolls(int $count = 2, ?User $creator = null): \Illuminate\Database\Eloquent\Collection
+    private function makeRolls(int $count = 2, ?User $creator = null): Collection
     {
         $creator ??= $this->warehouseUser();
 

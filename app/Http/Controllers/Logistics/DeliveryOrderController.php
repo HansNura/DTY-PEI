@@ -13,9 +13,12 @@ use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
 use App\Services\DeliveryOrderService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class DeliveryOrderController extends Controller
 {
@@ -65,9 +68,30 @@ class DeliveryOrderController extends Controller
 
     public function show(DeliveryOrder $order): View
     {
-        $order->load(['customer', 'fleet', 'driver', 'creator', 'items.dtyRoll', 'loadScans.scanner']);
+        $order->load([
+            'customer',
+            'fleet',
+            'driver',
+            'creator',
+            'items.dtyRoll',
+            'loadScans.scanner',
+            'proofOfDelivery',
+            'trackingEvents.recorder',
+        ]);
 
         return view('logistics.orders.show', compact('order'));
+    }
+
+    public function pdf(DeliveryOrder $order): Response
+    {
+        $order->load(['customer', 'fleet', 'driver', 'items.dtyRoll', 'proofOfDelivery']);
+        $signatureDataUri = $order->proofOfDelivery
+            ? 'data:image/png;base64,'.base64_encode(Storage::disk('local')->get($order->proofOfDelivery->signature_path))
+            : null;
+
+        return Pdf::loadView('logistics.orders.pdf', compact('order', 'signatureDataUri'))
+            ->setPaper('a4', 'portrait')
+            ->download($order->nomor_do.'.pdf');
     }
 
     public function print(DeliveryOrder $order): View

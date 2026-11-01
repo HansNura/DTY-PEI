@@ -32,4 +32,9 @@ class DeliveryOrderItem extends Model
     {
         return $this->belongsTo(DtyRoll::class);
     }
+
+    public function roll(): BelongsTo
+    {
+        return $this->dtyRoll();
+    }
 }

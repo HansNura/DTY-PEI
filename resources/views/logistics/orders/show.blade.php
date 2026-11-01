@@ -23,6 +23,10 @@
                    class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                     Cetak DO
                 </a>
+                <a href="{{ route('logistics.orders.pdf', $order) }}"
+                   class="rounded-lg border border-indigo-300 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50">
+                    Unduh PDF
+                </a>
                 @if (in_array($order->status->value, ['issued', 'loading', 'draft']))
                     <form method="POST" action="{{ route('logistics.orders.cancel', $order) }}"
                           x-data x-on:submit="if (!confirm('Batalkan surat jalan {{ $order->nomor_do }}? Semua rol akan dikembalikan ke stok.')) $event.preventDefault()">
@@ -65,6 +69,32 @@
             <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <span class="font-medium">Catatan:</span> {{ $order->catatan }}
             </div>
+        @endif
+
+        @if ($order->proofOfDelivery)
+            <section class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                <h2 class="font-semibold text-emerald-900">Bukti Penerimaan Digital</h2>
+                <p class="mt-2 text-sm text-emerald-800">
+                    Diterima oleh {{ $order->proofOfDelivery->received_by_name }}
+                    pada {{ $order->proofOfDelivery->received_at->format('d M Y, H:i') }}
+                </p>
+                <img src="{{ route('deliveries.signature', $order) }}" alt="Tanda tangan penerima"
+                     class="mt-3 max-h-28 rounded border border-emerald-200 bg-white p-2">
+            </section>
+        @endif
+
+        @if ($order->trackingEvents->isNotEmpty())
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 class="font-semibold text-slate-800">Riwayat Perjalanan</h2>
+                <ol class="mt-3 space-y-2">
+                    @foreach ($order->trackingEvents->sortBy('recorded_at') as $event)
+                        <li class="flex flex-wrap justify-between gap-2 text-sm text-slate-600">
+                            <span class="font-medium text-slate-800">{{ $event->status->label() }}</span>
+                            <time>{{ $event->recorded_at->format('d M Y, H:i') }}</time>
+                        </li>
+                    @endforeach
+                </ol>
+            </section>
         @endif
 
         {{-- Daftar Rol --}}
