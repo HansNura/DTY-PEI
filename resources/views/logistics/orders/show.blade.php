@@ -3,141 +3,109 @@
 @section('title', 'Detail — ' . $order->nomor_do)
 
 @section('content')
-    <div class="mx-auto max-w-4xl space-y-6">
-
-        {{-- Header --}}
+    <div class="mx-auto max-w-5xl space-y-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <div class="flex items-center gap-3">
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ $order->nomor_do }}</h1>
-                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset {{ $order->status->badgeClass() }}">
-                        {{ $order->status->label() }}
-                    </span>
+                <div class="flex flex-wrap items-center gap-3">
+                    <h1 class="font-mono text-2xl font-semibold tracking-tight text-slate-900">{{ $order->nomor_do }}</h1>
+                    <x-status-badge :status="$order->status" />
                 </div>
-                <p class="mt-1 text-sm text-slate-500">
-                    Diterbitkan oleh {{ $order->creator->nama }} pada {{ $order->created_at->format('d M Y, H:i') }}
-                </p>
+                <p class="mt-1 text-sm text-slate-500">Diterbitkan oleh {{ $order->creator->nama }} pada {{ $order->created_at->translatedFormat('d M Y, H:i') }}</p>
             </div>
-            <div class="flex gap-2">
-                <a href="{{ route('logistics.orders.print', $order) }}" target="_blank"
-                   class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                    Cetak DO
-                </a>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <x-button href="{{ route('logistics.orders.print', $order) }}" target="_blank" variant="secondary" icon="printer">Cetak DO</x-button>
                 @if (in_array($order->status->value, ['issued', 'loading', 'draft']))
-                    <form method="POST" action="{{ route('logistics.orders.cancel', $order) }}"
-                          x-data x-on:submit="if (!confirm('Batalkan surat jalan {{ $order->nomor_do }}? Semua rol akan dikembalikan ke stok.')) $event.preventDefault()">
-                        @csrf
-                        @method('PATCH')
-                        <button type="submit" class="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700">
-                            Batalkan DO
-                        </button>
-                    </form>
+                    <x-confirm-button
+                        :action="route('logistics.orders.cancel', $order)"
+                        method="PATCH"
+                        title="Batalkan Surat Jalan?"
+                        :description="'Semua rol pada '.$order->nomor_do.' akan dikembalikan ke stok gudang.'"
+                        confirm-label="Ya, batalkan DO"
+                    >
+                        Batalkan DO
+                    </x-confirm-button>
                 @endif
-                <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Kembali</a>
+                <x-button href="{{ route('logistics.orders.index') }}" variant="ghost" icon="arrow-left">Kembali</x-button>
             </div>
         </div>
 
-        {{-- Info Card --}}
+        <x-card>
+            <x-status-stepper :status="$order->status" />
+        </x-card>
+
         <div class="grid gap-4 sm:grid-cols-3">
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Pelanggan Tujuan</p>
-                <p class="mt-2 font-semibold text-slate-900">{{ $order->customer->nama_pabrik }}</p>
-                <p class="mt-0.5 text-sm text-slate-600">{{ $order->customer->alamat }}</p>
-                <p class="mt-1 text-sm text-slate-500">{{ $order->customer->kontak_nama }} · {{ $order->customer->kontak_telepon }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Armada &amp; Driver</p>
-                <p class="mt-2 font-semibold text-slate-900">{{ $order->fleet->nomor_polisi }}</p>
-                <p class="mt-0.5 text-sm text-slate-600">{{ $order->fleet->jenis_kendaraan }}</p>
-                <p class="mt-1 text-sm text-slate-500">Driver: {{ $order->driver->nama }}</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Ringkasan Muatan</p>
-                <p class="mt-2 text-3xl font-bold tabular-nums text-slate-900">{{ $order->total_rol }}</p>
+            <x-card title="Pelanggan tujuan">
+                <p class="font-semibold text-slate-900">{{ $order->customer->nama_pabrik }}</p>
+                <p class="mt-1 text-sm text-slate-600">{{ $order->customer->alamat }}</p>
+                <p class="mt-2 text-sm text-slate-500">{{ $order->customer->kontak_nama }} · {{ $order->customer->kontak_telepon }}</p>
+            </x-card>
+
+            <x-card title="Armada & driver">
+                <p class="font-mono font-semibold text-slate-900">{{ $order->fleet->nomor_polisi }}</p>
+                <p class="mt-1 text-sm text-slate-600">{{ $order->fleet->jenis_kendaraan }}</p>
+                <p class="mt-2 text-sm text-slate-500">Driver: {{ $order->driver->nama }}</p>
+            </x-card>
+
+            <x-card title="Ringkasan muatan">
+                <p class="text-3xl font-semibold tabular-nums text-slate-900">{{ $order->total_rol }}</p>
                 <p class="text-sm text-slate-500">rol benang DTY</p>
-                <p class="mt-1 text-sm font-medium text-slate-700">
-                    Total: {{ number_format($order->total_berat_kg, 2) }} kg
-                </p>
-            </div>
+                <p class="mt-2 text-sm font-medium text-slate-700">Total {{ number_format($order->total_berat_kg, 2) }} kg</p>
+            </x-card>
         </div>
 
         @if ($order->catatan)
-            <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <span class="font-medium">Catatan:</span> {{ $order->catatan }}
-            </div>
+            <x-alert tone="warning" title="Catatan">
+                {{ $order->catatan }}
+            </x-alert>
         @endif
 
-        {{-- Daftar Rol --}}
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-base font-semibold text-slate-800">Gulungan DTY yang Dialokasikan</h2>
-            </div>
+        <x-card padding="p-0" title="Gulungan DTY yang dialokasikan">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-100 text-sm">
-                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <thead class="bg-slate-50/70">
                         <tr>
-                            <th class="px-5 py-3 font-medium">Kode Rol</th>
-                            <th class="px-5 py-3 font-medium">Nomor Lot</th>
-                            <th class="px-5 py-3 font-medium">Spesifikasi</th>
-                            <th class="px-5 py-3 font-medium text-right">Berat (kg)</th>
-                            <th class="px-5 py-3 font-medium">Status</th>
+                            <x-th>Kode rol</x-th>
+                            <x-th>Nomor lot</x-th>
+                            <x-th>Spesifikasi</x-th>
+                            <x-th align="right">Berat (kg)</x-th>
+                            <x-th>Status</x-th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach ($order->items as $item)
                             <tr>
-                                <td class="px-5 py-3 font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</td>
-                                <td class="px-5 py-3 text-slate-700">{{ $item->dtyRoll->nomor_lot }}</td>
-                                <td class="px-5 py-3 text-slate-600">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</td>
-                                <td class="px-5 py-3 text-right tabular-nums">{{ number_format($item->berat_kg, 2) }}</td>
-                                <td class="px-5 py-3">
-                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset
-                                        {{ $item->dtyRoll->status->value === 'loaded' ? 'bg-blue-50 text-blue-700 ring-blue-200' :
-                                           ($item->dtyRoll->status->value === 'allocated' ? 'bg-amber-50 text-amber-700 ring-amber-200' : 'bg-slate-50 text-slate-600 ring-slate-200') }}">
-                                        {{ $item->dtyRoll->status->label() }}
-                                    </span>
-                                </td>
+                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</span></x-td>
+                                <x-td>{{ $item->dtyRoll->nomor_lot }}</x-td>
+                                <x-td class="tabular-nums">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</x-td>
+                                <x-td align="right" class="tabular-nums">{{ number_format($item->berat_kg, 2) }}</x-td>
+                                <x-td><x-status-badge :status="$item->dtyRoll->status" /></x-td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
+        </x-card>
 
-        {{-- Riwayat Scan --}}
         @if ($order->loadScans->isNotEmpty())
-            <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-200 px-6 py-4">
-                    <h2 class="text-base font-semibold text-slate-800">Riwayat Scan Muatan</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-100 text-sm">
-                        <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                            <tr>
-                                <th class="px-5 py-3 font-medium">Waktu Scan</th>
-                                <th class="px-5 py-3 font-medium">Kode Rol</th>
-                                <th class="px-5 py-3 font-medium">Hasil</th>
-                                <th class="px-5 py-3 font-medium">Petugas</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach ($order->loadScans->sortByDesc('scanned_at') as $scan)
-                                <tr>
-                                    <td class="px-5 py-3 text-xs text-slate-500 tabular-nums">{{ $scan->scanned_at->format('d M Y H:i:s') }}</td>
-                                    <td class="px-5 py-3 font-mono text-xs text-slate-700">{{ $scan->dtyRoll?->kode_rol ?? '—' }}</td>
-                                    <td class="px-5 py-3">
-                                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $scan->result->badgeClass() }}">
-                                            {{ $scan->result->label() }}
-                                        </span>
-                                    </td>
-                                    <td class="px-5 py-3 text-slate-700">{{ $scan->scanner->nama }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <x-card title="Riwayat scan muatan" description="Validasi QR yang dilakukan checker gudang">
+                <x-timeline>
+                    @foreach ($order->loadScans->sortByDesc('scanned_at') as $scan)
+                        <x-timeline-item
+                            :title="$scan->dtyRoll?->kode_rol ?? 'Kode QR tidak dikenal'"
+                            :meta="$scan->scanned_at->translatedFormat('d M Y, H:i:s').' · '.$scan->scanner->nama"
+                            :tone="\App\Support\StatusTone::for($scan->result)"
+                        >
+                            <div class="flex flex-wrap items-center gap-2">
+                                <x-status-badge :status="$scan->result" />
+                                @if ($scan->dtyRoll)
+                                    <span class="text-xs text-slate-500">Lot {{ $scan->dtyRoll->nomor_lot }}</span>
+                                @endif
+                            </div>
+                        </x-timeline-item>
+                    @endforeach
+                </x-timeline>
+            </x-card>
         @endif
-
     </div>
 @endsection

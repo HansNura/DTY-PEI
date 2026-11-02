@@ -3,301 +3,265 @@
 @section('title', 'Scanner — ' . $order->nomor_do)
 
 @section('content')
-<div class="mx-auto max-w-5xl space-y-6"
-     x-data="{
-        scanning: false,
-        loading: false,
-        lastResult: null,
-        history: [],
-        loadedCount: {{ $order->items->filter(fn ($item) => $item->dtyRoll?->status === \App\Enums\RollStatus::Loaded)->count() }},
-        totalRol: {{ $order->items->count() }},
-        cameraActive: false,
-        cameraError: null,
-        stream: null,
-        detector: null,
-        cameraTimer: null,
+    <div class="mx-auto max-w-6xl space-y-6"
+         x-data="{
+            loading: false,
+            lastResult: null,
+            history: [],
+            loadedCount: {{ $order->items->filter(fn ($item) => $item->dtyRoll?->status === \App\Enums\RollStatus::Loaded)->count() }},
+            totalRol: {{ $order->items->count() }},
+            cameraActive: false,
+            cameraError: null,
+            stream: null,
+            detector: null,
+            cameraTimer: null,
 
-        async submitToken(token) {
-            if (this.loading || !token.trim()) return;
-            this.loading = true;
-            try {
-                const resp = await fetch('{{ route('warehouse.scans.scan', $order) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ qr_token: token.trim() }),
-                });
-                const data = await resp.json();
-                this.lastResult = data;
-                this.loadedCount = data.loaded_count;
-                this.history.unshift({
-                    time: new Date().toLocaleTimeString('id-ID'),
-                    roll: data.roll?.kode_rol ?? '—',
-                    lot: data.roll?.nomor_lot ?? '—',
-                    result: data.result,
-                    result_label: data.result_label,
-                    message: data.message,
-                });
-                this.$refs.tokenInput.value = '';
-                this.$refs.tokenInput.focus();
-            } catch(e) {
-                this.lastResult = { success: false, message: 'Gagal terhubung ke server.', result: 'unknown' };
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        async startCamera() {
-            this.cameraError = null;
-
-            if (! ('BarcodeDetector' in window)) {
-                this.cameraError = 'Browser ini belum mendukung pemindaian kamera. Gunakan scanner USB atau ketik token manual.';
-                return;
-            }
-
-            try {
-                this.detector = new BarcodeDetector({ formats: ['qr_code'] });
-                this.stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' } },
-                    audio: false,
-                });
-                this.$refs.camera.srcObject = this.stream;
-                await this.$refs.camera.play();
-                this.cameraActive = true;
-                this.cameraTimer = setInterval(() => this.detectFrame(), 500);
-            } catch (error) {
-                this.cameraError = 'Kamera tidak dapat diakses. Periksa izin kamera atau gunakan scanner manual.';
-                this.stopCamera();
-            }
-        },
-
-        async detectFrame() {
-            if (! this.cameraActive || this.loading || ! this.detector || ! this.$refs.camera) return;
-            if (this.$refs.camera.readyState < 2) return;
-
-            try {
-                const codes = await this.detector.detect(this.$refs.camera);
-
-                if (codes.length > 0) {
-                    const token = codes[0].rawValue;
-                    this.stopCamera();
-                    await this.submitToken(token);
+            async submitToken(token) {
+                if (this.loading || !token.trim()) return;
+                this.loading = true;
+                try {
+                    const resp = await fetch('{{ route('warehouse.scans.scan', $order) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ qr_token: token.trim() }),
+                    });
+                    const data = await resp.json();
+                    this.lastResult = data;
+                    this.loadedCount = data.loaded_count;
+                    this.history.unshift({
+                        time: new Date().toLocaleTimeString('id-ID'),
+                        roll: data.roll?.kode_rol ?? '—',
+                        lot: data.roll?.nomor_lot ?? '—',
+                        result: data.result,
+                        result_label: data.result_label,
+                        message: data.message,
+                    });
+                    this.$refs.tokenInput.value = '';
+                    this.$refs.tokenInput.focus();
+                } catch (error) {
+                    this.lastResult = { success: false, message: 'Gagal terhubung ke server.', result: 'unknown' };
+                } finally {
+                    this.loading = false;
                 }
-            } catch (error) {
-                // Biarkan frame berikutnya mencoba lagi.
+            },
+
+            async startCamera() {
+                this.cameraError = null;
+
+                if (! ('BarcodeDetector' in window)) {
+                    this.cameraError = 'Browser ini belum mendukung pemindaian kamera. Gunakan scanner USB atau ketik token manual.';
+                    return;
+                }
+
+                try {
+                    this.detector = new BarcodeDetector({ formats: ['qr_code'] });
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' } },
+                        audio: false,
+                    });
+                    this.$refs.camera.srcObject = this.stream;
+                    await this.$refs.camera.play();
+                    this.cameraActive = true;
+                    this.cameraTimer = setInterval(() => this.detectFrame(), 500);
+                } catch (error) {
+                    this.cameraError = 'Kamera tidak dapat diakses. Periksa izin kamera atau gunakan scanner manual.';
+                    this.stopCamera();
+                }
+            },
+
+            async detectFrame() {
+                if (! this.cameraActive || this.loading || ! this.detector || ! this.$refs.camera) return;
+                if (this.$refs.camera.readyState < 2) return;
+
+                try {
+                    const codes = await this.detector.detect(this.$refs.camera);
+                    if (codes.length > 0) {
+                        const token = codes[0].rawValue;
+                        this.stopCamera();
+                        await this.submitToken(token);
+                    }
+                } catch (error) {
+                    // Coba frame berikutnya.
+                }
+            },
+
+            stopCamera() {
+                if (this.cameraTimer) {
+                    clearInterval(this.cameraTimer);
+                    this.cameraTimer = null;
+                }
+                if (this.stream) {
+                    this.stream.getTracks().forEach((track) => track.stop());
+                    this.stream = null;
+                }
+                this.cameraActive = false;
+            },
+
+            resultClass(result) {
+                const map = {
+                    valid: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+                    wrong_do: 'border-rose-200 bg-rose-50 text-rose-800',
+                    duplicate: 'border-amber-200 bg-amber-50 text-amber-800',
+                    unknown: 'border-slate-200 bg-slate-50 text-slate-700',
+                    invalid_order: 'border-rose-200 bg-rose-50 text-rose-800',
+                };
+                return map[result] ?? map.unknown;
+            },
+
+            badgeClass(result) {
+                const map = {
+                    valid: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+                    wrong_do: 'bg-rose-100 text-rose-800 ring-rose-200',
+                    duplicate: 'bg-amber-100 text-amber-800 ring-amber-200',
+                    unknown: 'bg-slate-100 text-slate-700 ring-slate-200',
+                    invalid_order: 'bg-rose-100 text-rose-800 ring-rose-200',
+                };
+                return map[result] ?? map.unknown;
             }
-        },
+         }"
+         x-on:beforeunload.window="stopCamera()">
 
-        stopCamera() {
-            if (this.cameraTimer) {
-                clearInterval(this.cameraTimer);
-                this.cameraTimer = null;
-            }
-
-            if (this.stream) {
-                this.stream.getTracks().forEach((track) => track.stop());
-                this.stream = null;
-            }
-
-            this.cameraActive = false;
-        },
-
-        resultClass(result) {
-            const map = {
-                valid: 'bg-emerald-50 border-emerald-300 text-emerald-800',
-                wrong_do: 'bg-rose-50 border-rose-300 text-rose-800',
-                duplicate: 'bg-amber-50 border-amber-300 text-amber-800',
-                unknown: 'bg-slate-50 border-slate-300 text-slate-700',
-                invalid_order: 'bg-rose-50 border-rose-300 text-rose-800',
-            };
-            return map[result] ?? map.unknown;
-        },
-
-        badgeClass(result) {
-            const map = {
-                valid: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-                wrong_do: 'bg-rose-100 text-rose-800 ring-rose-200',
-                duplicate: 'bg-amber-100 text-amber-800 ring-amber-200',
-                unknown: 'bg-slate-100 text-slate-700 ring-slate-200',
-                invalid_order: 'bg-rose-100 text-rose-800 ring-rose-200',
-            };
-            return map[result] ?? map.unknown;
-        }
-     }"
-     x-on:beforeunload.window="stopCamera()">
-
-    {{-- Header --}}
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Scanner Muatan</h1>
-            <p class="mt-1 text-sm text-slate-500">
-                {{ $order->nomor_do }} &mdash; {{ $order->customer->nama_pabrik }} &mdash; {{ $order->fleet->nomor_polisi }}
-            </p>
-        </div>
-        <a href="{{ route('warehouse.scans.index') }}" class="text-sm font-medium text-slate-600 hover:text-slate-900">Kembali ke daftar DO</a>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-3">
-        {{-- Progress --}}
-        <div class="sm:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-medium text-slate-700">Progress Muatan</p>
-                <p class="text-sm font-bold tabular-nums" x-text="loadedCount + ' / ' + totalRol + ' rol'"></p>
-            </div>
-            <div class="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100">
-                <div class="h-3 rounded-full bg-indigo-600 transition-all duration-500"
-                     x-bind:style="'width:' + (totalRol > 0 ? Math.round((loadedCount / totalRol) * 100) : 0) + '%'"></div>
-            </div>
-            <p class="mt-1.5 text-right text-xs text-slate-500"
-               x-text="totalRol > 0 ? Math.round((loadedCount / totalRol) * 100) + '%' : '0%'"></p>
-
-            <template x-if="loadedCount >= totalRol && totalRol > 0">
-                <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-                    ✅ Semua gulungan sudah berhasil dimuat ke armada!
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Scanner muatan</h1>
+                    <x-status-badge :status="$order->status" />
                 </div>
-            </template>
+                <p class="mt-1 text-sm text-slate-500">
+                    <span class="font-mono font-medium text-slate-700">{{ $order->nomor_do }}</span>
+                    &middot; {{ $order->customer->nama_pabrik }} &middot; {{ $order->fleet->nomor_polisi }}
+                </p>
+            </div>
+            <x-button href="{{ route('warehouse.scans.index') }}" variant="ghost" icon="arrow-left">Daftar DO</x-button>
         </div>
 
-        {{-- DO Info --}}
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm text-sm space-y-2">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Info DO</p>
-            <p><span class="text-slate-500">Status:</span>
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $order->status->badgeClass() }}">{{ $order->status->label() }}</span>
-            </p>
-            <p><span class="text-slate-500">Tanggal:</span> {{ $order->tanggal->format('d M Y') }}</p>
-            <p><span class="text-slate-500">Driver:</span> {{ $order->driver->nama }}</p>
-        </div>
-    </div>
-
-    {{-- Input Scanner --}}
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-        <h2 class="text-base font-semibold text-slate-800">Pindai QR Code</h2>
-        <p class="text-sm text-slate-500">Gunakan kamera perangkat, scanner QR USB, atau ketik token QR secara manual lalu tekan Enter.</p>
-
-        <form x-on:submit.prevent="submitToken($refs.tokenInput.value)" class="flex gap-3">
-            <input x-ref="tokenInput" type="text" placeholder="Token QR akan terisi otomatis saat dipindai..." autofocus
-                   class="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono">
-            <button type="submit" x-bind:disabled="loading"
-                    class="rounded-lg bg-indigo-700 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-800 disabled:opacity-50">
-                <span x-show="!loading">Validasi</span>
-                <span x-show="loading" x-cloak>Memproses...</span>
-            </button>
-        </form>
-
-        <div class="flex flex-wrap items-center gap-3">
-            <button type="button" x-show="!cameraActive" x-on:click="startCamera()"
-                    class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
-                Aktifkan kamera
-            </button>
-            <button type="button" x-show="cameraActive" x-cloak x-on:click="stopCamera()"
-                    class="rounded-lg border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50">
-                Matikan kamera
-            </button>
-            <span class="text-xs text-slate-500">Kamera hanya aktif di HTTPS atau localhost.</span>
-        </div>
-
-        <template x-if="cameraError">
-            <p class="text-sm text-rose-700" x-text="cameraError"></p>
-        </template>
-
-        <div x-show="cameraActive" x-cloak>
-            <video x-ref="camera" class="w-full max-w-md rounded-xl border border-slate-200 bg-black" playsinline muted></video>
-        </div>
-
-        {{-- Hasil Scan Terbaru --}}
-        <template x-if="lastResult">
-            <div class="rounded-xl border px-5 py-4 transition-all"
-                 x-bind:class="resultClass(lastResult.result)">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <p class="text-base font-semibold" x-text="lastResult.message"></p>
-                        <template x-if="lastResult.roll">
-                            <p class="mt-1 text-sm font-mono" x-text="lastResult.roll.kode_rol + ' · Lot ' + lastResult.roll.nomor_lot + ' · ' + lastResult.roll.denier + 'D/' + lastResult.roll.filamen + 'F · ' + lastResult.roll.berat_gram + 'gr'"></p>
-                        </template>
+        <div class="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+            <div class="space-y-6">
+                <x-card title="Progress muatan">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-slate-500">Rol tervalidasi</span>
+                        <span class="font-semibold tabular-nums text-slate-900" x-text="loadedCount + ' / ' + totalRol + ' rol'"></span>
                     </div>
-                    <span class="shrink-0 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                          x-bind:class="badgeClass(lastResult.result)"
-                          x-text="lastResult.result_label"></span>
-                </div>
-            </div>
-        </template>
-    </div>
+                    <div class="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div class="h-3 rounded-full bg-brand-600 transition-all duration-500"
+                             x-bind:style="'width:' + (totalRol > 0 ? Math.round((loadedCount / totalRol) * 100) : 0) + '%'"></div>
+                    </div>
+                    <p class="mt-2 text-right text-xs tabular-nums text-slate-500"
+                       x-text="totalRol > 0 ? Math.round((loadedCount / totalRol) * 100) + '%' : '0%'"></p>
 
-    {{-- Riwayat Scan Sesi Ini --}}
-    <template x-if="history.length > 0">
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-                <h2 class="text-base font-semibold text-slate-800">Riwayat Sesi Ini</h2>
-                <span class="text-sm text-slate-500" x-text="history.length + ' scan'"></span>
+                    <template x-if="loadedCount >= totalRol && totalRol > 0">
+                        <x-alert tone="success" title="Semua gulungan sudah dimuat" class="mt-4">
+                            Muatan lengkap. Driver dapat memulai perjalanan.
+                        </x-alert>
+                    </template>
+                </x-card>
+
+                <x-card title="Pindai QR code" description="Gunakan kamera, scanner QR USB, atau input manual.">
+                    <form x-on:submit.prevent="submitToken($refs.tokenInput.value)" class="flex flex-col gap-3 sm:flex-row">
+                        <x-input x-ref="tokenInput" type="text" placeholder="Token QR akan terisi otomatis..." autofocus class="flex-1 font-mono" aria-label="Token QR" />
+                        <x-button type="submit" x-bind:disabled="loading" icon="scan">
+                            <span x-show="!loading">Validasi</span>
+                            <span x-show="loading" x-cloak>Memproses...</span>
+                        </x-button>
+                    </form>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                        <x-button type="button" variant="secondary" size="sm" icon="camera" x-show="!cameraActive" x-on:click="startCamera()">Aktifkan kamera</x-button>
+                        <x-button type="button" variant="danger" size="sm" icon="x" x-show="cameraActive" x-cloak x-on:click="stopCamera()">Matikan kamera</x-button>
+                        <span class="text-xs text-slate-500">Kamera aktif di HTTPS atau localhost.</span>
+                    </div>
+
+                    <template x-if="cameraError">
+                        <p class="mt-3 text-sm text-rose-700" x-text="cameraError"></p>
+                    </template>
+
+                    <div x-show="cameraActive" x-cloak class="mt-4">
+                        <video x-ref="camera" class="w-full max-w-md rounded-xl border border-slate-200 bg-black" playsinline muted></video>
+                    </div>
+
+                    <template x-if="lastResult">
+                        <div class="mt-5 rounded-xl border px-4 py-3" x-bind:class="resultClass(lastResult.result)">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold" x-text="lastResult.message"></p>
+                                    <template x-if="lastResult.roll">
+                                        <p class="mt-1 truncate font-mono text-xs" x-text="lastResult.roll.kode_rol + ' · Lot ' + lastResult.roll.nomor_lot + ' · ' + lastResult.roll.denier + 'D/' + lastResult.roll.filamen + 'F · ' + lastResult.roll.berat_gram + ' g'"></p>
+                                    </template>
+                                </div>
+                                <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" x-bind:class="badgeClass(lastResult.result)" x-text="lastResult.result_label"></span>
+                            </div>
+                        </div>
+                    </template>
+                </x-card>
             </div>
+
+            <div class="space-y-6">
+                <x-card title="Info Surat Jalan">
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Status</dt><dd><x-status-badge :status="$order->status" /></dd></div>
+                        <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Tanggal</dt><dd class="font-medium text-slate-900">{{ $order->tanggal->translatedFormat('d M Y') }}</dd></div>
+                        <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Driver</dt><dd class="font-medium text-slate-900">{{ $order->driver->nama }}</dd></div>
+                        <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Armada</dt><dd class="font-mono font-medium text-slate-900">{{ $order->fleet->nomor_polisi }}</dd></div>
+                        <div class="flex items-center justify-between gap-3"><dt class="text-slate-500">Total rol</dt><dd class="font-medium tabular-nums text-slate-900">{{ $order->items->count() }}</dd></div>
+                    </dl>
+                </x-card>
+
+                <x-card padding="p-0" title="Riwayat sesi ini">
+                    <template x-if="history.length === 0">
+                        <p class="px-5 py-8 text-center text-sm text-slate-500">Belum ada scan pada sesi ini.</p>
+                    </template>
+
+                    <ul class="divide-y divide-slate-100" x-show="history.length > 0" x-cloak>
+                        <template x-for="(scan, idx) in history" x-bind:key="idx">
+                            <li class="flex items-start justify-between gap-3 px-5 py-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-mono text-xs font-semibold text-slate-800" x-text="scan.roll"></p>
+                                    <p class="text-xs text-slate-500"><span x-text="scan.time"></span> · Lot <span x-text="scan.lot"></span></p>
+                                </div>
+                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset" x-bind:class="badgeClass(scan.result)" x-text="scan.result_label"></span>
+                            </li>
+                        </template>
+                    </ul>
+                </x-card>
+            </div>
+        </div>
+
+        <x-card padding="p-0" title="Checklist gulungan DO">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-100 text-sm">
-                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <thead class="bg-slate-50/70">
                         <tr>
-                            <th class="px-5 py-3 font-medium">Waktu</th>
-                            <th class="px-5 py-3 font-medium">Kode Rol</th>
-                            <th class="px-5 py-3 font-medium">Lot</th>
-                            <th class="px-5 py-3 font-medium">Hasil</th>
+                            <x-th>Status</x-th>
+                            <x-th>Kode rol</x-th>
+                            <x-th>Nomor lot</x-th>
+                            <x-th>Spesifikasi</x-th>
+                            <x-th align="right">Berat (g)</x-th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        <template x-for="(scan, idx) in history" x-bind:key="idx">
-                            <tr>
-                                <td class="px-5 py-3 tabular-nums text-xs text-slate-500" x-text="scan.time"></td>
-                                <td class="px-5 py-3 font-mono text-xs font-semibold text-slate-800" x-text="scan.roll"></td>
-                                <td class="px-5 py-3 text-slate-600" x-text="scan.lot"></td>
-                                <td class="px-5 py-3">
-                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
-                                          x-bind:class="badgeClass(scan.result)"
-                                          x-text="scan.result_label"></span>
-                                </td>
+                        @foreach ($order->items as $item)
+                            @php $loaded = $item->dtyRoll->status === \App\Enums\RollStatus::Loaded; @endphp
+                            <tr class="{{ $loaded ? 'bg-emerald-50/50' : '' }}">
+                                <x-td>
+                                    @if ($loaded)
+                                        <x-badge tone="success" dot>Dimuat</x-badge>
+                                    @else
+                                        <x-badge tone="neutral" dot>Menunggu</x-badge>
+                                    @endif
+                                </x-td>
+                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</span></x-td>
+                                <x-td>{{ $item->dtyRoll->nomor_lot }}</x-td>
+                                <x-td class="tabular-nums">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</x-td>
+                                <x-td align="right" class="tabular-nums">{{ number_format((float) $item->dtyRoll->berat_gram, 2) }}</x-td>
                             </tr>
-                        </template>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
-        </div>
-    </template>
-
-    {{-- Daftar Rol DO --}}
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 px-6 py-4">
-            <h2 class="text-base font-semibold text-slate-800">Checklist Gulungan DO</h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-100 text-sm">
-                <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 font-medium">Kode Rol</th>
-                        <th class="px-5 py-3 font-medium">Nomor Lot</th>
-                        <th class="px-5 py-3 font-medium">Spesifikasi</th>
-                        <th class="px-5 py-3 font-medium text-right">Berat (gram)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @foreach ($order->items as $item)
-                        <tr class="{{ $item->dtyRoll->status->value === 'loaded' ? 'bg-emerald-50' : '' }}">
-                            <td class="px-5 py-3">
-                                @if ($item->dtyRoll->status->value === 'loaded')
-                                    <span class="text-emerald-700 font-bold">✓</span>
-                                @else
-                                    <span class="text-slate-300">○</span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-3 font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</td>
-                            <td class="px-5 py-3 text-slate-700">{{ $item->dtyRoll->nomor_lot }}</td>
-                            <td class="px-5 py-3 text-slate-600">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</td>
-                            <td class="px-5 py-3 text-right tabular-nums">{{ number_format($item->dtyRoll->berat_gram, 2) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        </x-card>
     </div>
-
-</div>
 @endsection

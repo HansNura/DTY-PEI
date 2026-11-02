@@ -61,13 +61,16 @@ app/Http/Middleware/        role, EnsureUserIsActive, SecurityHeaders
 app/Http/Requests/          validasi FormRequest
 app/Models/                 model Eloquent
 app/Services/               logika domain (QR, surat jalan, scan, tracking)
+app/Support/                Navigation dan StatusTone
 database/migrations/        skema
 database/seeders/           data awal & akun demo
 docs/                       ERD dan laporan sprint
 resources/views/            Blade
+resources/views/components/ komponen UI reusable (button, card, badge, table, dll.)
+resources/views/layouts/partials/ sidebar, topbar, bottom-nav
 resources/js/app.js         entry Alpine + QR label
 resources/js/tracking-map.js peta Leaflet live tracking
-resources/css/app.css       entry Tailwind
+resources/css/app.css       token Tailwind + font
 routes/web.php              route web
 tests/Feature/              test perilaku
 tests/bootstrap.php         isolasi environment test

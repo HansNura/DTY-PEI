@@ -10,6 +10,7 @@ Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d
 - Blade + Alpine.js + Tailwind CSS 4 (TALL ringan)
 - SQLite untuk lokal; siap dipindah ke MySQL/PostgreSQL untuk produksi
 - Vite 7
+- Instrument Sans Variable (self-host) + design system Clean SaaS Light
 - `qrcode` untuk membuat QR label secara lokal di browser
 - `leaflet` + OpenStreetMap untuk peta live tracking
 - PHPUnit 11 + Laravel Pint
@@ -75,6 +76,14 @@ composer run dev                   # server + queue + log + Vite
 - Driver memiliki halaman mobile-first untuk melihat perjalanan dan memperbarui status Berangkat, Dalam Perjalanan, dan Tiba beserta koordinat GPS.
 - Tim Logistik memiliki dashboard live tracking berisi peta posisi terakhir, status armada, dan riwayat perjalanan per DO.
 - Gulungan dibatalkan dan pelanggan/armada dinonaktifkan tanpa menghapus riwayat data.
+
+## UI dan design system
+
+- Arah visual **Clean SaaS Light**: kanvas terang, kartu putih, border tipis, aksen teal, font Instrument Sans self-host.
+- App shell: sidebar di desktop dan bottom navigation di mobile, dengan menu berbeda per peran.
+- Komponen Blade reusable di `resources/views/components/` (button, card, stat, badge, table, form, modal, timeline, stepper).
+- Token warna, tipografi, dan bayangan ada di `resources/css/app.css`.
+- Aturan UI lengkap: [`.ai/rules/ui-tailwind.md`](.ai/rules/ui-tailwind.md).
 
 ## Kontribusi tim
 

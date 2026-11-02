@@ -8,152 +8,109 @@
     <style>[x-cloak]{display:none!important}</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="flex min-h-full flex-col bg-slate-50 text-slate-900 antialiased" x-data="{ open: false }">
-    <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-            <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                <span class="grid size-9 place-items-center rounded-xl bg-indigo-700 text-sm font-bold text-white">PMT</span>
-                <span class="text-base font-semibold tracking-tight">Pelacakan DTY</span>
-            </a>
+<body class="min-h-full bg-canvas text-slate-900 antialiased">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white">
+        Lewati ke konten
+    </a>
 
-            <nav class="hidden items-center gap-1 text-sm md:flex">
-                @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('dashboard') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                        Dashboard
-                    </a>
+    @auth
+        @php
+            $currentUser = auth()->user();
+            $navigationGroups = \App\Support\Navigation::groups($currentUser);
+            $bottomNavigation = \App\Support\Navigation::bottom($currentUser);
+        @endphp
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin))
-                        <a href="{{ route('admin.users.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('admin.users.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Pengguna
-                        </a>
-                    @endif
+        <div class="min-h-screen lg:flex" x-data="{ navOpen: false }">
+            @include('layouts.partials.sidebar', ['groups' => $navigationGroups, 'user' => $currentUser])
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::AdminGudang))
-                        <a href="{{ route('warehouse.rolls.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('warehouse.rolls.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Gulungan DTY
-                        </a>
-                        <a href="{{ route('warehouse.scans.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('warehouse.scans.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Scanner Muatan
-                        </a>
-                    @endif
-
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Logistik))
-                        <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.orders.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Surat Jalan
-                        </a>
-                        <a href="{{ route('logistics.tracking.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.tracking.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Live Tracking
-                        </a>
-                        <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.customers.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Pelanggan
-                        </a>
-                        <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('logistics.fleets.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Armada
-                        </a>
-                    @endif
-
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Driver))
-                        <a href="{{ route('driver.deliveries.index') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('driver.deliveries.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                            Perjalanan
-                        </a>
-                    @endif
-
-                    <a href="{{ route('profile.edit') }}" class="rounded-lg px-3 py-2 {{ request()->routeIs('profile.*') ? 'bg-slate-100 font-medium text-slate-900' : 'text-slate-600 transition hover:bg-slate-100 hover:text-slate-900' }}">
-                        Profil
-                    </a>
-
-                    <span class="mx-2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset {{ auth()->user()->role->badgeClasses() }}">
-                        {{ auth()->user()->role->label() }}
-                    </span>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="rounded-lg px-3 py-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
-                            Keluar
+            <div x-cloak x-show="navOpen" class="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+                <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" x-on:click="navOpen = false"></div>
+                <div class="relative flex h-full w-72 max-w-[85vw] flex-col bg-white shadow-xl" x-on:keydown.escape.window="navOpen = false">
+                    <div class="flex h-16 items-center justify-between border-b border-slate-100 px-5">
+                        <x-app-logo />
+                        <button type="button" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100" x-on:click="navOpen = false" aria-label="Tutup navigasi">
+                            <x-icon name="x" class="size-5" />
                         </button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}" class="rounded-lg bg-indigo-700 px-3.5 py-2 font-medium text-white transition hover:bg-indigo-800">
-                        Masuk
-                    </a>
-                @endauth
-            </nav>
+                    </div>
 
-            <button type="button" class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden" x-on:click="open = ! open" aria-label="Buka menu">
-                <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-                </svg>
-            </button>
-        </div>
+                    <div class="flex-1 overflow-y-auto px-3 py-4">
+                        @foreach ($navigationGroups as $group)
+                            <p class="px-2 pb-2 pt-4 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{{ $group['label'] }}</p>
+                            <ul class="space-y-1">
+                                @foreach ($group['items'] as $item)
+                                    @php $active = request()->routeIs($item['active']); @endphp
+                                    <li>
+                                        <a href="{{ route($item['route']) }}" x-on:click="navOpen = false"
+                                           class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm {{ $active ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-600 hover:bg-slate-50' }}">
+                                            <x-icon :name="$item['icon']" class="size-5 {{ $active ? 'text-brand-600' : 'text-slate-400' }}" />
+                                            {{ $item['label'] }}
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
 
-        <div class="border-t border-slate-200 md:hidden" x-cloak x-show="open">
-            <div class="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 text-sm sm:px-6">
-                @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Dashboard</a>
+            <div class="flex min-w-0 flex-1 flex-col">
+                @include('layouts.partials.topbar', ['user' => $currentUser])
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Admin))
-                        <a href="{{ route('admin.users.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Pengguna</a>
-                    @endif
+                <main id="main-content" class="flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+                    <div class="mx-auto max-w-7xl space-y-6">
+                        @if (session('status'))
+                            <x-alert tone="success" dismissible>{{ session('status') }}</x-alert>
+                        @endif
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::AdminGudang))
-                        <a href="{{ route('warehouse.rolls.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Gulungan DTY</a>
-                        <a href="{{ route('warehouse.scans.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Scanner Muatan</a>
-                    @endif
+                        @if ($errors->any())
+                            <x-alert tone="danger" title="Ada data yang perlu diperbaiki">
+                                <ul class="list-inside list-disc space-y-0.5">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </x-alert>
+                        @endif
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Logistik))
-                        <a href="{{ route('logistics.orders.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Surat Jalan</a>
-                        <a href="{{ route('logistics.tracking.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Live Tracking</a>
-                        <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Pelanggan</a>
-                        <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Armada</a>
-                    @endif
+                        @yield('content')
+                    </div>
+                </main>
 
-                    @if (auth()->user()->hasRole(\App\Enums\UserRole::Driver))
-                        <a href="{{ route('driver.deliveries.index') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Perjalanan</a>
-                    @endif
-
-                    <a href="{{ route('profile.edit') }}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100">Profil</a>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="w-full rounded-lg px-3 py-2 text-left text-slate-600 hover:bg-slate-100">Keluar</button>
-                    </form>
-                @else
-                    <a href="{{ route('login') }}" class="rounded-lg px-3 py-2 font-medium text-indigo-700 hover:bg-slate-100">Masuk</a>
-                @endauth
+                @include('layouts.partials.bottom-nav', ['items' => $bottomNavigation])
             </div>
         </div>
-    </header>
-
-    <main class="flex-1">
-        <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-            @if (session('status'))
-                <div class="mb-6 flex items-start justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" x-data="{ show: true }" x-show="show">
-                    <p>{{ session('status') }}</p>
-                    <button type="button" class="text-emerald-700 hover:text-emerald-900" x-on:click="show = false" aria-label="Tutup">&times;</button>
+    @else
+        <div class="flex min-h-screen flex-col">
+            <header class="border-b border-slate-200/80 bg-white/90 backdrop-blur">
+                <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+                    <x-app-logo />
+                    @unless (request()->routeIs('login'))
+                        <a href="{{ route('login') }}" class="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700">
+                            Masuk
+                        </a>
+                    @endunless
                 </div>
-            @endif
+            </header>
 
-            @if ($errors->any())
-                <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                    <p class="font-medium">Ada data yang perlu diperbaiki.</p>
-                    <ul class="mt-1 list-inside list-disc space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+            <main id="main-content" class="flex-1">
+                <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+                    @if (session('status'))
+                        <x-alert tone="success" dismissible>{{ session('status') }}</x-alert>
+                    @endif
+
+                    @yield('content')
                 </div>
-            @endif
+            </main>
 
-            @yield('content')
+            <footer class="border-t border-slate-200/80 bg-white">
+                <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <p>&copy; {{ date('Y') }} PMT. Sistem pelacakan rol benang DTY.</p>
+                    <p>Gudang &rarr; perjalanan &rarr; pelanggan.</p>
+                </div>
+            </footer>
         </div>
-    </main>
+    @endauth
 
-    <footer class="border-t border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p>&copy; {{ date('Y') }} PMT. Sistem pelacakan rol benang DTY.</p>
-            <p>Sprint 4 &mdash; Driver Interface &amp; Live Tracking.</p>
-        </div>
-    </footer>
     @stack('scripts')
 </body>
 </html>

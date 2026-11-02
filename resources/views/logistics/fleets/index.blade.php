@@ -3,72 +3,113 @@
 @section('title', 'Armada')
 
 @section('content')
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Master armada</h1>
-            <p class="mt-1 text-sm text-slate-500">Kelola kendaraan, kapasitas, dan pengemudi utama.</p>
-        </div>
-        <a href="{{ route('logistics.fleets.create') }}" class="rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-800">Tambah armada</a>
-    </div>
+    <div class="space-y-6">
+        <x-page-header title="Master armada" description="Kelola kendaraan, kapasitas, dan pengemudi utama.">
+            <x-slot:actions>
+                <x-button href="{{ route('logistics.fleets.create') }}" icon="plus">Tambah armada</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-    <form method="GET" action="{{ route('logistics.fleets.index') }}" class="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1.6fr_1fr_auto]">
-        <label for="q" class="sr-only">Cari nomor polisi, kendaraan, atau pengemudi</label>
-        <input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari nomor polisi, kendaraan, pengemudi"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-        <label for="status" class="sr-only">Status</label>
-        <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-            <option value="">Semua status</option>
-            <option value="active" @selected($status === 'active')>Aktif</option>
-            <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
-        </select>
-        <div class="flex gap-2">
-            <button type="submit" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Filter</button>
-            <a href="{{ route('logistics.fleets.index') }}" class="rounded-lg px-3 py-2 text-sm text-slate-500 hover:text-slate-800">Reset</a>
-        </div>
-    </form>
+        <x-card padding="p-4">
+            <form method="GET" action="{{ route('logistics.fleets.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_auto]">
+                <x-field name="q">
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari nomor polisi, kendaraan, pengemudi" aria-label="Cari armada" />
+                </x-field>
 
-    <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Nomor polisi</th>
-                        <th class="px-5 py-3 font-medium">Jenis kendaraan</th>
-                        <th class="px-5 py-3 font-medium">Kapasitas</th>
-                        <th class="px-5 py-3 font-medium">Pengemudi</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 text-right font-medium">Aksi</th>
+                <x-field name="status">
+                    <x-select id="status" name="status" aria-label="Filter status">
+                        <option value="">Semua status</option>
+                        <option value="active" @selected($status === 'active')>Aktif</option>
+                        <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
+                    </x-select>
+                </x-field>
+
+                <div class="flex items-end gap-2">
+                    <x-button type="submit" variant="secondary" icon="filter">Filter</x-button>
+                    <x-button href="{{ route('logistics.fleets.index') }}" variant="ghost">Reset</x-button>
+                </div>
+            </form>
+        </x-card>
+
+        <x-table class="hidden md:block" padding="p-0">
+            <x-slot:footer><x-pagination :paginator="$fleets" class="!mt-0" /></x-slot:footer>
+
+            <thead class="bg-slate-50/70">
+                <tr>
+                    <x-th>Nomor polisi</x-th>
+                    <x-th>Jenis kendaraan</x-th>
+                    <x-th>Kapasitas</x-th>
+                    <x-th>Pengemudi</x-th>
+                    <x-th>Status</x-th>
+                    <x-th align="right">Aksi</x-th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse ($fleets as $fleet)
+                    <tr class="hover:bg-slate-50/60">
+                        <x-td><span class="font-mono text-xs font-semibold text-slate-900">{{ $fleet->nomor_polisi }}</span></x-td>
+                        <x-td>{{ $fleet->jenis_kendaraan }}</x-td>
+                        <x-td class="tabular-nums">{{ number_format((float) $fleet->kapasitas_kg, 2, ',', '.') }} kg</x-td>
+                        <x-td>{{ $fleet->driver?->nama ?? 'Belum ditentukan' }}</x-td>
+                        <x-td><x-badge :tone="$fleet->is_active ? 'success' : 'danger'" dot>{{ $fleet->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge></x-td>
+                        <x-td align="right">
+                            <div class="flex items-center justify-end gap-2">
+                                <x-button href="{{ route('logistics.fleets.edit', $fleet) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
+                                <x-confirm-button
+                                    :action="route('logistics.fleets.toggle-active', $fleet)"
+                                    method="PATCH"
+                                    :title="$fleet->is_active ? 'Nonaktifkan armada?' : 'Aktifkan armada?'"
+                                    :description="'Status armada '.$fleet->nomor_polisi.' akan diubah.'"
+                                    :confirm-label="$fleet->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
+                                    :tone="$fleet->is_active ? 'danger' : 'brand'"
+                                    variant="ghost"
+                                    :icon="$fleet->is_active ? 'ban' : 'check'"
+                                >
+                                    {{ $fleet->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                </x-confirm-button>
+                            </div>
+                        </x-td>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse ($fleets as $fleet)
-                        <tr>
-                            <td class="px-5 py-3 font-medium text-slate-900">{{ $fleet->nomor_polisi }}</td>
-                            <td class="px-5 py-3 text-slate-600">{{ $fleet->jenis_kendaraan }}</td>
-                            <td class="px-5 py-3 text-slate-600">{{ number_format((float) $fleet->kapasitas_kg, 2, ',', '.') }} kg</td>
-                            <td class="px-5 py-3 text-slate-600">{{ $fleet->driver?->nama ?? 'Belum ditentukan' }}</td>
-                            <td class="px-5 py-3">
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $fleet->is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200' }}">{{ $fleet->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                            </td>
-                            <td class="px-5 py-3">
-                                <div class="flex items-center justify-end gap-3">
-                                    <a href="{{ route('logistics.fleets.edit', $fleet) }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-900">Edit</a>
-                                    <form method="POST" action="{{ route('logistics.fleets.toggle-active', $fleet) }}" x-data x-on:submit="if (! confirm('{{ $fleet->is_active ? 'Nonaktifkan' : 'Aktifkan' }} armada {{ $fleet->nomor_polisi }}?')) $event.preventDefault()">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="text-sm font-medium {{ $fleet->is_active ? 'text-rose-700 hover:text-rose-900' : 'text-emerald-700 hover:text-emerald-900' }}">{{ $fleet->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">Belum ada armada yang cocok dengan filter.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+                @empty
+                    <tr><x-td colspan="6" class="py-8 text-center text-slate-500">Belum ada armada yang cocok dengan filter.</x-td></tr>
+                @endforelse
+            </tbody>
+        </x-table>
+
+        <div class="space-y-3 md:hidden">
+            @forelse ($fleets as $fleet)
+                <x-card padding="p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="font-mono text-sm font-semibold text-slate-900">{{ $fleet->nomor_polisi }}</p>
+                            <p class="text-xs text-slate-500">{{ $fleet->jenis_kendaraan }}</p>
+                        </div>
+                        <x-badge :tone="$fleet->is_active ? 'success' : 'danger'" dot>{{ $fleet->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge>
+                    </div>
+                    <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div><dt class="text-slate-500">Kapasitas</dt><dd class="font-medium tabular-nums text-slate-800">{{ number_format((float) $fleet->kapasitas_kg, 2, ',', '.') }} kg</dd></div>
+                        <div><dt class="text-slate-500">Pengemudi</dt><dd class="font-medium text-slate-800">{{ $fleet->driver?->nama ?? 'Belum ditentukan' }}</dd></div>
+                    </dl>
+                    <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                        <x-button href="{{ route('logistics.fleets.edit', $fleet) }}" variant="secondary" size="sm">Edit</x-button>
+                        <x-confirm-button
+                            :action="route('logistics.fleets.toggle-active', $fleet)"
+                            method="PATCH"
+                            :title="$fleet->is_active ? 'Nonaktifkan armada?' : 'Aktifkan armada?'"
+                            :description="'Status armada '.$fleet->nomor_polisi.' akan diubah.'"
+                            :confirm-label="$fleet->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
+                            :tone="$fleet->is_active ? 'danger' : 'brand'"
+                            variant="ghost"
+                            :icon="$fleet->is_active ? 'ban' : 'check'"
+                        >
+                            {{ $fleet->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                        </x-confirm-button>
+                    </div>
+                </x-card>
+            @empty
+                <x-empty-state icon="truck" title="Belum ada armada" description="Tambahkan kendaraan untuk mulai menerbitkan surat jalan." />
+            @endforelse
+            <x-pagination :paginator="$fleets" />
         </div>
-        @if ($fleets->hasPages())
-            <div class="border-t border-slate-200 px-5 py-4">{{ $fleets->links() }}</div>
-        @endif
     </div>
 @endsection

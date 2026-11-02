@@ -3,82 +3,129 @@
 @section('title', 'Pelanggan')
 
 @section('content')
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Master pelanggan</h1>
-            <p class="mt-1 text-sm text-slate-500">Kelola pabrik tujuan, alamat, koordinat, dan kontak penerima.</p>
-        </div>
-        <a href="{{ route('logistics.customers.create') }}" class="rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-800">Tambah pelanggan</a>
-    </div>
+    <div class="space-y-6">
+        <x-page-header title="Master pelanggan" description="Kelola pabrik tujuan, alamat, koordinat, dan kontak penerima.">
+            <x-slot:actions>
+                <x-button href="{{ route('logistics.customers.create') }}" icon="plus">Tambah pelanggan</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-    <form method="GET" action="{{ route('logistics.customers.index') }}" class="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1.6fr_1fr_auto]">
-        <label for="q" class="sr-only">Cari pelanggan atau kontak</label>
-        <input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari pelanggan atau kontak"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-        <label for="status" class="sr-only">Status</label>
-        <select id="status" name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-            <option value="">Semua status</option>
-            <option value="active" @selected($status === 'active')>Aktif</option>
-            <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
-        </select>
-        <div class="flex gap-2">
-            <button type="submit" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">Filter</button>
-            <a href="{{ route('logistics.customers.index') }}" class="rounded-lg px-3 py-2 text-sm text-slate-500 hover:text-slate-800">Reset</a>
-        </div>
-    </form>
+        <x-card padding="p-4">
+            <form method="GET" action="{{ route('logistics.customers.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_auto]">
+                <x-field name="q">
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari pelanggan atau kontak" aria-label="Cari pelanggan" />
+                </x-field>
 
-    <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Pabrik / Alamat</th>
-                        <th class="px-5 py-3 font-medium">Kontak penerima</th>
-                        <th class="px-5 py-3 font-medium">Titik maps</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 text-right font-medium">Aksi</th>
+                <x-field name="status">
+                    <x-select id="status" name="status" aria-label="Filter status">
+                        <option value="">Semua status</option>
+                        <option value="active" @selected($status === 'active')>Aktif</option>
+                        <option value="inactive" @selected($status === 'inactive')>Nonaktif</option>
+                    </x-select>
+                </x-field>
+
+                <div class="flex items-end gap-2">
+                    <x-button type="submit" variant="secondary" icon="filter">Filter</x-button>
+                    <x-button href="{{ route('logistics.customers.index') }}" variant="ghost">Reset</x-button>
+                </div>
+            </form>
+        </x-card>
+
+        <x-table class="hidden md:block" padding="p-0">
+            <x-slot:footer><x-pagination :paginator="$customers" class="!mt-0" /></x-slot:footer>
+
+            <thead class="bg-slate-50/70">
+                <tr>
+                    <x-th>Pabrik / Alamat</x-th>
+                    <x-th>Kontak penerima</x-th>
+                    <x-th>Titik maps</x-th>
+                    <x-th>Status</x-th>
+                    <x-th align="right">Aksi</x-th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse ($customers as $customer)
+                    <tr class="hover:bg-slate-50/60">
+                        <x-td>
+                            <p class="font-medium text-slate-900">{{ $customer->nama_pabrik }}</p>
+                            <p class="max-w-sm text-xs text-slate-500">{{ $customer->alamat }}</p>
+                        </x-td>
+                        <x-td>
+                            <p class="font-medium text-slate-800">{{ $customer->kontak_nama }}</p>
+                            <p class="text-xs text-slate-500">{{ $customer->kontak_telepon }}</p>
+                        </x-td>
+                        <x-td>
+                            @if ($customer->latitude !== null && $customer->longitude !== null)
+                                <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-700 hover:text-brand-900">
+                                    <x-icon name="map-pin" class="size-3.5" /> Buka peta
+                                </a>
+                            @else
+                                <span class="text-slate-400">Belum diatur</span>
+                            @endif
+                        </x-td>
+                        <x-td><x-badge :tone="$customer->is_active ? 'success' : 'danger'" dot>{{ $customer->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge></x-td>
+                        <x-td align="right">
+                            <div class="flex items-center justify-end gap-2">
+                                <x-button href="{{ route('logistics.customers.edit', $customer) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
+                                <x-confirm-button
+                                    :action="route('logistics.customers.toggle-active', $customer)"
+                                    method="PATCH"
+                                    :title="$customer->is_active ? 'Nonaktifkan pelanggan?' : 'Aktifkan pelanggan?'"
+                                    :description="'Status pelanggan '.$customer->nama_pabrik.' akan diubah.'"
+                                    :confirm-label="$customer->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
+                                    :tone="$customer->is_active ? 'danger' : 'brand'"
+                                    variant="ghost"
+                                    :icon="$customer->is_active ? 'ban' : 'check'"
+                                >
+                                    {{ $customer->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                </x-confirm-button>
+                            </div>
+                        </x-td>
                     </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse ($customers as $customer)
-                        <tr>
-                            <td class="px-5 py-3">
-                                <p class="font-medium text-slate-900">{{ $customer->nama_pabrik }}</p>
-                                <p class="max-w-sm text-xs text-slate-500">{{ $customer->alamat }}</p>
-                            </td>
-                            <td class="px-5 py-3">
-                                <p class="font-medium text-slate-800">{{ $customer->kontak_nama }}</p>
-                                <p class="text-xs text-slate-500">{{ $customer->kontak_telepon }}</p>
-                            </td>
-                            <td class="px-5 py-3">
-                                @if ($customer->latitude !== null && $customer->longitude !== null)
-                                    <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="text-indigo-700 hover:text-indigo-900">{{ $customer->latitude }}, {{ $customer->longitude }}</a>
-                                @else
-                                    <span class="text-slate-400">Belum diatur</span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-3">
-                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ $customer->is_active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-rose-50 text-rose-700 ring-rose-200' }}">{{ $customer->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                            </td>
-                            <td class="px-5 py-3">
-                                <div class="flex items-center justify-end gap-3">
-                                    <a href="{{ route('logistics.customers.edit', $customer) }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-900">Edit</a>
-                                    <form method="POST" action="{{ route('logistics.customers.toggle-active', $customer) }}" x-data x-on:submit="if (! confirm('{{ $customer->is_active ? 'Nonaktifkan' : 'Aktifkan' }} pelanggan {{ $customer->nama_pabrik }}?')) $event.preventDefault()">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button type="submit" class="text-sm font-medium {{ $customer->is_active ? 'text-rose-700 hover:text-rose-900' : 'text-emerald-700 hover:text-emerald-900' }}">{{ $customer->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+                @empty
+                    <tr><x-td colspan="5" class="py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</x-td></tr>
+                @endforelse
+            </tbody>
+        </x-table>
+
+        <div class="space-y-3 md:hidden">
+            @forelse ($customers as $customer)
+                <x-card padding="p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-900">{{ $customer->nama_pabrik }}</p>
+                            <p class="text-xs text-slate-500">{{ $customer->alamat }}</p>
+                        </div>
+                        <x-badge :tone="$customer->is_active ? 'success' : 'danger'" dot>{{ $customer->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge>
+                    </div>
+                    <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                        <span class="inline-flex items-center gap-1"><x-icon name="phone" class="size-3.5" /> {{ $customer->kontak_nama }} · {{ $customer->kontak_telepon }}</span>
+                        @if ($customer->latitude !== null && $customer->longitude !== null)
+                            <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-700">
+                                <x-icon name="map-pin" class="size-3.5" /> Peta
+                            </a>
+                        @endif
+                    </div>
+                    <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                        <x-button href="{{ route('logistics.customers.edit', $customer) }}" variant="secondary" size="sm">Edit</x-button>
+                        <x-confirm-button
+                            :action="route('logistics.customers.toggle-active', $customer)"
+                            method="PATCH"
+                            :title="$customer->is_active ? 'Nonaktifkan pelanggan?' : 'Aktifkan pelanggan?'"
+                            :description="'Status pelanggan '.$customer->nama_pabrik.' akan diubah.'"
+                            :confirm-label="$customer->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
+                            :tone="$customer->is_active ? 'danger' : 'brand'"
+                            variant="ghost"
+                            :icon="$customer->is_active ? 'ban' : 'check'"
+                        >
+                            {{ $customer->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                        </x-confirm-button>
+                    </div>
+                </x-card>
+            @empty
+                <x-empty-state icon="building" title="Belum ada pelanggan" description="Tambahkan pabrik tujuan untuk mulai menerbitkan surat jalan." />
+            @endforelse
+            <x-pagination :paginator="$customers" />
         </div>
-        @if ($customers->hasPages())
-            <div class="border-t border-slate-200 px-5 py-4">{{ $customers->links() }}</div>
-        @endif
     </div>
 @endsection

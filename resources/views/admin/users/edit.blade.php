@@ -3,25 +3,21 @@
 @section('title', 'Edit Pengguna')
 
 @section('content')
-    <div class="mx-auto max-w-2xl">
-        <div class="flex items-center justify-between gap-3">
-            <div>
-                <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Edit pengguna</h1>
-                <p class="mt-1 text-sm text-slate-500">{{ $user->email }}</p>
-            </div>
-            <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-slate-600 hover:text-slate-900">Kembali</a>
-        </div>
+    <div class="mx-auto max-w-3xl space-y-6">
+        <x-page-header title="Edit pengguna" :description="$user->email">
+            <x-slot:actions>
+                <x-button href="{{ route('admin.users.index') }}" variant="ghost" icon="arrow-left">Kembali</x-button>
+            </x-slot:actions>
+        </x-page-header>
 
-        <form method="POST" action="{{ route('admin.users.update', $user) }}" class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" class="space-y-6">
             @csrf
             @method('PUT')
             @include('admin.users._form', ['user' => $user])
 
-            <div class="mt-6 flex items-center justify-end gap-2">
-                <a href="{{ route('admin.users.index') }}" class="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">Batal</a>
-                <button type="submit" class="rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-800">
-                    Simpan perubahan
-                </button>
+            <div class="flex flex-wrap items-center justify-end gap-2">
+                <x-button href="{{ route('admin.users.index') }}" variant="secondary">Batal</x-button>
+                <x-button type="submit" icon="check">Simpan perubahan</x-button>
             </div>
         </form>
     </div>
