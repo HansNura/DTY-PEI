@@ -177,6 +177,7 @@
                         <div class="space-y-3">
                             <x-button href="{{ route('logistics.orders.create') }}" class="w-full" icon="plus">Terbitkan Surat Jalan</x-button>
                             <x-button href="{{ route('logistics.tracking.index') }}" variant="secondary" class="w-full" icon="route">Buka live tracking</x-button>
+                            <x-button href="{{ route('logistics.reports.deliveries') }}" variant="secondary" class="w-full" icon="download">Rekap pengiriman</x-button>
                         </div>
                     </x-card>
 

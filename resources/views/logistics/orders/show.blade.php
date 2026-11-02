@@ -15,6 +15,7 @@
 
             <div class="flex flex-wrap items-center gap-2">
                 <x-button href="{{ route('logistics.orders.print', $order) }}" target="_blank" variant="secondary" icon="printer">Cetak DO</x-button>
+                <x-button href="{{ route('logistics.orders.pdf', $order) }}" variant="secondary" icon="download">Unduh PDF</x-button>
                 @if (in_array($order->status->value, ['issued', 'loading', 'draft']))
                     <x-confirm-button
                         :action="route('logistics.orders.cancel', $order)"
@@ -58,6 +59,44 @@
             <x-alert tone="warning" title="Catatan">
                 {{ $order->catatan }}
             </x-alert>
+        @endif
+
+        @if ($order->proofOfDelivery)
+            <x-card title="Bukti penerimaan digital">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-medium text-slate-900">Diterima oleh {{ $order->proofOfDelivery->received_by_name }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $order->proofOfDelivery->received_at->translatedFormat('d M Y, H:i') }}</p>
+                    </div>
+                    <x-badge tone="success" dot>POD tersimpan</x-badge>
+                </div>
+                <img src="{{ route('deliveries.signature', $order) }}" alt="Tanda tangan penerima {{ $order->proofOfDelivery->received_by_name }}"
+                     class="mt-4 max-h-32 rounded-xl border border-slate-200 bg-white p-2">
+            </x-card>
+        @endif
+
+        @if ($order->trackingEvents->isNotEmpty())
+            <x-card title="Riwayat perjalanan">
+                <x-timeline>
+                    @foreach ($order->trackingEvents as $event)
+                        <x-timeline-item
+                            :title="$event->status->label()"
+                            :meta="$event->recorded_at->translatedFormat('d M Y, H:i')"
+                            :tone="\App\Support\StatusTone::for($event->status)"
+                        >
+                            @if ($event->hasCoordinates())
+                                <a href="https://www.openstreetmap.org/?mlat={{ $event->latitude }}&mlon={{ $event->longitude }}#map=15/{{ $event->latitude }}/{{ $event->longitude }}"
+                                   target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs text-brand-700">
+                                    <x-icon name="map-pin" class="size-3.5" />
+                                    {{ number_format($event->latitude, 5) }}, {{ number_format($event->longitude, 5) }}
+                                </a>
+                            @else
+                                <span class="text-xs text-slate-500">Tanpa koordinat</span>
+                            @endif
+                        </x-timeline-item>
+                    @endforeach
+                </x-timeline>
+            </x-card>
         @endif
 
         <x-card padding="p-0" title="Gulungan DTY yang dialokasikan">

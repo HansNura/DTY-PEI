@@ -38,6 +38,7 @@ class Navigation
                     $dashboard,
                     ['label' => 'Surat Jalan', 'route' => 'logistics.orders.index', 'icon' => 'clipboard', 'active' => 'logistics.orders.*'],
                     ['label' => 'Live Tracking', 'route' => 'logistics.tracking.index', 'icon' => 'route', 'active' => 'logistics.tracking.*'],
+                    ['label' => 'Rekap Pengiriman', 'route' => 'logistics.reports.deliveries', 'icon' => 'download', 'active' => 'logistics.reports.*'],
                 ]],
                 ['label' => 'Master Data', 'items' => [
                     ['label' => 'Pelanggan', 'route' => 'logistics.customers.index', 'icon' => 'building', 'active' => 'logistics.customers.*'],

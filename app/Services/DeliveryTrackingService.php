@@ -56,6 +56,22 @@ class DeliveryTrackingService
         });
     }
 
+    /**
+     * Compatibility wrapper for callers that pass validated request data.
+     *
+     * @param  array{status: string, latitude?: ?string, longitude?: ?string}  $data
+     */
+    public function advance(DeliveryOrder $order, User $driver, array $data): void
+    {
+        $this->updateStatus(
+            $order,
+            $driver,
+            TrackingStatus::from($data['status']),
+            isset($data['latitude']) ? (float) $data['latitude'] : null,
+            isset($data['longitude']) ? (float) $data['longitude'] : null,
+        );
+    }
+
     private function assertTransitionAllowed(DeliveryOrder $order, TrackingStatus $status): void
     {
         if ($status === TrackingStatus::Departed) {

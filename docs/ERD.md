@@ -1,6 +1,6 @@
 # ERD Roadmap — Sistem Pelacakan DTY (PMT)
 
-Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint 4 sudah dimigrasikan; tabel Sprint 5–6 masih berupa rancangan dan ditambahkan saat tiket terkait dikerjakan.
+Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint 5 sudah dimigrasikan; tabel Sprint 6 masih berupa rancangan dan ditambahkan saat tiket terkait dikerjakan.
 
 ## Konvensi
 
@@ -88,7 +88,7 @@ Armada dinonaktifkan melalui `is_active`; pengemudi yang dapat dipilih harus mem
 | fleet_id | bigint FK fleets | Armada |
 | driver_id | bigint FK users | Driver |
 | tanggal | date | Tanggal terbit |
-| status | varchar(20) index | `draft`, `issued`, `loading`, `departed`, `in_transit`, `arrived`, `received`, `cancelled` |
+| status | varchar(20) index | `issued`, `departed`, `in_transit`, `arrived`, `received` |
 | catatan | text nullable | |
 | created_by | bigint FK users | Tim logistik |
 | created_at / updated_at | timestamp | |
@@ -103,7 +103,8 @@ Armada dinonaktifkan melalui `is_active`; pengemudi yang dapat dipilih harus mem
 | berat_kg | decimal(10,2) | Berat saat alokasi |
 | created_at / updated_at | timestamp | |
 
-Constraint unik: (`delivery_order_id`, `dty_roll_id`) untuk mencegah duplikasi alokasi dalam satu DO.
+Constraint unik pada `dty_roll_id` mencegah satu rol dialokasikan ke lebih dari satu DO.
+Setiap rol hanya dapat dialokasikan ke satu DO. Penerbitan DO mengunci stok, memeriksa kapasitas armada, lalu mengubah status rol menjadi `allocated` dalam satu transaksi.
 
 ### `load_scans`
 
@@ -133,8 +134,9 @@ Constraint unik: (`delivery_order_id`, `dty_roll_id`) untuk mencegah duplikasi a
 | created_at / updated_at | timestamp | |
 
 Posisi terakhir armada = event terbaru per `delivery_order_id`.
+Driver yang ditugaskan memperbarui status berurutan: `issued` → `departed` → `in_transit` → `arrived`.
 
-## Sprint 5 — Bukti Terima & Laporan (rancangan)
+## Sprint 5 — Bukti Terima & Laporan (sudah diimplementasikan)
 
 ### `proof_of_deliveries`
 
@@ -144,13 +146,26 @@ Posisi terakhir armada = event terbaru per `delivery_order_id`.
 | delivery_order_id | bigint FK delivery_orders unique | Satu POD per DO |
 | received_by_name | varchar(100) | Nama penerima |
 | signature_path | varchar(255) | Path berkas tanda tangan |
-| photo_path | varchar(255) nullable | Foto bukti |
 | received_at | timestamp | |
 | latitude | decimal(10,7) nullable | |
 | longitude | decimal(10,7) nullable | |
 | created_at / updated_at | timestamp | |
 
-Laporan pengiriman diturunkan dari `delivery_orders`, `delivery_order_items`, `delivery_tracking_events`, dan `proof_of_deliveries` — tidak memerlukan tabel rekap terpisah.
+Tanda tangan PNG disimpan pada disk privat, bukan di disk publik. Akses gambar hanya melalui route terautentikasi untuk Logistik atau driver yang ditugaskan.
+
+### `delivery_order_receipt_scans`
+
+| Kolom | Tipe | Keterangan |
+| --- | --- | --- |
+| id | bigint PK | |
+| delivery_order_id | bigint FK delivery_orders | |
+| dty_roll_id | bigint FK dty_rolls nullable | Null untuk QR yang tidak dikenal |
+| scanned_by | bigint FK users | Driver yang memproses penerimaan |
+| result | varchar(20) | `valid`, `wrong_do`, `duplicate`, `unknown` |
+| scanned_at | timestamp | |
+| created_at / updated_at | timestamp | |
+
+Setiap scan penerimaan dicatat. POD hanya disimpan setelah seluruh QR rol cocok tepat dengan isi DO; penerimaan mengubah status rol menjadi `delivered` dan status DO menjadi `received` dalam satu transaksi. Laporan PDF dan Excel diturunkan dari data DO dan POD, tanpa tabel rekap terpisah.
 
 ## Sprint 6 — Audit & Riwayat (rancangan)
 
@@ -187,4 +202,5 @@ delivery_orders 1─* delivery_order_items *─1 dty_rolls
 delivery_orders 1─* load_scans            *─1 dty_rolls
 delivery_orders 1─* delivery_tracking_events
 delivery_orders 1─1 proof_of_deliveries
+delivery_orders 1─* delivery_order_receipt_scans *─1 dty_rolls
 ```

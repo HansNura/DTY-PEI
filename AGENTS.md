@@ -12,7 +12,7 @@ PMT adalah sistem pelacakan rol benang DTY dari gudang sampai pelanggan: master 
 
 Backlog berasal dari `Rencana Kerja Tim PMT.xlsx` (13 tiket `DTY-001` s/d `DTY-013`, Sprint 1–6). Rancangan data lintas sprint ada di `docs/ERD.md`.
 
-Status saat ini: **Sprint 1 sampai Sprint 4 selesai** (auth/RBAC, master data dan QR, pelanggan/armada, surat jalan, scanner muatan, driver interface, live tracking). Sprint 5 belum dimulai.
+Status saat ini: **Sprint 1 sampai Sprint 5 selesai** (auth/RBAC, master data dan QR, pelanggan/armada, surat jalan, scanner muatan, driver interface, live tracking, POD, rekap pengiriman). Sprint 6 belum dimulai.
 
 ## Stack
 
@@ -21,6 +21,8 @@ Status saat ini: **Sprint 1 sampai Sprint 4 selesai** (auth/RBAC, master data da
 - SQLite untuk lokal; target produksi MySQL/PostgreSQL
 - PHPUnit 11, Laravel Pint
 - `qrcode` untuk label QR, `leaflet` untuk peta live tracking
+- `@zxing/browser` untuk scan QR kamera POD
+- `barryvdh/laravel-dompdf` dan `phpoffice/phpspreadsheet` untuk PDF/Excel
 
 ## Perintah wajib
 

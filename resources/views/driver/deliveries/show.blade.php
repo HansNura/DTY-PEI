@@ -65,6 +65,20 @@
             @endif
         </x-card>
 
+        @if ($order->proofOfDelivery)
+            <x-card title="Penerimaan dikonfirmasi">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-slate-900">{{ $order->proofOfDelivery->received_by_name }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Diterima {{ $order->proofOfDelivery->received_at->translatedFormat('d M Y, H:i') }}</p>
+                    </div>
+                    <x-badge tone="success" dot>POD tersimpan</x-badge>
+                </div>
+                <img src="{{ route('deliveries.signature', $order) }}" alt="Tanda tangan penerima {{ $order->proofOfDelivery->received_by_name }}"
+                     class="mt-4 max-h-32 rounded-xl border border-slate-200 bg-white p-2">
+            </x-card>
+        @endif
+
         <x-card title="Perbarui status perjalanan" description="Koordinat GPS diambil otomatis bila perangkat mengizinkan.">
             @if (count($actions) > 0)
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -97,11 +111,65 @@
 
             <form method="POST" action="{{ route('driver.deliveries.status', $order) }}" x-ref="statusForm" class="hidden">
                 @csrf
+                @method('PATCH')
                 <input type="hidden" name="status" x-bind:value="status">
                 <input type="hidden" name="latitude" x-bind:value="latitude">
                 <input type="hidden" name="longitude" x-bind:value="longitude">
             </form>
         </x-card>
+
+        @if ($order->status === \App\Enums\DeliveryOrderStatus::Arrived && ! $order->proofOfDelivery)
+            <x-card title="Konfirmasi penerimaan pelanggan" description="Pelanggan memeriksa dan menandatangani di perangkat ini. Pindai QR setiap gulungan sesuai surat jalan.">
+                <form method="POST" action="{{ route('driver.deliveries.confirm', $order) }}" class="space-y-5" data-receipt-form>
+                    @csrf
+
+                    <x-field label="Nama penerima" name="received_by_name" required>
+                        <x-input id="received_by_name" name="received_by_name" type="text" required maxlength="100"
+                                 value="{{ old('received_by_name', $order->customer->kontak_nama) }}" />
+                    </x-field>
+
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-700">Scan QR gulungan</h3>
+                        <p class="mt-1 text-xs text-slate-500">QR harus cocok dengan seluruh rol pada DO. QR tidak terdaftar, berbeda, atau berulang akan ditolak. Kamera memerlukan HTTPS atau localhost.</p>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <input type="text" data-scan-input autocomplete="off" placeholder="Kode hasil scan" aria-label="Kode hasil scan"
+                                   class="min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 font-mono text-sm focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none">
+                            <button type="button" data-add-scan class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Tambah scan</button>
+                            <button type="button" data-start-camera class="rounded-xl border border-brand-200 px-4 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50">Buka kamera</button>
+                            <button type="button" data-stop-camera class="hidden rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Tutup kamera</button>
+                        </div>
+
+                        <video data-scan-video class="mt-3 hidden max-h-64 w-full rounded-xl bg-slate-900 object-contain" playsinline aria-label="Pratinjau kamera scan QR"></video>
+                        <p data-scan-message class="mt-2 text-sm text-slate-600" aria-live="polite"></p>
+                        <div data-scan-list class="mt-3 flex flex-wrap gap-2"></div>
+
+                        @foreach (old('scanned_tokens', []) as $token)
+                            <input type="hidden" name="scanned_tokens[]" value="{{ $token }}" data-scanned-token>
+                        @endforeach
+                        @error('scanned_tokens')
+                            <p class="mt-2 text-sm text-rose-700">{{ $message }}</p>
+                        @enderror
+                        @error('scanned_tokens.*')
+                            <p class="mt-2 text-sm text-rose-700">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-700">Tanda tangan penerima</h3>
+                        <p class="mt-1 text-xs text-slate-500">Minta pelanggan membubuhkan tanda tangan dengan jari pada area berikut.</p>
+                        <canvas data-signature-pad class="mt-3 h-44 w-full touch-none rounded-xl border border-slate-200 bg-white" aria-label="Area tanda tangan penerima"></canvas>
+                        <input type="hidden" name="signature" data-signature-input>
+                        <button type="button" data-clear-signature class="mt-2 text-sm font-medium text-brand-700 hover:text-brand-900">Hapus tanda tangan</button>
+                        @error('signature')
+                            <p class="mt-1 text-sm text-rose-700">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <x-button type="submit" class="w-full sm:w-auto" icon="check">Simpan konfirmasi penerimaan</x-button>
+                </form>
+            </x-card>
+        @endif
 
         <x-card title="Riwayat perjalanan">
             <x-timeline>

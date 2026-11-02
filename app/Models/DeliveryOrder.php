@@ -86,6 +86,25 @@ class DeliveryOrder extends Model
         return $this->hasOne(DeliveryTrackingEvent::class)->latestOfMany('recorded_at');
     }
 
+    public function proofOfDelivery(): HasOne
+    {
+        return $this->hasOne(ProofOfDelivery::class);
+    }
+
+    public function receiptScans(): HasMany
+    {
+        return $this->hasMany(DeliveryOrderReceiptScan::class);
+    }
+
+    public function totalWeightInKg(): string
+    {
+        $hundredthsOfKg = $this->items->sum(
+            fn (DeliveryOrderItem $item): int => (int) str_replace('.', '', (string) $item->berat_kg)
+        );
+
+        return intdiv($hundredthsOfKg, 100).'.'.str_pad((string) ($hundredthsOfKg % 100), 2, '0', STR_PAD_LEFT);
+    }
+
     public function getTotalBeratKgAttribute(): float
     {
         return (float) $this->items->sum('berat_kg');

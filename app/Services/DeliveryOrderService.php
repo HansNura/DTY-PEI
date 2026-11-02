@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\DeliveryOrderStatus;
 use App\Enums\RollStatus;
+use App\Enums\UserRole;
+use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
 use App\Models\DtyRoll;
@@ -35,14 +37,29 @@ class DeliveryOrderService
     public function createDeliveryOrder(array $data, array $rollIds, User $creator): DeliveryOrder
     {
         return DB::transaction(function () use ($data, $rollIds, $creator) {
+            $customer = Customer::query()->lockForUpdate()->findOrFail($data['customer_id']);
+            $fleet = Fleet::query()->lockForUpdate()->findOrFail($data['fleet_id']);
+            $driver = User::query()->findOrFail($data['driver_id']);
             $rolls = DtyRoll::whereIn('id', $rollIds)
                 ->lockForUpdate()
                 ->get();
 
-            if ($rolls->count() !== count(array_unique($rollIds))) {
+            if ($rolls->count() !== count($rollIds) || count($rollIds) !== count(array_unique($rollIds))) {
                 throw ValidationException::withMessages([
                     'rolls' => 'Beberapa rol yang dipilih tidak ditemukan.',
                 ]);
+            }
+
+            if (! $customer->is_active) {
+                throw ValidationException::withMessages(['customer_id' => 'Pelanggan sudah tidak aktif.']);
+            }
+
+            if (! $fleet->is_active) {
+                throw ValidationException::withMessages(['fleet_id' => 'Armada sudah tidak aktif.']);
+            }
+
+            if (! $driver->is_active || ! $driver->hasRole(UserRole::Driver)) {
+                throw ValidationException::withMessages(['driver_id' => 'Pengemudi harus merupakan akun driver yang aktif.']);
             }
 
             foreach ($rolls as $roll) {
@@ -53,10 +70,9 @@ class DeliveryOrderService
                 }
             }
 
-            $fleet = Fleet::whereKey($data['fleet_id'])->lockForUpdate()->first();
             $totalKg = round($rolls->sum(fn (DtyRoll $roll): float => (float) $roll->berat_gram / 1000), 2);
 
-            if ($fleet && (float) $fleet->kapasitas_kg > 0 && $totalKg > (float) $fleet->kapasitas_kg) {
+            if ((float) $fleet->kapasitas_kg > 0 && $totalKg > (float) $fleet->kapasitas_kg) {
                 throw ValidationException::withMessages([
                     'rolls' => sprintf(
                         'Total berat %.2f kg melebihi kapasitas armada %s (%.2f kg).',
@@ -79,12 +95,10 @@ class DeliveryOrderService
             ]);
 
             foreach ($rolls as $roll) {
-                $beratKg = round($roll->berat_gram / 1000, 2);
-
                 DeliveryOrderItem::create([
                     'delivery_order_id' => $order->id,
                     'dty_roll_id' => $roll->id,
-                    'berat_kg' => $beratKg,
+                    'berat_kg' => $roll->weightInKg(),
                 ]);
 
                 $roll->update(['status' => RollStatus::Allocated]);

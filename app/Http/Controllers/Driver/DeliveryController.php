@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Driver;
 
 use App\Enums\DeliveryOrderStatus;
 use App\Enums\TrackingStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Driver\ConfirmDeliveryOrderRequest;
 use App\Http\Requests\Driver\UpdateDeliveryStatusRequest;
 use App\Models\DeliveryOrder;
 use App\Services\DeliveryTrackingService;
+use App\Services\ProofOfDeliveryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DeliveryController extends Controller
@@ -19,11 +23,12 @@ class DeliveryController extends Controller
         $status = (string) $request->query('status');
 
         $orders = DeliveryOrder::query()
-            ->with(['customer', 'fleet', 'latestTrackingEvent'])
+            ->with(['customer', 'fleet', 'latestTrackingEvent', 'proofOfDelivery'])
             ->where('driver_id', $request->user()->id)
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->orderByRaw("CASE WHEN status IN ('departed', 'in_transit', 'arrived') THEN 0 ELSE 1 END")
             ->latest('tanggal')
+            ->latest('id')
             ->paginate(15)
             ->withQueryString();
 
@@ -36,15 +41,16 @@ class DeliveryController extends Controller
 
     public function show(Request $request, DeliveryOrder $order): View
     {
-        abort_unless($order->driver_id === $request->user()->id, 403, 'Anda tidak ditugaskan pada Surat Jalan ini.');
+        $this->authorizeDriver($order, $request);
 
         $order->load([
             'customer',
             'fleet',
             'driver',
             'items.dtyRoll',
-            'trackingEvents.recordedBy',
+            'trackingEvents.recorder',
             'latestTrackingEvent',
+            'proofOfDelivery',
         ]);
 
         return view('driver.deliveries.show', [
@@ -72,6 +78,25 @@ class DeliveryController extends Controller
             ->with('status', "Status perjalanan diperbarui: {$event->status->label()}.");
     }
 
+    public function confirm(
+        ConfirmDeliveryOrderRequest $request,
+        DeliveryOrder $order,
+        ProofOfDeliveryService $service,
+    ): RedirectResponse {
+        $this->authorizeDriver($order, $request);
+
+        try {
+            $service->confirm($order, $request->user(), $request->validated());
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors())
+                ->withInput($request->except('signature'));
+        }
+
+        return redirect()->route('driver.deliveries.show', $order)
+            ->with('status', 'Penerimaan dan tanda tangan pelanggan berhasil disimpan.');
+    }
+
     /**
      * @return array<int, TrackingStatus>
      */
@@ -92,5 +117,14 @@ class DeliveryController extends Controller
             DeliveryOrderStatus::InTransit => [TrackingStatus::InTransit, TrackingStatus::Arrived],
             default => [],
         };
+    }
+
+    private function authorizeDriver(DeliveryOrder $order, Request $request): void
+    {
+        abort_unless(
+            $request->user()?->hasRole(UserRole::Driver) && $order->driver_id === $request->user()->id,
+            403,
+            'Surat jalan ini bukan tanggung jawab Anda.',
+        );
     }
 }

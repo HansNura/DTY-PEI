@@ -39,4 +39,14 @@ enum DeliveryOrderStatus: string
             self::Cancelled => 'bg-rose-100 text-rose-800',
         };
     }
+
+    public function next(): ?self
+    {
+        return match ($this) {
+            self::Issued, self::Loading => self::Departed,
+            self::Departed => self::InTransit,
+            self::InTransit => self::Arrived,
+            self::Draft, self::Arrived, self::Received, self::Cancelled => null,
+        };
+    }
 }

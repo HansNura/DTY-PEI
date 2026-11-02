@@ -40,6 +40,11 @@ class DeliveryTrackingEvent extends Model
         return $this->belongsTo(User::class, 'recorded_by');
     }
 
+    public function recorder(): BelongsTo
+    {
+        return $this->recordedBy();
+    }
+
     public function hasCoordinates(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;

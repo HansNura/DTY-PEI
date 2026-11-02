@@ -86,7 +86,7 @@ class DriverDeliveryTest extends TestCase
         $order = $this->makeOrder($driver);
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
             ->assertRedirect(route('driver.deliveries.show', $order));
 
         $this->assertSame(DeliveryOrderStatus::Departed, $order->fresh()->status);
@@ -103,7 +103,7 @@ class DriverDeliveryTest extends TestCase
         $order = $this->makeOrder($driver, DeliveryOrderStatus::Loading, RollStatus::Allocated);
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(DeliveryOrderStatus::Loading, $order->fresh()->status);
@@ -115,7 +115,7 @@ class DriverDeliveryTest extends TestCase
         $driver = $this->driver();
         $order = $this->makeOrder($driver, DeliveryOrderStatus::Departed);
 
-        $this->actingAs($driver)->post(route('driver.deliveries.status', $order), [
+        $this->actingAs($driver)->patch(route('driver.deliveries.status', $order), [
             'status' => TrackingStatus::InTransit->value,
             'latitude' => -6.914744,
             'longitude' => 107.609810,
@@ -130,7 +130,7 @@ class DriverDeliveryTest extends TestCase
         ]);
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Arrived->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Arrived->value])
             ->assertRedirect();
 
         $this->assertSame(DeliveryOrderStatus::Arrived, $order->fresh()->status);
@@ -143,7 +143,7 @@ class DriverDeliveryTest extends TestCase
         $order = $this->makeOrder($driver);
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Arrived->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Arrived->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(DeliveryOrderStatus::Loading, $order->fresh()->status);
@@ -154,12 +154,12 @@ class DriverDeliveryTest extends TestCase
         $driver = $this->driver();
         $order = $this->makeOrder($driver, DeliveryOrderStatus::Departed);
 
-        $this->actingAs($driver)->post(route('driver.deliveries.status', $order), [
+        $this->actingAs($driver)->patch(route('driver.deliveries.status', $order), [
             'status' => TrackingStatus::InTransit->value,
             'latitude' => -6.9,
         ])->assertSessionHasErrors('longitude');
 
-        $this->actingAs($driver)->post(route('driver.deliveries.status', $order), [
+        $this->actingAs($driver)->patch(route('driver.deliveries.status', $order), [
             'status' => TrackingStatus::InTransit->value,
             'latitude' => -120,
             'longitude' => 200,
@@ -172,7 +172,7 @@ class DriverDeliveryTest extends TestCase
         $order = $this->makeOrder($this->driver());
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
             ->assertForbidden();
 
         $this->assertSame(DeliveryOrderStatus::Loading, $order->fresh()->status);
@@ -184,7 +184,7 @@ class DriverDeliveryTest extends TestCase
         $order = $this->makeOrder($driver, DeliveryOrderStatus::Cancelled);
 
         $this->actingAs($driver)
-            ->post(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Departed->value])
             ->assertSessionHasErrors('status');
 
         $this->assertSame(DeliveryOrderStatus::Cancelled, $order->fresh()->status);

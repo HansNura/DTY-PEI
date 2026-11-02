@@ -132,6 +132,7 @@ class UiSmokeTest extends TestCase
             route('logistics.orders.print', $order),
             route('logistics.tracking.index'),
             route('logistics.tracking.show', $order),
+            route('logistics.reports.deliveries'),
         ];
 
         foreach ($pages as $url) {

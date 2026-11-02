@@ -28,8 +28,8 @@ class UpdateDeliveryStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::enum(TrackingStatus::class)],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'decimal:0,7', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'decimal:0,7', 'required_with:latitude'],
         ];
     }
 
@@ -43,9 +43,11 @@ class UpdateDeliveryStatusRequest extends FormRequest
             'status.enum' => 'Status perjalanan tidak valid.',
             'latitude.numeric' => 'Koordinat lintang tidak valid.',
             'latitude.between' => 'Koordinat lintang harus antara -90 dan 90.',
+            'latitude.decimal' => 'Koordinat lintang maksimal 7 angka desimal.',
             'latitude.required_with' => 'Lintang dan bujur harus dikirim bersamaan.',
             'longitude.numeric' => 'Koordinat bujur tidak valid.',
             'longitude.between' => 'Koordinat bujur harus antara -180 dan 180.',
+            'longitude.decimal' => 'Koordinat bujur maksimal 7 angka desimal.',
             'longitude.required_with' => 'Lintang dan bujur harus dikirim bersamaan.',
         ];
     }

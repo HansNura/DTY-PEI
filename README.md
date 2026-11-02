@@ -2,7 +2,7 @@
 
 Aplikasi pelacakan rol benang DTY dari gudang sampai pelanggan: master data rol, QR code, surat jalan, validasi muatan, status perjalanan, bukti terima digital, laporan, dan audit.
 
-Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) sampai Sprint 4 (driver interface dan live tracking) sudah selesai.
+Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) sampai Sprint 5 (bukti terima digital dan rekap pengiriman) sudah selesai.
 
 ## Stack
 
@@ -12,7 +12,9 @@ Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d
 - Vite 7
 - Instrument Sans Variable (self-host) + design system Clean SaaS Light
 - `qrcode` untuk membuat QR label secara lokal di browser
+- `@zxing/browser` untuk scan QR kamera pada konfirmasi POD
 - `leaflet` + OpenStreetMap untuk peta live tracking
+- `barryvdh/laravel-dompdf` + `phpoffice/phpspreadsheet` untuk PDF/Excel
 - PHPUnit 11 + Laravel Pint
 
 ## Menjalankan di lokal
@@ -75,6 +77,8 @@ composer run dev                   # server + queue + log + Vite
 - Validasi kapasitas armada terhadap total berat rol saat penerbitan DO.
 - Driver memiliki halaman mobile-first untuk melihat perjalanan dan memperbarui status Berangkat, Dalam Perjalanan, dan Tiba beserta koordinat GPS.
 - Tim Logistik memiliki dashboard live tracking berisi peta posisi terakhir, status armada, dan riwayat perjalanan per DO.
+- Driver dapat memindai ulang QR seluruh rol, mencatat nama penerima, dan mengambil tanda tangan digital pelanggan sebagai POD.
+- Tim Logistik dapat mencetak/mengunduh DO sebagai PDF, serta memfilter dan mengunduh rekap pengiriman per periode, lot, dan armada dalam PDF/Excel.
 - Gulungan dibatalkan dan pelanggan/armada dinonaktifkan tanpa menghapus riwayat data.
 
 ## UI dan design system
@@ -97,6 +101,7 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 - [`docs/sprint-2.md`](docs/sprint-2.md) — master data, QR, pelanggan, dan armada.
 - [`docs/sprint-3.md`](docs/sprint-3.md) — surat jalan, scanner, dan hasil perbaikan review.
 - [`docs/sprint-4.md`](docs/sprint-4.md) — driver interface dan live tracking.
+- [`docs/sprint-5.md`](docs/sprint-5.md) — POD dan rekap pengiriman PDF/Excel.
 - [`Rencana Kerja Tim PMT.xlsx`](Rencana%20Kerja%20Tim%20PMT.xlsx) — backlog dan target sprint.
 - [`AGENTS.md`](AGENTS.md) — panduan kerja seluruh AI agent.
 - [`.ai/rules/`](.ai/rules/) — aturan arsitektur, database, dan UI.
@@ -110,5 +115,5 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 | 2 | DTY-002 s/d DTY-005 | Selesai |
 | 3 | DTY-006 s/d DTY-007 | Selesai |
 | 4 | DTY-008 s/d DTY-009 | Selesai |
-| 5 | DTY-010 s/d DTY-011 | Belum dimulai |
+| 5 | DTY-010 s/d DTY-011 | Selesai |
 | 6 | DTY-012 s/d DTY-013 | Belum dimulai |
