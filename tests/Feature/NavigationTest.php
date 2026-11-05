@@ -31,7 +31,8 @@ class NavigationTest extends TestCase
         $this->actingAs($this->user(UserRole::AdminGudang))
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Gulungan DTY')
+            ->assertSee('Kardus DTY')
+            ->assertSee('Stok Bobbin')
             ->assertSee('Scanner Muatan')
             ->assertDontSee('Live Tracking');
     }

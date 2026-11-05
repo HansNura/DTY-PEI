@@ -27,22 +27,47 @@ Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint
 
 ## Sprint 2 — Master Data, QR, Pelanggan, Armada (sudah diimplementasikan)
 
+### `dty_cartons`
+
+| Kolom | Tipe | Keterangan |
+| --- | --- | --- |
+| id | bigint PK | |
+| nomor_hu | varchar(50) unique | Carton / HU number, contoh `ADMG00054918` |
+| nomor_merge | varchar(50) index | Lot / merge number, contoh `4D9164` |
+| grade | varchar(10) | Grade produk, contoh `WE` |
+| production_date | date index | Tanggal produksi |
+| denier | integer | Denier benang |
+| filamen | integer | Jumlah filamen |
+| intermingled | boolean | `false` = NI (Non-Intermingled) |
+| twist_direction | varchar(1) nullable | `Z` atau `S` |
+| gross_weight_kg | decimal(10,2) | Berat kotor kardus + isi |
+| net_weight_kg | decimal(10,2) | Berat bersih benang |
+| unit_bobbins | smallint | Jumlah bobbin dalam kardus |
+| pallet_number | varchar(50) nullable | Nomor pallet, contoh `ADP063296` |
+| qr_token | varchar(64) unique | QR identitas kardus |
+| catatan | text nullable | Catatan operator |
+| created_by | bigint FK users | Admin gudang pencatat |
+| created_at / updated_at | timestamp | |
+
+Satu kardus membuat `unit_bobbins` baris `dty_rolls` secara otomatis. Berat per bobbin = `net_weight_kg × 1000 ÷ unit_bobbins`.
+
 ### `dty_rolls`
 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
+| dty_carton_id | bigint FK dty_cartons nullable | Kardus asal; null untuk input manual lama |
 | kode_rol | varchar(50) unique | Kode internal rol |
 | denier | integer | Spesifikasi DTY |
 | filamen | integer | Jumlah filamen |
 | berat_gram | decimal(10,2) | Berat bersih |
-| nomor_lot | varchar(50) index | Nomor lot produksi |
+| nomor_lot | varchar(50) index | Nomor lot produksi (mengikuti merge kardus) |
 | qr_token | varchar(64) unique | Payload QR code |
 | status | varchar(20) index | `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled` |
 | created_by | bigint FK users | Admin gudang pencatat |
 | created_at / updated_at | timestamp | |
 
-Relasi: `created_by` → `users.id`. Satu rol memiliki satu QR unik.
+Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu rol memiliki satu QR unik.
 `kode_rol` dan `qr_token` dibuat otomatis dan unik. QR membawa token acak 256-bit; gulungan hanya dapat dibatalkan saat masih `in_stock`, tanpa menghapus riwayatnya.
 
 ### `customers`
@@ -190,6 +215,8 @@ Riwayat perjalanan rol = gabungan `load_scans`, `delivery_order_items`, `deliver
 
 ```text
 users 1─* dty_rolls (created_by)
+users 1─* dty_cartons (created_by)
+dty_cartons 1─* dty_rolls
 users 1─* fleets (driver_id)
 users 1─* delivery_orders (driver_id, created_by)
 users 1─* load_scans (scanned_by)

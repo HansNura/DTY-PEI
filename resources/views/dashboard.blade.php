@@ -126,12 +126,19 @@
 
                 <x-card title="Aksi cepat">
                     <div class="space-y-3">
-                        <x-button href="{{ route('warehouse.rolls.create') }}" class="w-full" icon="plus">Tambah gulungan DTY</x-button>
+                        <x-button href="{{ route('warehouse.cartons.create') }}" class="w-full" icon="boxes">Tambah kardus DTY</x-button>
+                        <x-button href="{{ route('warehouse.rolls.create') }}" variant="secondary" class="w-full" icon="plus">Tambah bobbin manual</x-button>
                         <x-button href="{{ route('warehouse.scans.index') }}" variant="secondary" class="w-full" icon="scan">Buka scanner muatan</x-button>
                     </div>
-                    <div class="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        <p class="font-medium text-slate-900">{{ $loadingOrders }} Surat Jalan</p>
-                        <p class="text-xs text-slate-500">sedang menunggu pemuatan atau validasi.</p>
+                    <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                        <div class="rounded-xl bg-slate-50 px-4 py-3">
+                            <p class="font-medium text-slate-900">{{ $cartonsCount }}</p>
+                            <p class="text-xs text-slate-500">kardus terdaftar</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-4 py-3">
+                            <p class="font-medium text-slate-900">{{ $loadingOrders }}</p>
+                            <p class="text-xs text-slate-500">DO menunggu muat</p>
+                        </div>
                     </div>
                 </x-card>
             </div>

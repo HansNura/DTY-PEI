@@ -99,6 +99,7 @@
                                                    aria-label="Pilih semua gulungan">
                                         </x-th>
                                         <x-th>Kode rol</x-th>
+                                        <x-th>Kardus</x-th>
                                         <x-th>Nomor lot</x-th>
                                         <x-th>Spesifikasi</x-th>
                                         <x-th align="right">Berat (g)</x-th>
@@ -116,6 +117,12 @@
                                                        x-on:click.stop="toggleRoll({{ $roll->id }})">
                                             </x-td>
                                             <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</span></x-td>
+                                            <x-td>
+                                                <span class="font-mono text-xs text-slate-700">{{ $roll->carton?->nomor_hu ?? '—' }}</span>
+                                                @if ($roll->carton)
+                                                    <p class="text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
+                                                @endif
+                                            </x-td>
                                             <x-td>{{ $roll->nomor_lot }}</x-td>
                                             <x-td class="tabular-nums">{{ $roll->denier }}D / {{ $roll->filamen }}F</x-td>
                                             <x-td align="right" class="tabular-nums">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }}</x-td>

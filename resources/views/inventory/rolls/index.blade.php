@@ -4,16 +4,17 @@
 
 @section('content')
     <div class="space-y-6">
-        <x-page-header title="Stok gulungan DTY" description="Catat spesifikasi, nomor lot, dan cetak label QR untuk tiap gulungan.">
+        <x-page-header title="Stok bobbin DTY" description="Daftar bobbin hasil input kardus atau input manual, lengkap dengan QR untuk validasi muatan.">
             <x-slot:actions>
-                <x-button href="{{ route('warehouse.rolls.create') }}" icon="plus">Tambah gulungan</x-button>
+                <x-button href="{{ route('warehouse.cartons.index') }}" variant="secondary" icon="boxes">Kardus DTY</x-button>
+                <x-button href="{{ route('warehouse.rolls.create') }}" icon="plus">Tambah bobbin</x-button>
             </x-slot:actions>
         </x-page-header>
 
         <x-card padding="p-4">
             <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_auto]">
                 <x-field name="q">
-                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol atau nomor lot" aria-label="Cari gulungan" />
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, lot, atau nomor HU" aria-label="Cari gulungan" />
                 </x-field>
 
                 <x-field name="status">
@@ -38,6 +39,7 @@
             <thead class="bg-slate-50/70">
                 <tr>
                     <x-th>Kode rol / Lot</x-th>
+                    <x-th>Kardus</x-th>
                     <x-th>Spesifikasi</x-th>
                     <x-th>Berat</x-th>
                     <x-th>Status</x-th>
@@ -50,6 +52,14 @@
                         <x-td>
                             <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
+                        </x-td>
+                        <x-td>
+                            @if ($roll->carton)
+                                <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="font-mono text-xs font-medium text-brand-700 hover:text-brand-900">{{ $roll->carton->nomor_hu }}</a>
+                                <p class="text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
+                            @else
+                                <span class="text-xs text-slate-400">Input manual</span>
+                            @endif
                         </x-td>
                         <x-td class="tabular-nums">{{ number_format($roll->denier) }} D / {{ number_format($roll->filamen) }} F</x-td>
                         <x-td class="tabular-nums">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</x-td>
@@ -77,7 +87,7 @@
                         </x-td>
                     </tr>
                 @empty
-                    <tr><x-td colspan="5" class="py-8 text-center text-slate-500">Belum ada gulungan yang cocok dengan filter.</x-td></tr>
+                    <tr><x-td colspan="6" class="py-8 text-center text-slate-500">Belum ada gulungan yang cocok dengan filter.</x-td></tr>
                 @endforelse
             </tbody>
         </x-table>
@@ -95,6 +105,7 @@
                     <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
                         <p>Spesifikasi: <span class="font-medium text-slate-700">{{ $roll->denier }}D / {{ $roll->filamen }}F</span></p>
                         <p>Berat: <span class="font-medium text-slate-700">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</span></p>
+                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? 'Input manual' }}</span></p>
                     </div>
                     <div class="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
                         @if ($roll->status !== \App\Enums\RollStatus::Cancelled)

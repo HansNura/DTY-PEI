@@ -23,6 +23,14 @@ Status: selesai
 
 ## Bukti uji
 
+`tests/Feature/DtyCartonManagementTest.php`:
+- input kardus membuat bobbin dan QR sesuai `unit_bobbins`,
+- validasi net ≤ gross, HU unik, dan jumlah bobbin,
+- update berat menghitung ulang berat per bobbin,
+- kardus yang sudah dialokasikan tidak dapat diubah,
+- label kardus menampilkan HU, merge, spesifikasi, dan berat,
+- otorisasi khusus Admin Gudang.
+
 `tests/Feature/DtyRollManagementTest.php`:
 - `test_warehouse_user_can_create_a_roll_with_a_unique_qr_token_and_print_label`
 - `test_warehouse_user_can_update_and_cancel_only_available_rolls`

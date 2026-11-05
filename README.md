@@ -70,7 +70,7 @@ composer run dev                   # server + queue + log + Vite
 - Profil: ubah nama, email, dan kata sandi.
 - Dashboard ringkas per peran.
 - Security header dasar pada semua respons.
-- Admin Gudang dapat mengelola gulungan DTY beserta denier, filamen, berat, dan nomor lot; kode rol serta token QR unik dibuat otomatis dan label thermal 50 × 30 mm dapat dicetak.
+- Admin Gudang dapat menginput kardus DTY lengkap dengan nomor HU, lot/merge, grade, tanggal produksi, gross/net weight, unit bobbin, dan pallet. Satu kardus otomatis membuat bobbin dengan kode rol dan QR unik; label kardus 100 × 150 mm dapat dicetak.
 - Tim Logistik dapat mengelola pelanggan dengan kontak penerima dan koordinat maps, serta armada dengan jenis kendaraan, kapasitas, dan pengemudi utama.
 - Tim Logistik dapat menerbitkan Surat Jalan dengan alokasi rol, mencetaknya, dan membatalkannya sebelum armada berangkat.
 - Checker gudang dapat memindai QR rol (kamera, scanner USB, atau input manual) untuk memvalidasi muatan; salah DO, duplikat, dan kode tak dikenal ditolak.

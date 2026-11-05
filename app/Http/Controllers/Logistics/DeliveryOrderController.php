@@ -50,7 +50,7 @@ class DeliveryOrderController extends Controller
         $customers = Customer::where('is_active', true)->orderBy('nama_pabrik')->get();
         $fleets = Fleet::where('is_active', true)->with('driver')->orderBy('nomor_polisi')->get();
         $drivers = User::where('role', UserRole::Driver)->where('is_active', true)->orderBy('nama')->get();
-        $availableRolls = DtyRoll::where('status', RollStatus::InStock)->orderBy('nomor_lot')->orderBy('kode_rol')->get();
+        $availableRolls = DtyRoll::with('carton')->where('status', RollStatus::InStock)->orderBy('nomor_lot')->orderBy('kode_rol')->get();
 
         return view('logistics.orders.create', compact('customers', 'fleets', 'drivers', 'availableRolls'));
     }

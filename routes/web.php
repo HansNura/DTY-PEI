@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliverySignatureController;
 use App\Http\Controllers\Driver\DeliveryController as DriverDeliveryController;
+use App\Http\Controllers\Inventory\DtyCartonController;
 use App\Http\Controllers\Inventory\DtyRollController;
 use App\Http\Controllers\Logistics\CustomerController;
 use App\Http\Controllers\Logistics\DeliveryOrderController;
@@ -54,6 +55,13 @@ Route::middleware(['auth', 'role:admin_gudang'])
     ->prefix('warehouse')
     ->name('warehouse.')
     ->group(function () {
+        Route::get('/cartons', [DtyCartonController::class, 'index'])->name('cartons.index');
+        Route::get('/cartons/create', [DtyCartonController::class, 'create'])->name('cartons.create');
+        Route::post('/cartons', [DtyCartonController::class, 'store'])->name('cartons.store');
+        Route::get('/cartons/{carton}/edit', [DtyCartonController::class, 'edit'])->name('cartons.edit');
+        Route::put('/cartons/{carton}', [DtyCartonController::class, 'update'])->name('cartons.update');
+        Route::get('/cartons/{carton}/label', [DtyCartonController::class, 'label'])->name('cartons.label');
+
         Route::get('/rolls', [DtyRollController::class, 'index'])->name('rolls.index');
         Route::get('/rolls/create', [DtyRollController::class, 'create'])->name('rolls.create');
         Route::post('/rolls', [DtyRollController::class, 'store'])->name('rolls.store');

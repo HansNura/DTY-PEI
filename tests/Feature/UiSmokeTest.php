@@ -10,6 +10,7 @@ use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
 use App\Models\DeliveryTrackingEvent;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
@@ -84,10 +85,15 @@ class UiSmokeTest extends TestCase
     {
         $warehouse = $this->user(UserRole::AdminGudang);
         $roll = DtyRoll::factory()->create(['status' => RollStatus::InStock, 'created_by' => $warehouse->id]);
+        $carton = DtyCarton::factory()->create(['created_by' => $warehouse->id]);
         $order = $this->order($this->user(UserRole::Driver), DeliveryOrderStatus::Issued);
 
         $pages = [
             route('dashboard'),
+            route('warehouse.cartons.index'),
+            route('warehouse.cartons.create'),
+            route('warehouse.cartons.edit', $carton),
+            route('warehouse.cartons.label', $carton),
             route('warehouse.rolls.index'),
             route('warehouse.rolls.create'),
             route('warehouse.rolls.edit', $roll),

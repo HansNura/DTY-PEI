@@ -6,6 +6,7 @@ use App\Enums\DeliveryOrderStatus;
 use App\Enums\RollStatus;
 use App\Enums\UserRole;
 use App\Models\DeliveryOrder;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\User;
 use Illuminate\View\View;
@@ -38,6 +39,7 @@ class DashboardController extends Controller
                     'cancelled' => DtyRoll::where('status', RollStatus::Cancelled)->count(),
                 ],
                 'recentRolls' => DtyRoll::latest()->take(5)->get(),
+                'cartonsCount' => DtyCarton::count(),
                 'loadingOrders' => DeliveryOrder::whereIn('status', [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading])->count(),
             ];
         } elseif ($user->hasRole(UserRole::Logistik)) {

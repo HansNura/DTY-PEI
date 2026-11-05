@@ -14,6 +14,7 @@ class DtyRoll extends Model
     use HasFactory;
 
     protected $fillable = [
+        'dty_carton_id',
         'kode_rol',
         'denier',
         'filamen',
@@ -35,6 +36,11 @@ class DtyRoll extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function carton(): BelongsTo
+    {
+        return $this->belongsTo(DtyCarton::class, 'dty_carton_id');
     }
 
     public function deliveryOrderItem(): HasOne

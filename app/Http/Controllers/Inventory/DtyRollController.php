@@ -19,9 +19,13 @@ class DtyRollController extends Controller
         $status = (string) $request->query('status');
 
         $rolls = DtyRoll::query()
+            ->with('carton')
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('kode_rol', 'like', "%{$search}%")
-                    ->orWhere('nomor_lot', 'like', "%{$search}%");
+                    ->orWhere('nomor_lot', 'like', "%{$search}%")
+                    ->orWhereHas('carton', fn ($cartonQuery) => $cartonQuery
+                        ->where('nomor_hu', 'like', "%{$search}%")
+                        ->orWhere('nomor_merge', 'like', "%{$search}%"));
             }))
             ->when(RollStatus::tryFrom($status) !== null, fn ($query) => $query->where('status', $status))
             ->orderByDesc('id')

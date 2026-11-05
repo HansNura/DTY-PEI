@@ -29,7 +29,8 @@ class Navigation
                     ['label' => 'Scanner Muatan', 'route' => 'warehouse.scans.index', 'icon' => 'scan', 'active' => 'warehouse.scans.*'],
                 ]],
                 ['label' => 'Master Data', 'items' => [
-                    ['label' => 'Gulungan DTY', 'route' => 'warehouse.rolls.index', 'icon' => 'package', 'active' => 'warehouse.rolls.*'],
+                    ['label' => 'Kardus DTY', 'route' => 'warehouse.cartons.index', 'icon' => 'boxes', 'active' => 'warehouse.cartons.*'],
+                    ['label' => 'Stok Bobbin', 'route' => 'warehouse.rolls.index', 'icon' => 'package', 'active' => 'warehouse.rolls.*'],
                 ]],
                 ['label' => 'Akun', 'items' => [$profile]],
             ],
@@ -72,7 +73,7 @@ class Navigation
             ],
             UserRole::AdminGudang => [
                 $dashboard,
-                ['label' => 'Gulungan', 'route' => 'warehouse.rolls.index', 'icon' => 'package', 'active' => 'warehouse.rolls.*'],
+                ['label' => 'Kardus', 'route' => 'warehouse.cartons.index', 'icon' => 'boxes', 'active' => 'warehouse.cartons.*'],
                 ['label' => 'Scan', 'route' => 'warehouse.scans.index', 'icon' => 'scan', 'active' => 'warehouse.scans.*'],
                 $profile,
             ],
