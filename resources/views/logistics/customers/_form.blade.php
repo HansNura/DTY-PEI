@@ -7,7 +7,15 @@
     <x-card title="Identitas pelanggan" description="Kode internal dan informasi perusahaan">
         <div class="grid gap-5 sm:grid-cols-2">
             <x-field label="Kode pelanggan" hint="Dibuat otomatis. Kode ini yang akan dipakai saat pelanggan disimpan.">
-                <x-input id="kode_pelanggan" type="text" value="{{ $customer->kode_pelanggan ?? $previewCode ?? 'Otomatis' }}" readonly class="font-mono bg-slate-50 text-slate-500" />
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-dashed border-teal-300 bg-teal-50/70 px-3.5 py-2.5">
+                    <div class="flex min-w-0 items-center gap-2.5">
+                        <span class="flex size-7 shrink-0 items-center justify-center rounded-lg bg-white text-teal-700 ring-1 ring-teal-200">
+                            <x-icon name="lock" class="size-3.5" />
+                        </span>
+                        <span class="truncate font-mono text-sm font-semibold tracking-wide text-teal-950">{{ $customer->kode_pelanggan ?? $previewCode ?? '—' }}</span>
+                    </div>
+                    <span class="shrink-0 rounded-full bg-teal-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Otomatis</span>
+                </div>
             </x-field>
 
             <x-field label="Nama pabrik pelanggan" name="nama_pabrik" required>

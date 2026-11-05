@@ -195,7 +195,7 @@ class CustomerManagementTest extends TestCase
             ->get(route('logistics.customers.create'))
             ->assertOk()
             ->assertSee('CUST-0001')
-            ->assertSee('readonly', false)
+            ->assertSee('Otomatis')
             ->assertDontSee('name="kode_pelanggan"', false)
             ->assertSee('Contoh: Bandung')
             ->assertSee('Contoh: Jawa Barat')
