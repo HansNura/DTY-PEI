@@ -63,7 +63,6 @@
                     <x-th>Pabrik / Alamat</x-th>
                     <x-th>Kontak penerima</x-th>
                     <x-th>Kota</x-th>
-                    <x-th>Titik maps</x-th>
                     <x-th>Status</x-th>
                     <x-th align="right">Aksi</x-th>
                 </tr>
@@ -94,24 +93,19 @@
                                 <p class="text-[11px] text-slate-500">{{ $customer->provinsi }}</p>
                             @endif
                         </x-td>
-                        <x-td>
-                            @if ($customer->latitude !== null && $customer->longitude !== null)
-                                <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-700 hover:text-brand-900">
-                                    <x-icon name="map-pin" class="size-3.5" /> Buka peta
-                                </a>
-                            @else
-                                <span class="text-slate-400">Belum diatur</span>
-                            @endif
-                        </x-td>
                         <x-td><x-badge :tone="$customer->is_active ? 'success' : 'danger'" dot>{{ $customer->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge></x-td>
                         <x-td align="right">
-                            <div class="flex items-center justify-end gap-2">
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                <x-customer-drawer :customer="$customer" />
                                 <x-button href="{{ route('logistics.customers.edit', $customer) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
                                 <x-confirm-button
                                     :action="route('logistics.customers.toggle-active', $customer)"
                                     method="PATCH"
                                     :title="$customer->is_active ? 'Nonaktifkan pelanggan?' : 'Aktifkan pelanggan?'"
                                     :description="'Status pelanggan '.$customer->nama_pabrik.' akan diubah.'"
+                                    :note="$customer->is_active
+                                        ? 'Pelanggan tidak akan muncul sebagai pilihan saat membuat surat jalan baru. Data dan riwayat pengiriman tetap tersimpan.'
+                                        : 'Pelanggan akan kembali muncul sebagai pilihan saat membuat surat jalan baru.'"
                                     :confirm-label="$customer->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
                                     :tone="$customer->is_active ? 'danger' : 'brand'"
                                     variant="ghost"
@@ -123,7 +117,7 @@
                         </x-td>
                     </tr>
                 @empty
-                    <tr><x-td colspan="6" class="py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</x-td></tr>
+                    <tr><x-td colspan="5" class="py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</x-td></tr>
                 @endforelse
             </tbody>
         </x-table>
@@ -149,19 +143,18 @@
                         @if ($customer->email)
                             <span class="inline-flex items-center gap-1"><x-icon name="mail" class="size-3.5" /> {{ $customer->email }}</span>
                         @endif
-                        @if ($customer->latitude !== null && $customer->longitude !== null)
-                            <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-700">
-                                <x-icon name="map-pin" class="size-3.5" /> Peta
-                            </a>
-                        @endif
                     </div>
-                    <div class="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                    <div class="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                        <x-customer-drawer :customer="$customer" />
                         <x-button href="{{ route('logistics.customers.edit', $customer) }}" variant="secondary" size="sm">Edit</x-button>
                         <x-confirm-button
                             :action="route('logistics.customers.toggle-active', $customer)"
                             method="PATCH"
                             :title="$customer->is_active ? 'Nonaktifkan pelanggan?' : 'Aktifkan pelanggan?'"
                             :description="'Status pelanggan '.$customer->nama_pabrik.' akan diubah.'"
+                            :note="$customer->is_active
+                                ? 'Pelanggan tidak akan muncul sebagai pilihan saat membuat surat jalan baru. Data dan riwayat pengiriman tetap tersimpan.'
+                                : 'Pelanggan akan kembali muncul sebagai pilihan saat membuat surat jalan baru.'"
                             :confirm-label="$customer->is_active ? 'Ya, nonaktifkan' : 'Ya, aktifkan'"
                             :tone="$customer->is_active ? 'danger' : 'brand'"
                             variant="ghost"

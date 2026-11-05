@@ -36,7 +36,10 @@ class CustomerManagementTest extends TestCase
             ->get(route('logistics.customers.index'))
             ->assertOk()
             ->assertSee('Pabrik Tekstil')
-            ->assertSee('maps.google.com');
+            ->assertDontSee('Titik maps')
+            ->assertSee('data-customer-drawer', false)
+            ->assertSee('Buka di Google Maps')
+            ->assertSee('Data dan riwayat pengiriman tetap tersimpan.');
 
         $this->actingAs($logisticsUser)
             ->put(route('logistics.customers.update', $customer), [
