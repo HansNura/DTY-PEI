@@ -1,6 +1,6 @@
 @props(['groups', 'user'])
 
-<aside class="hidden w-64 shrink-0 border-r border-slate-200/80 bg-white lg:flex lg:flex-col">
+<aside class="hidden w-64 shrink-0 border-r border-slate-200/80 bg-white lg:sticky lg:top-0 lg:z-20 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden">
     <div class="flex h-16 shrink-0 items-center border-b border-slate-100 px-5">
         <x-app-logo />
     </div>
