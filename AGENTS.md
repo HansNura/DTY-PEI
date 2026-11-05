@@ -72,6 +72,7 @@ resources/views/components/ komponen UI reusable (button, card, badge, table, dl
 resources/views/layouts/partials/ sidebar, topbar, bottom-nav
 resources/js/app.js         entry Alpine + QR label
 resources/js/tracking-map.js peta Leaflet live tracking
+resources/js/customer-map.js pemilih titik pelanggan (Leaflet)
 resources/css/app.css       token Tailwind + font
 routes/web.php              route web
 tests/Feature/              test perilaku

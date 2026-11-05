@@ -19,6 +19,9 @@ class CustomerController extends Controller
         $customers = Customer::query()
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('nama_pabrik', 'like', "%{$search}%")
+                    ->orWhere('kode_pelanggan', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('kota', 'like', "%{$search}%")
                     ->orWhere('kontak_nama', 'like', "%{$search}%");
             }))
             ->when($status === 'active', fn ($query) => $query->where('is_active', true))

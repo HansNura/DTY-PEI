@@ -1,31 +1,95 @@
+@php
+    $initialLatitude = old('latitude', $customer->latitude ?? '');
+    $initialLongitude = old('longitude', $customer->longitude ?? '');
+@endphp
+
 <div class="space-y-6">
-    <div class="grid gap-5 sm:grid-cols-2">
-        <x-field label="Nama pabrik pelanggan" name="nama_pabrik" required class="sm:col-span-2">
-            <x-input id="nama_pabrik" name="nama_pabrik" type="text" maxlength="150" value="{{ old('nama_pabrik', $customer->nama_pabrik ?? '') }}" required />
-        </x-field>
+    <x-card title="Identitas pelanggan" description="Kode internal dan informasi perusahaan">
+        <div class="grid gap-5 sm:grid-cols-2">
+            <x-field label="Kode pelanggan" name="kode_pelanggan" hint="Opsional, contoh: CUST-0001">
+                <x-input id="kode_pelanggan" name="kode_pelanggan" type="text" maxlength="30" value="{{ old('kode_pelanggan', $customer->kode_pelanggan ?? '') }}" class="font-mono uppercase" />
+            </x-field>
 
-        <x-field label="Alamat pengiriman" name="alamat" required class="sm:col-span-2">
-            <x-textarea id="alamat" name="alamat" rows="3" required>{{ old('alamat', $customer->alamat ?? '') }}</x-textarea>
-        </x-field>
+            <x-field label="Nama pabrik pelanggan" name="nama_pabrik" required>
+                <x-input id="nama_pabrik" name="nama_pabrik" type="text" maxlength="150" value="{{ old('nama_pabrik', $customer->nama_pabrik ?? '') }}" required />
+            </x-field>
 
-        <x-field label="Nama kontak penerima" name="kontak_nama" required>
-            <x-input id="kontak_nama" name="kontak_nama" type="text" maxlength="100" value="{{ old('kontak_nama', $customer->kontak_nama ?? '') }}" required />
-        </x-field>
+            <x-field label="Email perusahaan / kontak" name="email">
+                <x-input id="email" name="email" type="email" maxlength="150" value="{{ old('email', $customer->email ?? '') }}" placeholder="purchasing@pabrik.co.id" />
+            </x-field>
 
-        <x-field label="Telepon penerima" name="kontak_telepon" required>
-            <x-input id="kontak_telepon" name="kontak_telepon" type="tel" maxlength="30" value="{{ old('kontak_telepon', $customer->kontak_telepon ?? '') }}" required />
-        </x-field>
+            <x-field label="NPWP" name="npwp" hint="Opsional">
+                <x-input id="npwp" name="npwp" type="text" maxlength="30" value="{{ old('npwp', $customer->npwp ?? '') }}" />
+            </x-field>
+        </div>
+    </x-card>
 
-        <x-field label="Latitude" name="latitude" hint="Opsional. Isi bersama longitude.">
-            <x-input id="latitude" name="latitude" type="number" min="-90" max="90" step="any" value="{{ old('latitude', $customer->latitude ?? '') }}" />
-        </x-field>
+    <x-card title="Alamat pengiriman" description="Alamat lengkap tujuan pengiriman">
+        <div class="grid gap-5 sm:grid-cols-2">
+            <x-field label="Alamat" name="alamat" required class="sm:col-span-2">
+                <x-textarea id="alamat" name="alamat" rows="3" required>{{ old('alamat', $customer->alamat ?? '') }}</x-textarea>
+            </x-field>
 
-        <x-field label="Longitude" name="longitude" hint="Opsional. Isi bersama latitude.">
-            <x-input id="longitude" name="longitude" type="number" min="-180" max="180" step="any" value="{{ old('longitude', $customer->longitude ?? '') }}" />
-        </x-field>
-    </div>
+            <x-field label="Kota / Kabupaten" name="kota">
+                <x-input id="kota" name="kota" type="text" maxlength="100" value="{{ old('kota', $customer->kota ?? '') }}" />
+            </x-field>
 
-    <p class="rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
-        Koordinat akan ditautkan ke Google Maps dan membantu memperkirakan posisi tujuan pada live tracking.
-    </p>
+            <x-field label="Provinsi" name="provinsi">
+                <x-input id="provinsi" name="provinsi" type="text" maxlength="100" value="{{ old('provinsi', $customer->provinsi ?? '') }}" />
+            </x-field>
+
+            <x-field label="Kode pos" name="kode_pos">
+                <x-input id="kode_pos" name="kode_pos" type="text" maxlength="10" value="{{ old('kode_pos', $customer->kode_pos ?? '') }}" />
+            </x-field>
+        </div>
+    </x-card>
+
+    <x-card title="Kontak penerima" description="Orang yang dapat dihubungi saat pengiriman tiba">
+        <div class="grid gap-5 sm:grid-cols-3">
+            <x-field label="Nama kontak" name="kontak_nama" required>
+                <x-input id="kontak_nama" name="kontak_nama" type="text" maxlength="100" value="{{ old('kontak_nama', $customer->kontak_nama ?? '') }}" required />
+            </x-field>
+
+            <x-field label="Jabatan" name="kontak_jabatan" hint="Opsional">
+                <x-input id="kontak_jabatan" name="kontak_jabatan" type="text" maxlength="100" value="{{ old('kontak_jabatan', $customer->kontak_jabatan ?? '') }}" />
+            </x-field>
+
+            <x-field label="Telepon" name="kontak_telepon" required>
+                <x-input id="kontak_telepon" name="kontak_telepon" type="tel" maxlength="30" value="{{ old('kontak_telepon', $customer->kontak_telepon ?? '') }}" required />
+            </x-field>
+        </div>
+    </x-card>
+
+    <x-card title="Titik lokasi pelanggan" description="Klik peta untuk memilih titik, atau geser marker untuk menyesuaikan.">
+        <div class="overflow-hidden rounded-xl border border-slate-200">
+            <div id="customer-map" class="h-80 w-full bg-slate-100" aria-label="Peta pemilihan lokasi pelanggan"></div>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-slate-500">Koordinat dipakai untuk live tracking dan tautan peta.</p>
+            <button type="button" data-customer-locate class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+                <x-icon name="map-pin" class="size-4" />
+                Gunakan lokasi saya
+            </button>
+        </div>
+        <p data-customer-locate-status class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
+
+        <div class="mt-4 grid gap-5 sm:grid-cols-2">
+            <x-field label="Latitude" name="latitude" hint="Terisi otomatis dari peta. Dapat diedit manual.">
+                <x-input id="latitude" name="latitude" type="number" min="-90" max="90" step="any" value="{{ $initialLatitude }}" />
+            </x-field>
+
+            <x-field label="Longitude" name="longitude" hint="Terisi otomatis dari peta. Dapat diedit manual.">
+                <x-input id="longitude" name="longitude" type="number" min="-180" max="180" step="any" value="{{ $initialLongitude }}" />
+            </x-field>
+        </div>
+    </x-card>
+
+    <x-card title="Catatan" description="Opsional, informasi tambahan untuk tim logistik">
+        <x-textarea id="catatan" name="catatan" rows="2" maxlength="1000">{{ old('catatan', $customer->catatan ?? '') }}</x-textarea>
+    </x-card>
 </div>
+
+@push('scripts')
+    @vite('resources/js/customer-map.js')
+@endpush

@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="space-y-6">
-        <x-page-header title="Master pelanggan" description="Kelola pabrik tujuan, alamat, koordinat, dan kontak penerima.">
+        <x-page-header title="Master pelanggan" description="Kelola kode pelanggan, pabrik tujuan, alamat, kota, kontak penerima, dan titik peta.">
             <x-slot:actions>
                 <x-button href="{{ route('logistics.customers.create') }}" icon="plus">Tambah pelanggan</x-button>
             </x-slot:actions>
@@ -13,7 +13,7 @@
         <x-card padding="p-4">
             <form method="GET" action="{{ route('logistics.customers.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_auto]">
                 <x-field name="q">
-                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari pelanggan atau kontak" aria-label="Cari pelanggan" />
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode, pelanggan, email, kota, atau kontak" aria-label="Cari pelanggan" />
                 </x-field>
 
                 <x-field name="status">
@@ -38,6 +38,7 @@
                 <tr>
                     <x-th>Pabrik / Alamat</x-th>
                     <x-th>Kontak penerima</x-th>
+                    <x-th>Kota</x-th>
                     <x-th>Titik maps</x-th>
                     <x-th>Status</x-th>
                     <x-th align="right">Aksi</x-th>
@@ -47,12 +48,27 @@
                 @forelse ($customers as $customer)
                     <tr class="hover:bg-slate-50/60">
                         <x-td>
+                            @if ($customer->kode_pelanggan)
+                                <p class="font-mono text-[11px] font-medium text-brand-700">{{ $customer->kode_pelanggan }}</p>
+                            @endif
                             <p class="font-medium text-slate-900">{{ $customer->nama_pabrik }}</p>
                             <p class="max-w-sm text-xs text-slate-500">{{ $customer->alamat }}</p>
                         </x-td>
                         <x-td>
                             <p class="font-medium text-slate-800">{{ $customer->kontak_nama }}</p>
+                            @if ($customer->kontak_jabatan)
+                                <p class="text-[11px] text-slate-500">{{ $customer->kontak_jabatan }}</p>
+                            @endif
                             <p class="text-xs text-slate-500">{{ $customer->kontak_telepon }}</p>
+                            @if ($customer->email)
+                                <p class="text-[11px] text-slate-500">{{ $customer->email }}</p>
+                            @endif
+                        </x-td>
+                        <x-td>
+                            <p class="text-slate-700">{{ $customer->kota ?? '—' }}</p>
+                            @if ($customer->provinsi)
+                                <p class="text-[11px] text-slate-500">{{ $customer->provinsi }}</p>
+                            @endif
                         </x-td>
                         <x-td>
                             @if ($customer->latitude !== null && $customer->longitude !== null)
@@ -83,7 +99,7 @@
                         </x-td>
                     </tr>
                 @empty
-                    <tr><x-td colspan="5" class="py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</x-td></tr>
+                    <tr><x-td colspan="6" class="py-8 text-center text-slate-500">Belum ada pelanggan yang cocok dengan filter.</x-td></tr>
                 @endforelse
             </tbody>
         </x-table>
@@ -93,13 +109,22 @@
                 <x-card padding="p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
+                            @if ($customer->kode_pelanggan)
+                                <p class="font-mono text-[11px] font-medium text-brand-700">{{ $customer->kode_pelanggan }}</p>
+                            @endif
                             <p class="text-sm font-semibold text-slate-900">{{ $customer->nama_pabrik }}</p>
                             <p class="text-xs text-slate-500">{{ $customer->alamat }}</p>
+                            @if ($customer->kota)
+                                <p class="text-xs text-slate-500">{{ $customer->kota }}{{ $customer->provinsi ? ', '.$customer->provinsi : '' }}</p>
+                            @endif
                         </div>
                         <x-badge :tone="$customer->is_active ? 'success' : 'danger'" dot>{{ $customer->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge>
                     </div>
                     <div class="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                        <span class="inline-flex items-center gap-1"><x-icon name="phone" class="size-3.5" /> {{ $customer->kontak_nama }} · {{ $customer->kontak_telepon }}</span>
+                        <span class="inline-flex items-center gap-1"><x-icon name="phone" class="size-3.5" /> {{ $customer->kontak_nama }}{{ $customer->kontak_jabatan ? ' ('.$customer->kontak_jabatan.')' : '' }} · {{ $customer->kontak_telepon }}</span>
+                        @if ($customer->email)
+                            <span class="inline-flex items-center gap-1"><x-icon name="mail" class="size-3.5" /> {{ $customer->email }}</span>
+                        @endif
                         @if ($customer->latitude !== null && $customer->longitude !== null)
                             <a href="https://maps.google.com/?q={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-brand-700">
                                 <x-icon name="map-pin" class="size-3.5" /> Peta

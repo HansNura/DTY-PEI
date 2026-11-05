@@ -11,12 +11,20 @@ class Customer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'kode_pelanggan',
         'nama_pabrik',
+        'email',
+        'npwp',
         'alamat',
+        'kota',
+        'provinsi',
+        'kode_pos',
         'kontak_nama',
+        'kontak_jabatan',
         'kontak_telepon',
         'latitude',
         'longitude',
+        'catatan',
         'is_active',
     ];
 

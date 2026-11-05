@@ -75,16 +75,24 @@ Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
+| kode_pelanggan | varchar(30) unique nullable | Kode internal pelanggan |
 | nama_pabrik | varchar(150) | Nama pelanggan |
+| email | varchar(150) nullable | Email perusahaan / kontak |
+| npwp | varchar(30) nullable | NPWP pelanggan |
 | alamat | text | Alamat pengiriman |
+| kota | varchar(100) nullable | Kota / kabupaten |
+| provinsi | varchar(100) nullable | Provinsi |
+| kode_pos | varchar(10) nullable | Kode pos |
 | kontak_nama | varchar(100) | PIC penerima |
+| kontak_jabatan | varchar(100) nullable | Jabatan PIC |
 | kontak_telepon | varchar(30) | |
 | latitude | decimal(10,7) nullable | Titik maps |
 | longitude | decimal(10,7) nullable | Titik maps |
+| catatan | text nullable | Catatan logistik |
 | is_active | boolean | |
 | created_at / updated_at | timestamp | |
 
-Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk relasi pengiriman.
+Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk relasi pengiriman. Titik koordinat dipilih lewat peta Leaflet pada form (klik peta, geser marker, atau gunakan lokasi perangkat).
 
 ### `fleets`
 

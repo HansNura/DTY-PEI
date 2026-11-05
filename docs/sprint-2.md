@@ -17,7 +17,8 @@ Status: selesai
 - `DtyRoll` menyimpan `kode_rol` dan `qr_token` unik; keduanya dibuat oleh `QrCodeService`.
 - STATUS gulungan: `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled`.
 - Label QR dirender di browser memakai pustaka `qrcode` dan siap dicetak pada ukuran thermal.
-- Pelanggan menyimpan `latitude`/`longitude` dengan validasi rentang dan presisi database.
+- Pelanggan menyimpan kode internal, email, NPWP, alamat lengkap (kota/provinsi/kode pos), kontak penerima beserta jabatan, catatan, dan koordinat.
+- Titik pelanggan dipilih lewat peta Leaflet: klik peta, geser marker, atau gunakan lokasi perangkat; latitude/longitude terisi otomatis dan tetap dapat diedit manual.
 - Pelanggan dan armada dinonaktifkan melalui `is_active`, bukan dihapus.
 - Driver utama armada wajib akun aktif dengan peran `driver`.
 

@@ -1,0 +1,120 @@
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+const container = document.getElementById('customer-map');
+const latitudeInput = document.getElementById('latitude');
+const longitudeInput = document.getElementById('longitude');
+const locateButton = document.querySelector('[data-customer-locate]');
+const locateStatus = document.querySelector('[data-customer-locate-status]');
+
+if (container && latitudeInput && longitudeInput) {
+    const parseCoordinate = (value) => {
+        const number = Number.parseFloat(String(value).replace(',', '.'));
+
+        return Number.isFinite(number) ? number : null;
+    };
+
+    const initialLatitude = parseCoordinate(latitudeInput.value);
+    const initialLongitude = parseCoordinate(longitudeInput.value);
+    const hasInitialPoint = initialLatitude !== null && initialLongitude !== null;
+
+    const map = L.map(container, {
+        scrollWheelZoom: true,
+    }).setView(hasInitialPoint ? [initialLatitude, initialLongitude] : [-2.5, 118.0], hasInitialPoint ? 14 : 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    const markerIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:28px;height:28px;border-radius:50% 50% 50% 0;background:#0d9488;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 10px rgba(15,23,42,.35);"></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+    });
+
+    let marker = null;
+
+    const syncInputs = (latitude, longitude) => {
+        latitudeInput.value = latitude.toFixed(7);
+        longitudeInput.value = longitude.toFixed(7);
+        latitudeInput.dispatchEvent(new Event('input', { bubbles: true }));
+        longitudeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    const placeMarker = (latitude, longitude) => {
+        if (marker === null) {
+            marker = L.marker([latitude, longitude], {
+                icon: markerIcon,
+                draggable: true,
+            }).addTo(map);
+
+            marker.on('dragend', () => {
+                const position = marker.getLatLng();
+                syncInputs(position.lat, position.lng);
+            });
+        } else {
+            marker.setLatLng([latitude, longitude]);
+        }
+    };
+
+    if (hasInitialPoint) {
+        placeMarker(initialLatitude, initialLongitude);
+    }
+
+    map.on('click', (event) => {
+        placeMarker(event.latlng.lat, event.latlng.lng);
+        syncInputs(event.latlng.lat, event.latlng.lng);
+    });
+
+    const updateFromInputs = () => {
+        const latitude = parseCoordinate(latitudeInput.value);
+        const longitude = parseCoordinate(longitudeInput.value);
+
+        if (latitude === null || longitude === null) {
+            return;
+        }
+
+        placeMarker(latitude, longitude);
+        map.panTo([latitude, longitude]);
+    };
+
+    latitudeInput.addEventListener('change', updateFromInputs);
+    longitudeInput.addEventListener('change', updateFromInputs);
+
+    locateButton?.addEventListener('click', () => {
+        if (! navigator.geolocation) {
+            if (locateStatus) {
+                locateStatus.textContent = 'Perangkat ini tidak mendukung geolokasi.';
+            }
+
+            return;
+        }
+
+        if (locateStatus) {
+            locateStatus.textContent = 'Mengambil lokasi perangkat...';
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                map.setView([latitude, longitude], 15);
+                placeMarker(latitude, longitude);
+                syncInputs(latitude, longitude);
+
+                if (locateStatus) {
+                    locateStatus.textContent = 'Lokasi perangkat berhasil dipakai.';
+                }
+            },
+            () => {
+                if (locateStatus) {
+                    locateStatus.textContent = 'Lokasi tidak dapat diambil. Periksa izin lokasi.';
+                }
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+        );
+    });
+
+    window.setTimeout(() => map.invalidateSize(), 150);
+}

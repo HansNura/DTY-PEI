@@ -107,6 +107,7 @@ Aturan komponen:
 - Kontras teks minimal AA.
 - Hormati `prefers-reduced-motion` (sudah di `app.css`).
 - Peta Leaflet dimuat hanya di halaman tracking lewat `resources/js/tracking-map.js`.
+- Form pelanggan memakai `resources/js/customer-map.js`; pertahankan id `customer-map`, `latitude`, `longitude`, dan tombol `data-customer-locate`.
 - Tidak menambah library chart/icon font; grafik memakai CSS/SVG.
 
 ## Yang harus dihindari

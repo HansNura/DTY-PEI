@@ -103,4 +103,70 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($warehouseUser)->get(route('logistics.customers.index'))->assertForbidden();
     }
+
+    public function test_customer_detail_fields_are_saved_and_normalized(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+
+        $this->actingAs($logisticsUser)
+            ->post(route('logistics.customers.store'), [
+                'kode_pelanggan' => 'cust-0001',
+                'nama_pabrik' => 'PT Contoh Tekstil',
+                'email' => 'PURCHASING@CONTOH.CO.ID',
+                'npwp' => '01.234.567.8-901.000',
+                'alamat' => 'Jl. Industri No. 10',
+                'kota' => 'Bandung',
+                'provinsi' => 'Jawa Barat',
+                'kode_pos' => '40123',
+                'kontak_nama' => 'Sari',
+                'kontak_jabatan' => 'Purchasing',
+                'kontak_telepon' => '08123456789',
+                'catatan' => 'Hubungi sebelum masuk gerbang.',
+            ])
+            ->assertRedirect(route('logistics.customers.index'));
+
+        $this->assertDatabaseHas('customers', [
+            'kode_pelanggan' => 'CUST-0001',
+            'email' => 'purchasing@contoh.co.id',
+            'nama_pabrik' => 'PT Contoh Tekstil',
+            'kota' => 'Bandung',
+            'provinsi' => 'Jawa Barat',
+            'kontak_jabatan' => 'Purchasing',
+        ]);
+    }
+
+    public function test_customer_code_must_be_unique(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+        Customer::factory()->create(['kode_pelanggan' => 'CUST-0001']);
+
+        $this->actingAs($logisticsUser)
+            ->post(route('logistics.customers.store'), [
+                'kode_pelanggan' => 'CUST-0001',
+                'nama_pabrik' => 'Pabrik Lain',
+                'alamat' => 'Jl. Lain No. 1',
+                'kontak_nama' => 'Budi',
+                'kontak_telepon' => '081200000000',
+            ])
+            ->assertSessionHasErrors('kode_pelanggan');
+    }
+
+    public function test_customer_form_renders_map_picker(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+        $customer = Customer::factory()->create();
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.create'))
+            ->assertOk()
+            ->assertSee('customer-map', false)
+            ->assertSee('Gunakan lokasi saya')
+            ->assertSee('id="latitude"', false)
+            ->assertSee('id="longitude"', false);
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.edit', $customer))
+            ->assertOk()
+            ->assertSee('customer-map', false);
+    }
 }
