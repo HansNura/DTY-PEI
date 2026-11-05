@@ -36,14 +36,18 @@ class CustomerController extends Controller
 
     public function create(): View
     {
-        return view('logistics.customers.create');
+        return view('logistics.customers.create', [
+            'previewCode' => $this->nextCustomerCode(),
+        ]);
     }
 
     public function store(SaveCustomerRequest $request): RedirectResponse
     {
         $customer = DB::transaction(function () use ($request): Customer {
             $customer = Customer::create($request->validated());
-            $customer->update(['kode_pelanggan' => $this->generateCustomerCode($customer)]);
+            $customer->update([
+                'kode_pelanggan' => $this->nextCustomerCode($customer->id, $customer->id),
+            ]);
 
             return $customer;
         });
@@ -74,15 +78,16 @@ class CustomerController extends Controller
             : 'Pelanggan berhasil dinonaktifkan.');
     }
 
-    private function generateCustomerCode(Customer $customer): string
+    private function nextCustomerCode(?int $id = null, ?int $ignoreId = null): string
     {
-        $base = 'CUST-'.str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+        $id ??= ((int) Customer::max('id')) + 1;
+        $base = 'CUST-'.str_pad((string) $id, 4, '0', STR_PAD_LEFT);
         $code = $base;
         $suffix = 1;
 
         while (Customer::query()
             ->where('kode_pelanggan', $code)
-            ->whereKeyNot($customer->getKey())
+            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
             ->exists()) {
             $suffix++;
             $code = "{$base}-{$suffix}";

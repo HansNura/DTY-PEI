@@ -6,8 +6,8 @@
 <div class="space-y-6">
     <x-card title="Identitas pelanggan" description="Kode internal dan informasi perusahaan">
         <div class="grid gap-5 sm:grid-cols-2">
-            <x-field label="Kode pelanggan" hint="Dibuat otomatis oleh sistem saat pelanggan disimpan.">
-                <x-input id="kode_pelanggan" type="text" value="{{ $customer->kode_pelanggan ?? 'Otomatis' }}" readonly class="font-mono bg-slate-50 text-slate-500" />
+            <x-field label="Kode pelanggan" hint="Dibuat otomatis. Kode ini yang akan dipakai saat pelanggan disimpan.">
+                <x-input id="kode_pelanggan" type="text" value="{{ $customer->kode_pelanggan ?? $previewCode ?? 'Otomatis' }}" readonly class="font-mono bg-slate-50 text-slate-500" />
             </x-field>
 
             <x-field label="Nama pabrik pelanggan" name="nama_pabrik" required>
