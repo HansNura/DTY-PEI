@@ -41,19 +41,46 @@
             </ul>
         </div>
 
-        <div class="p-6 sm:p-10">
+        <div class="p-6 sm:p-10"
+             data-initial-email="{{ old('email') }}"
+             x-data="{
+                email: '',
+                password: '',
+                demoOpen: false,
+                selectedRole: null,
+                selectAccount(role, email) {
+                    this.email = email;
+                    this.password = 'password';
+                    this.selectedRole = role;
+                    this.demoOpen = true;
+                    this.$nextTick(() => this.$refs.loginButton?.focus());
+                }
+             }"
+             x-init="email = $el.dataset.initialEmail || ''">
             <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Masuk ke PMT</h2>
             <p class="mt-1 text-sm text-slate-500">Gunakan akun yang diberikan administrator.</p>
+
+            <template x-if="selectedRole">
+                <div class="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    <span>
+                        Akun <strong x-text="selectedRole"></strong> dipilih:
+                        <span class="font-mono" x-text="email"></span>
+                        <span class="text-emerald-600">/</span>
+                        <span class="font-mono">password</span>
+                    </span>
+                    <button type="button" class="text-xs font-semibold underline" x-on:click="demoOpen = true">Ganti akun</button>
+                </div>
+            </template>
 
             <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5">
                 @csrf
 
                 <x-field label="Email" name="email" required>
-                    <x-input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username" placeholder="nama@perusahaan.com" />
+                    <x-input id="email" name="email" type="email" x-model="email" value="{{ old('email') }}" required autofocus autocomplete="username" placeholder="nama@perusahaan.com" />
                 </x-field>
 
                 <x-field label="Kata sandi" name="password" required>
-                    <x-input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••" />
+                    <x-input id="password" name="password" type="password" x-model="password" required autocomplete="current-password" placeholder="••••••••" />
                 </x-field>
 
                 <label class="flex items-center gap-2 text-sm text-slate-600">
@@ -61,29 +88,39 @@
                     Ingat saya di perangkat ini
                 </label>
 
-                <x-button type="submit" class="w-full" size="lg">Masuk</x-button>
+                <x-button type="submit" class="w-full" size="lg" x-ref="loginButton">Masuk</x-button>
             </form>
 
-            <div class="mt-8 border-t border-slate-100 pt-5" x-data="{ show: false }">
-                <button type="button" class="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800" x-on:click="show = ! show">
+            <div class="mt-8 border-t border-slate-100 pt-5">
+                <button type="button" class="flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800" x-on:click="demoOpen = ! demoOpen">
                     <x-icon name="users" class="size-4" />
-                    <span x-show="! show">Lihat akun demo</span>
-                    <span x-show="show" x-cloak>Sembunyikan akun demo</span>
+                    <span x-show="! demoOpen">Lihat akun demo</span>
+                    <span x-show="demoOpen" x-cloak>Sembunyikan akun demo</span>
                 </button>
 
-                <div class="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2" x-cloak x-show="show">
+                <div class="mt-3 grid gap-2 sm:grid-cols-2" x-cloak x-show="demoOpen">
                     @foreach ([
                         ['Administrator', 'admin@pmt.test'],
                         ['Admin Gudang', 'gudang@pmt.test'],
                         ['Tim Logistik', 'logistik@pmt.test'],
                         ['Driver', 'driver@pmt.test'],
                     ] as [$role, $email])
-                        <div class="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2">
-                            <p class="text-xs font-medium text-slate-500">{{ $role }}</p>
-                            <p class="font-mono text-xs text-slate-800">{{ $email }}</p>
-                        </div>
+                        <button type="button" x-on:click="selectAccount('{{ $role }}', '{{ $email }}')"
+                                class="group rounded-xl border px-3 py-2.5 text-left transition"
+                                x-bind:class="selectedRole === '{{ $role }}' ? 'border-brand-300 bg-brand-50 ring-1 ring-brand-200' : 'border-slate-200 bg-slate-50/70 hover:border-brand-200 hover:bg-brand-50/40'">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-semibold text-slate-900">{{ $role }}</span>
+                                <span class="text-[10px] font-medium text-brand-700" x-show="selectedRole === '{{ $role }}'" x-cloak>Dipilih</span>
+                                <x-icon name="arrow-right" class="size-3.5 text-slate-300 transition group-hover:text-brand-600" x-show="selectedRole !== '{{ $role }}'" />
+                            </div>
+                            <p class="mt-1 truncate font-mono text-[11px] text-slate-700">{{ $email }}</p>
+                            <p class="mt-0.5 font-mono text-[11px] text-slate-500">password: <span class="font-semibold text-slate-700">password</span></p>
+                        </button>
                     @endforeach
-                    <p class="text-xs text-slate-500 sm:col-span-2">Semua akun demo memakai kata sandi <span class="font-mono">password</span>.</p>
+
+                    <p class="text-xs text-slate-500 sm:col-span-2">
+                        Klik salah satu akun untuk mengisi email dan kata sandi otomatis, lalu klik <strong>Masuk</strong>.
+                    </p>
                 </div>
             </div>
         </div>
