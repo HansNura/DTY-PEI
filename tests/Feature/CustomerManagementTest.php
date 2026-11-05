@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\User;
+use Database\Seeders\CustomerSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -207,5 +208,20 @@ class CustomerManagementTest extends TestCase
             ->get(route('logistics.customers.edit', $customer))
             ->assertOk()
             ->assertSee('CUST-0042');
+    }
+
+    public function test_customer_seeder_assigns_codes_to_demo_customers(): void
+    {
+        $this->seed(CustomerSeeder::class);
+
+        $this->assertDatabaseCount('customers', 6);
+        $this->assertDatabaseHas('customers', [
+            'kode_pelanggan' => 'CUST-0001',
+            'nama_pabrik' => 'PT Demo Tekstil',
+            'alamat' => 'Jl. Industri No. 10',
+            'kota' => 'Bandung',
+            'kontak_nama' => 'Rina',
+            'kontak_telepon' => '081200000001',
+        ]);
     }
 }

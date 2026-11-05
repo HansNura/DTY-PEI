@@ -47,10 +47,18 @@ Dibuat oleh `UserSeeder`:
 
 Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
+### Data demo pelanggan
+
+`CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
+
+```bash
+php artisan db:seed --class=CustomerSeeder
+```
+
 ## Perintah berguna
 
 ```bash
-php artisan migrate:fresh --seed   # reset database + akun demo
+php artisan migrate:fresh --seed   # reset database + akun & pelanggan demo
 php artisan test                   # seluruh test
 composer ci                        # Pint check + seluruh test
 composer lint                      # perbaiki format kode otomatis
