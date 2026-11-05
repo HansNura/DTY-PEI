@@ -16,7 +16,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Warehouse\LoadScanController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home')->name('home');
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : view('home');
+})->name('home');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

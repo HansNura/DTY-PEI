@@ -78,4 +78,13 @@ class AuthenticationTest extends TestCase
     {
         $this->get('/dashboard')->assertRedirect(route('login'));
     }
+
+    public function test_authenticated_user_is_redirected_from_home_to_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertRedirect(route('dashboard'));
+    }
 }
