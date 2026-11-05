@@ -5,7 +5,6 @@ namespace App\Http\Requests\Logistics;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 
 class SaveCustomerRequest extends FormRequest
 {
@@ -20,12 +19,6 @@ class SaveCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kode_pelanggan' => [
-                'nullable',
-                'string',
-                'max:30',
-                Rule::unique('customers', 'kode_pelanggan')->ignore($this->route('customer')),
-            ],
             'nama_pabrik' => ['required', 'string', 'max:150'],
             'email' => ['nullable', 'email', 'max:150'],
             'npwp' => ['nullable', 'string', 'max:30'],
@@ -45,7 +38,6 @@ class SaveCustomerRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'kode_pelanggan' => $this->filled('kode_pelanggan') ? Str::upper(trim((string) $this->input('kode_pelanggan'))) : null,
             'email' => $this->filled('email') ? Str::lower(trim((string) $this->input('email'))) : null,
             'npwp' => $this->filled('npwp') ? trim((string) $this->input('npwp')) : null,
             'kota' => $this->filled('kota') ? trim((string) $this->input('kota')) : null,
@@ -60,8 +52,6 @@ class SaveCustomerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'kode_pelanggan.max' => 'Kode pelanggan maksimal 30 karakter.',
-            'kode_pelanggan.unique' => 'Kode pelanggan sudah digunakan.',
             'nama_pabrik.required' => 'Nama pabrik wajib diisi.',
             'nama_pabrik.string' => 'Nama pabrik harus berupa teks.',
             'nama_pabrik.max' => 'Nama pabrik maksimal 150 karakter.',

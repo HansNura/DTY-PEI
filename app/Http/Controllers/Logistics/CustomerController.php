@@ -7,6 +7,7 @@ use App\Http\Requests\Logistics\SaveCustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CustomerController extends Controller
@@ -40,10 +41,15 @@ class CustomerController extends Controller
 
     public function store(SaveCustomerRequest $request): RedirectResponse
     {
-        Customer::create($request->validated());
+        $customer = DB::transaction(function () use ($request): Customer {
+            $customer = Customer::create($request->validated());
+            $customer->update(['kode_pelanggan' => $this->generateCustomerCode($customer)]);
+
+            return $customer;
+        });
 
         return redirect()->route('logistics.customers.index')
-            ->with('status', 'Data pelanggan berhasil ditambahkan.');
+            ->with('status', "Data pelanggan {$customer->kode_pelanggan} berhasil ditambahkan.");
     }
 
     public function edit(Customer $customer): View
@@ -66,5 +72,22 @@ class CustomerController extends Controller
         return back()->with('status', $customer->is_active
             ? 'Pelanggan berhasil diaktifkan.'
             : 'Pelanggan berhasil dinonaktifkan.');
+    }
+
+    private function generateCustomerCode(Customer $customer): string
+    {
+        $base = 'CUST-'.str_pad((string) $customer->id, 4, '0', STR_PAD_LEFT);
+        $code = $base;
+        $suffix = 1;
+
+        while (Customer::query()
+            ->where('kode_pelanggan', $code)
+            ->whereKeyNot($customer->getKey())
+            ->exists()) {
+            $suffix++;
+            $code = "{$base}-{$suffix}";
+        }
+
+        return $code;
     }
 }

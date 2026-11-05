@@ -75,7 +75,7 @@ Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
-| kode_pelanggan | varchar(30) unique nullable | Kode internal pelanggan |
+| kode_pelanggan | varchar(30) unique nullable | Dibuat otomatis oleh sistem saat pelanggan dibuat (format `CUST-0001`) |
 | nama_pabrik | varchar(150) | Nama pelanggan |
 | email | varchar(150) nullable | Email perusahaan / kontak |
 | npwp | varchar(30) nullable | NPWP pelanggan |

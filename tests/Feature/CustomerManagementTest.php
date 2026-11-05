@@ -110,7 +110,6 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($logisticsUser)
             ->post(route('logistics.customers.store'), [
-                'kode_pelanggan' => 'cust-0001',
                 'nama_pabrik' => 'PT Contoh Tekstil',
                 'email' => 'PURCHASING@CONTOH.CO.ID',
                 'npwp' => '01.234.567.8-901.000',
@@ -135,20 +134,34 @@ class CustomerManagementTest extends TestCase
         ]);
     }
 
-    public function test_customer_code_must_be_unique(): void
+    public function test_customer_code_is_generated_automatically_and_ignores_manual_input(): void
     {
         $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
-        Customer::factory()->create(['kode_pelanggan' => 'CUST-0001']);
+
+        $payload = [
+            'nama_pabrik' => 'Pabrik A',
+            'alamat' => 'Jl. Lain No. 1',
+            'kontak_nama' => 'Budi',
+            'kontak_telepon' => '081200000000',
+        ];
 
         $this->actingAs($logisticsUser)
-            ->post(route('logistics.customers.store'), [
-                'kode_pelanggan' => 'CUST-0001',
-                'nama_pabrik' => 'Pabrik Lain',
-                'alamat' => 'Jl. Lain No. 1',
-                'kontak_nama' => 'Budi',
-                'kontak_telepon' => '081200000000',
-            ])
-            ->assertSessionHasErrors('kode_pelanggan');
+            ->post(route('logistics.customers.store'), $payload + ['kode_pelanggan' => 'MANUAL-999'])
+            ->assertRedirect(route('logistics.customers.index'));
+
+        $this->actingAs($logisticsUser)
+            ->post(route('logistics.customers.store'), array_merge($payload, ['nama_pabrik' => 'Pabrik B']))
+            ->assertRedirect(route('logistics.customers.index'));
+
+        $this->assertDatabaseHas('customers', [
+            'nama_pabrik' => 'Pabrik A',
+            'kode_pelanggan' => 'CUST-0001',
+        ]);
+        $this->assertDatabaseHas('customers', [
+            'nama_pabrik' => 'Pabrik B',
+            'kode_pelanggan' => 'CUST-0002',
+        ]);
+        $this->assertDatabaseMissing('customers', ['kode_pelanggan' => 'MANUAL-999']);
     }
 
     public function test_customer_form_renders_map_picker(): void
@@ -170,17 +183,29 @@ class CustomerManagementTest extends TestCase
             ->assertSee('customer-map', false);
     }
 
-    public function test_customer_manual_fields_have_placeholders(): void
+    public function test_customer_form_shows_automatic_code_and_address_placeholders(): void
     {
         $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
 
         $this->actingAs($logisticsUser)
             ->get(route('logistics.customers.create'))
             ->assertOk()
-            ->assertSee('name="kode_pelanggan"', false)
-            ->assertSee('Contoh: CUST-0001')
+            ->assertSee('Otomatis')
+            ->assertSee('readonly', false)
+            ->assertDontSee('name="kode_pelanggan"', false)
             ->assertSee('Contoh: Bandung')
             ->assertSee('Contoh: Jawa Barat')
             ->assertSee('Contoh: 40123');
+    }
+
+    public function test_customer_code_is_displayed_on_edit(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+        $customer = Customer::factory()->create(['kode_pelanggan' => 'CUST-0042']);
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.edit', $customer))
+            ->assertOk()
+            ->assertSee('CUST-0042');
     }
 }
