@@ -4,13 +4,12 @@ import 'leaflet/dist/leaflet.css';
 const container = document.getElementById('customer-map');
 const latitudeInput = document.getElementById('latitude');
 const longitudeInput = document.getElementById('longitude');
-const locateButton = document.querySelector('[data-customer-locate]');
 const clearButton = document.querySelector('[data-customer-clear]');
-const locateStatus = document.querySelector('[data-customer-locate-status]');
+const mapStatus = document.querySelector('[data-customer-map-status]');
 
 const setStatus = (message) => {
-    if (locateStatus) {
-        locateStatus.textContent = message;
+    if (mapStatus) {
+        mapStatus.textContent = message;
     }
 };
 
@@ -93,30 +92,6 @@ if (container && latitudeInput && longitudeInput) {
 
     latitudeInput.addEventListener('change', updateFromInputs);
     longitudeInput.addEventListener('change', updateFromInputs);
-
-    locateButton?.addEventListener('click', () => {
-        if (! navigator.geolocation) {
-            setStatus('Perangkat ini tidak mendukung geolokasi.');
-
-            return;
-        }
-
-        setStatus('Mengambil lokasi perangkat...');
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                map.setView([latitude, longitude], 15);
-                placeMarker(latitude, longitude);
-                syncInputs(latitude, longitude);
-                setStatus('Lokasi perangkat berhasil dipakai.');
-            },
-            () => {
-                setStatus('Lokasi tidak dapat diambil. Periksa izin lokasi.');
-            },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
-        );
-    });
 
     clearButton?.addEventListener('click', () => {
         latitudeInput.value = '';

@@ -174,7 +174,8 @@ class CustomerManagementTest extends TestCase
             ->get(route('logistics.customers.create'))
             ->assertOk()
             ->assertSee('customer-map', false)
-            ->assertSee('Gunakan lokasi saya')
+            ->assertSee('Hapus titik')
+            ->assertDontSee('Gunakan lokasi saya')
             ->assertSee('id="latitude"', false)
             ->assertSee('id="longitude"', false);
 

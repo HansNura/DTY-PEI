@@ -68,17 +68,13 @@
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
             <p class="text-xs text-slate-500">Koordinat dipakai untuk live tracking dan tautan peta.</p>
             <div class="flex flex-wrap items-center gap-2">
-                <button type="button" data-customer-locate class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
-                    <x-icon name="map-pin" class="size-4" />
-                    Gunakan lokasi saya
-                </button>
                 <button type="button" data-customer-clear class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
                     <x-icon name="x" class="size-4" />
                     Hapus titik
                 </button>
             </div>
         </div>
-        <p data-customer-locate-status class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
+        <p data-customer-map-status class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
 
         <div class="mt-4 grid gap-5 sm:grid-cols-2">
             <x-field label="Latitude" name="latitude" hint="Terisi otomatis dari peta. Dapat diedit manual.">
