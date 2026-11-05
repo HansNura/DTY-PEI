@@ -6,12 +6,12 @@
 <div class="space-y-6">
     <x-card title="Identitas pelanggan" description="Kode internal dan informasi perusahaan">
         <div class="grid gap-5 sm:grid-cols-2">
-            <x-field label="Kode pelanggan" name="kode_pelanggan" hint="Opsional, contoh: CUST-0001">
-                <x-input id="kode_pelanggan" name="kode_pelanggan" type="text" maxlength="30" value="{{ old('kode_pelanggan', $customer->kode_pelanggan ?? '') }}" class="font-mono uppercase" />
+            <x-field label="Kode pelanggan" name="kode_pelanggan" hint="Opsional, isi manual. Contoh: CUST-0001">
+                <x-input id="kode_pelanggan" name="kode_pelanggan" type="text" maxlength="30" value="{{ old('kode_pelanggan', $customer->kode_pelanggan ?? '') }}" placeholder="Contoh: CUST-0001" class="font-mono uppercase" />
             </x-field>
 
             <x-field label="Nama pabrik pelanggan" name="nama_pabrik" required>
-                <x-input id="nama_pabrik" name="nama_pabrik" type="text" maxlength="150" value="{{ old('nama_pabrik', $customer->nama_pabrik ?? '') }}" required />
+                <x-input id="nama_pabrik" name="nama_pabrik" type="text" maxlength="150" value="{{ old('nama_pabrik', $customer->nama_pabrik ?? '') }}" placeholder="Contoh: PT Contoh Tekstil" required />
             </x-field>
 
             <x-field label="Email perusahaan / kontak" name="email">
@@ -19,7 +19,7 @@
             </x-field>
 
             <x-field label="NPWP" name="npwp" hint="Opsional">
-                <x-input id="npwp" name="npwp" type="text" maxlength="30" value="{{ old('npwp', $customer->npwp ?? '') }}" />
+                <x-input id="npwp" name="npwp" type="text" maxlength="30" value="{{ old('npwp', $customer->npwp ?? '') }}" placeholder="Contoh: 01.234.567.8-901.000" />
             </x-field>
         </div>
     </x-card>
@@ -27,19 +27,19 @@
     <x-card title="Alamat pengiriman" description="Alamat lengkap tujuan pengiriman">
         <div class="grid gap-5 sm:grid-cols-2">
             <x-field label="Alamat" name="alamat" required class="sm:col-span-2">
-                <x-textarea id="alamat" name="alamat" rows="3" required>{{ old('alamat', $customer->alamat ?? '') }}</x-textarea>
+                <x-textarea id="alamat" name="alamat" rows="3" placeholder="Nama jalan, nomor, kelurahan, kecamatan" required>{{ old('alamat', $customer->alamat ?? '') }}</x-textarea>
             </x-field>
 
             <x-field label="Kota / Kabupaten" name="kota">
-                <x-input id="kota" name="kota" type="text" maxlength="100" value="{{ old('kota', $customer->kota ?? '') }}" />
+                <x-input id="kota" name="kota" type="text" maxlength="100" value="{{ old('kota', $customer->kota ?? '') }}" placeholder="Contoh: Bandung" />
             </x-field>
 
             <x-field label="Provinsi" name="provinsi">
-                <x-input id="provinsi" name="provinsi" type="text" maxlength="100" value="{{ old('provinsi', $customer->provinsi ?? '') }}" />
+                <x-input id="provinsi" name="provinsi" type="text" maxlength="100" value="{{ old('provinsi', $customer->provinsi ?? '') }}" placeholder="Contoh: Jawa Barat" />
             </x-field>
 
             <x-field label="Kode pos" name="kode_pos">
-                <x-input id="kode_pos" name="kode_pos" type="text" maxlength="10" value="{{ old('kode_pos', $customer->kode_pos ?? '') }}" />
+                <x-input id="kode_pos" name="kode_pos" type="text" maxlength="10" value="{{ old('kode_pos', $customer->kode_pos ?? '') }}" placeholder="Contoh: 40123" />
             </x-field>
         </div>
     </x-card>
@@ -47,15 +47,15 @@
     <x-card title="Kontak penerima" description="Orang yang dapat dihubungi saat pengiriman tiba">
         <div class="grid gap-5 sm:grid-cols-3">
             <x-field label="Nama kontak" name="kontak_nama" required>
-                <x-input id="kontak_nama" name="kontak_nama" type="text" maxlength="100" value="{{ old('kontak_nama', $customer->kontak_nama ?? '') }}" required />
+                <x-input id="kontak_nama" name="kontak_nama" type="text" maxlength="100" value="{{ old('kontak_nama', $customer->kontak_nama ?? '') }}" placeholder="Contoh: Sari" required />
             </x-field>
 
             <x-field label="Jabatan" name="kontak_jabatan" hint="Opsional">
-                <x-input id="kontak_jabatan" name="kontak_jabatan" type="text" maxlength="100" value="{{ old('kontak_jabatan', $customer->kontak_jabatan ?? '') }}" />
+                <x-input id="kontak_jabatan" name="kontak_jabatan" type="text" maxlength="100" value="{{ old('kontak_jabatan', $customer->kontak_jabatan ?? '') }}" placeholder="Contoh: Purchasing" />
             </x-field>
 
             <x-field label="Telepon" name="kontak_telepon" required>
-                <x-input id="kontak_telepon" name="kontak_telepon" type="tel" maxlength="30" value="{{ old('kontak_telepon', $customer->kontak_telepon ?? '') }}" required />
+                <x-input id="kontak_telepon" name="kontak_telepon" type="tel" maxlength="30" value="{{ old('kontak_telepon', $customer->kontak_telepon ?? '') }}" placeholder="Contoh: 08123456789" required />
             </x-field>
         </div>
     </x-card>

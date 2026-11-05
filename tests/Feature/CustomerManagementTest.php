@@ -169,4 +169,18 @@ class CustomerManagementTest extends TestCase
             ->assertOk()
             ->assertSee('customer-map', false);
     }
+
+    public function test_customer_manual_fields_have_placeholders(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.create'))
+            ->assertOk()
+            ->assertSee('name="kode_pelanggan"', false)
+            ->assertSee('Contoh: CUST-0001')
+            ->assertSee('Contoh: Bandung')
+            ->assertSee('Contoh: Jawa Barat')
+            ->assertSee('Contoh: 40123');
+    }
 }
