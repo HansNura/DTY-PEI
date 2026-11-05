@@ -40,7 +40,7 @@ class CustomerController extends Controller
 
     public function store(SaveCustomerRequest $request): RedirectResponse
     {
-        $customer = Customer::create($request->validated());
+        Customer::create($request->validated());
 
         return redirect()->route('logistics.customers.index')
             ->with('status', 'Data pelanggan berhasil ditambahkan.');
