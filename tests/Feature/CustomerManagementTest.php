@@ -213,6 +213,33 @@ class CustomerManagementTest extends TestCase
             ->assertSee('CUST-0042');
     }
 
+    public function test_customer_index_filters_by_search_and_status(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+        Customer::factory()->create([
+            'kode_pelanggan' => 'CUST-1001',
+            'nama_pabrik' => 'Pabrik Aktif',
+            'is_active' => true,
+        ]);
+        Customer::factory()->create([
+            'kode_pelanggan' => 'CUST-1002',
+            'nama_pabrik' => 'Pabrik Nonaktif',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.index', ['q' => 'Pabrik Aktif']))
+            ->assertOk()
+            ->assertSee('Pabrik Aktif')
+            ->assertDontSee('Pabrik Nonaktif');
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.customers.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertSee('Pabrik Nonaktif')
+            ->assertDontSee('Pabrik Aktif');
+    }
+
     public function test_customer_seeder_assigns_codes_to_demo_customers(): void
     {
         $this->seed(CustomerSeeder::class);
