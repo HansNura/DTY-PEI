@@ -47,6 +47,36 @@
     }
 }
 
+@layer components {
+    .map-embed,
+    .map-embed.leaflet-container {
+        position: relative;
+        isolation: isolate;
+        z-index: 0;
+    }
+
+    .map-embed.leaflet-container {
+        font-family: inherit;
+    }
+
+    .map-embed .leaflet-control-zoom a {
+        border-color: var(--color-slate-200);
+        color: var(--color-slate-700);
+        background-color: #fff;
+    }
+
+    .map-embed .leaflet-control-zoom a:hover {
+        color: var(--color-slate-900);
+        background-color: var(--color-slate-50);
+    }
+
+    .map-embed .leaflet-control-attribution {
+        background: rgb(255 255 255 / 0.85);
+        color: var(--color-slate-500);
+        font-size: 10px;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

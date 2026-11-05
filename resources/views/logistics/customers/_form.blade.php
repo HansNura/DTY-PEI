@@ -62,15 +62,21 @@
 
     <x-card title="Titik lokasi pelanggan" description="Klik peta untuk memilih titik, atau geser marker untuk menyesuaikan.">
         <div class="overflow-hidden rounded-xl border border-slate-200">
-            <div id="customer-map" class="h-80 w-full bg-slate-100" aria-label="Peta pemilihan lokasi pelanggan"></div>
+            <div id="customer-map" class="map-embed h-80 w-full bg-slate-100" aria-label="Peta pemilihan lokasi pelanggan"></div>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
             <p class="text-xs text-slate-500">Koordinat dipakai untuk live tracking dan tautan peta.</p>
-            <button type="button" data-customer-locate class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
-                <x-icon name="map-pin" class="size-4" />
-                Gunakan lokasi saya
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" data-customer-locate class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50">
+                    <x-icon name="map-pin" class="size-4" />
+                    Gunakan lokasi saya
+                </button>
+                <button type="button" data-customer-clear class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700">
+                    <x-icon name="x" class="size-4" />
+                    Hapus titik
+                </button>
+            </div>
         </div>
         <p data-customer-locate-status class="mt-1 text-xs text-slate-500" aria-live="polite"></p>
 
@@ -86,7 +92,7 @@
     </x-card>
 
     <x-card title="Catatan" description="Opsional, informasi tambahan untuk tim logistik">
-        <x-textarea id="catatan" name="catatan" rows="2" maxlength="1000">{{ old('catatan', $customer->catatan ?? '') }}</x-textarea>
+        <x-textarea id="catatan" name="catatan" rows="2" maxlength="1000" aria-label="Catatan pelanggan">{{ old('catatan', $customer->catatan ?? '') }}</x-textarea>
     </x-card>
 </div>
 

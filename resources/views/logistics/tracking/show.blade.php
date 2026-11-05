@@ -33,7 +33,7 @@
         <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
             <x-card padding="p-0" title="Posisi terakhir">
                 @if (count($point) > 0)
-                    <div id="tracking-map" class="h-[440px] w-full bg-slate-100"></div>
+                    <div id="tracking-map" class="map-embed h-[440px] w-full bg-slate-100"></div>
                 @else
                     <div class="px-5 py-12 text-center text-sm text-slate-500">
                         Belum ada koordinat GPS yang dikirim driver untuk Surat Jalan ini.

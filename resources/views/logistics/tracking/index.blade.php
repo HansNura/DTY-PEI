@@ -24,7 +24,7 @@
 
         <div class="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
             <x-card padding="p-0" title="Peta posisi terakhir" description="Klik penanda untuk melihat detail Surat Jalan">
-                <div id="tracking-map" class="h-[520px] w-full bg-slate-100"></div>
+                <div id="tracking-map" class="map-embed h-[520px] w-full bg-slate-100"></div>
             </x-card>
 
             <x-card padding="p-0" title="Armada aktif" description="Update posisi terakhir per Surat Jalan">

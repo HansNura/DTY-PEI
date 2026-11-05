@@ -13,9 +13,7 @@
         <form method="POST" action="{{ route('logistics.customers.update', $customer) }}" class="space-y-6">
             @csrf
             @method('PUT')
-            <x-card title="Data pelanggan">
-                @include('logistics.customers._form')
-            </x-card>
+            @include('logistics.customers._form', ['customer' => $customer])
 
             <div class="flex flex-wrap items-center justify-end gap-2">
                 <x-button href="{{ route('logistics.customers.index') }}" variant="secondary">Batal</x-button>
