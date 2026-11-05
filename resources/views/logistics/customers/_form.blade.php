@@ -78,11 +78,11 @@
 
         <div class="mt-4 grid gap-5 sm:grid-cols-2">
             <x-field label="Latitude" name="latitude" hint="Terisi otomatis dari peta. Dapat diedit manual.">
-                <x-input id="latitude" name="latitude" type="number" min="-90" max="90" step="any" value="{{ $initialLatitude }}" />
+                <x-input id="latitude" name="latitude" type="number" min="-90" max="90" step="any" value="{{ $initialLatitude }}" placeholder="Contoh: -6.9175" />
             </x-field>
 
             <x-field label="Longitude" name="longitude" hint="Terisi otomatis dari peta. Dapat diedit manual.">
-                <x-input id="longitude" name="longitude" type="number" min="-180" max="180" step="any" value="{{ $initialLongitude }}" />
+                <x-input id="longitude" name="longitude" type="number" min="-180" max="180" step="any" value="{{ $initialLongitude }}" placeholder="Contoh: 107.6191" />
             </x-field>
         </div>
     </x-card>

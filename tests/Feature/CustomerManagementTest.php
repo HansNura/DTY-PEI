@@ -177,7 +177,9 @@ class CustomerManagementTest extends TestCase
             ->assertSee('Hapus titik')
             ->assertDontSee('Gunakan lokasi saya')
             ->assertSee('id="latitude"', false)
-            ->assertSee('id="longitude"', false);
+            ->assertSee('id="longitude"', false)
+            ->assertSee('Contoh: -6.9175')
+            ->assertSee('Contoh: 107.6191');
 
         $this->actingAs($logisticsUser)
             ->get(route('logistics.customers.edit', $customer))
