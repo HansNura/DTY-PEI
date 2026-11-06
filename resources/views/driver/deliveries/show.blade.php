@@ -226,7 +226,7 @@
                     <tbody class="divide-y divide-slate-100">
                         @foreach ($order->items as $item)
                             <tr>
-                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</span></x-td>
+                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->nomor_seri ?? '—' }}</span></x-td>
                                 <x-td>{{ $item->dtyRoll->nomor_lot }}</x-td>
                                 <x-td class="tabular-nums">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</x-td>
                                 <x-td align="right" class="tabular-nums">{{ number_format($item->berat_kg, 2) }}</x-td>

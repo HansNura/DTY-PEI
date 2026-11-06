@@ -77,15 +77,16 @@ class DtyInventorySeeder extends Seeder
                 ],
             );
 
-            foreach ($config['statuses'] as $position => $status) {
-                $kodeRol = "DTY-SEED-{$batch->nomor_merge}-{$cartonIndex}-{$position}";
+            foreach ($config['statuses'] as $status) {
+                $serial = $this->nextSerial($batch);
+                $kodeRol = $this->internalCode($serial);
 
                 DtyRoll::updateOrCreate(
-                    ['kode_rol' => $kodeRol],
+                    ['nomor_seri' => $serial],
                     [
+                        'kode_rol' => $kodeRol,
                         'dty_carton_id' => $carton->id,
                         'production_batch_id' => $batch->id,
-                        'nomor_seri' => $this->nextSerial($batch),
                         'grade' => $config['grade'],
                         'denier' => $batch->denier,
                         'filamen' => $batch->filamen,
@@ -115,32 +116,42 @@ class DtyInventorySeeder extends Seeder
             ['merge' => '4D9168', 'grade' => 'B', 'weight' => 620],
             ['merge' => '4D9164', 'grade' => 'A', 'weight' => 3500],
             ['merge' => '4D9165', 'grade' => 'B', 'weight' => 750],
+            ['merge' => '4D9164', 'grade' => 'OW', 'weight' => 5700, 'status' => RollStatus::Overweight],
+            ['merge' => '4D9165', 'grade' => 'OW', 'weight' => 5820, 'status' => RollStatus::Overweight],
+            ['merge' => '4D9166', 'grade' => 'WASTE', 'weight' => 450, 'status' => RollStatus::Waste],
+            ['merge' => '4D9167', 'grade' => 'WASTE', 'weight' => 320, 'status' => RollStatus::Waste],
         ];
 
-        foreach ($configs as $index => $config) {
+        foreach ($configs as $config) {
             $batch = ProductionBatch::query()
                 ->where('nomor_merge', $config['merge'])
                 ->firstOrFail();
 
-            $kodeRol = "DTY-SEED-READY-{$index}";
+            $serial = $this->nextSerial($batch);
+            $kodeRol = $this->internalCode($serial);
 
             DtyRoll::updateOrCreate(
-                ['kode_rol' => $kodeRol],
+                ['nomor_seri' => $serial],
                 [
+                    'kode_rol' => $kodeRol,
                     'dty_carton_id' => null,
                     'production_batch_id' => $batch->id,
-                    'nomor_seri' => $this->nextSerial($batch),
                     'grade' => $config['grade'],
                     'denier' => $batch->denier,
                     'filamen' => $batch->filamen,
                     'berat_gram' => $config['weight'],
                     'nomor_lot' => $batch->nomor_merge,
                     'qr_token' => substr(hash('sha256', $kodeRol), 0, 64),
-                    'status' => RollStatus::ReadyToPack,
+                    'status' => $config['status'] ?? RollStatus::ReadyToPack,
                     'created_by' => $user->id,
                 ],
             );
         }
+    }
+
+    private function internalCode(string $serial): string
+    {
+        return 'DTY-'.strtoupper(substr(hash('sha256', 'pmt-roll-'.$serial), 0, 26));
     }
 
     private function nextSerial(ProductionBatch $batch): string

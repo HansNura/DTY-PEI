@@ -65,7 +65,6 @@ class PackingService
             'rolls' => $rolls->map(fn (DtyRoll $roll): array => [
                 'id' => $roll->id,
                 'nomor_seri' => $roll->nomor_seri,
-                'kode_rol' => $roll->kode_rol,
                 'berat_gram' => (float) $roll->berat_gram,
                 'grade' => $roll->grade,
                 'nomor_lot' => $roll->nomor_lot,
@@ -93,6 +92,18 @@ class PackingService
 
         if ($roll === null) {
             return $this->failure('Bobbin tidak ditemukan. Periksa QR atau nomor seri.');
+        }
+
+        if ($roll->status === RollStatus::Overweight) {
+            return $this->failure("Bobbin {$roll->nomor_seri} berstatus OVERWEIGHT / HOLD dan tidak diizinkan masuk ke Box grade normal.");
+        }
+
+        if ($roll->status === RollStatus::Waste) {
+            return $this->failure("Bobbin {$roll->nomor_seri} berstatus WASTE / SCRAP dan tidak diizinkan masuk ke Box grade normal.");
+        }
+
+        if (in_array($roll->grade, [BobbinWeightStandard::OVERWEIGHT_GRADE, BobbinWeightStandard::WASTE_GRADE], true)) {
+            return $this->failure("Bobbin {$roll->nomor_seri} memiliki grade anomali {$roll->grade} dan tidak diizinkan masuk ke Box grade normal.");
         }
 
         if ($roll->status !== RollStatus::ReadyToPack) {
@@ -217,7 +228,8 @@ class PackingService
                     || $roll->status !== RollStatus::ReadyToPack
                     || $roll->dty_carton_id !== null
                     || $roll->production_batch_id !== $batch->id
-                    || $roll->grade !== $grade) {
+                    || $roll->grade !== $grade
+                    || in_array($roll->grade, [BobbinWeightStandard::OVERWEIGHT_GRADE, BobbinWeightStandard::WASTE_GRADE], true)) {
                     throw ValidationException::withMessages([
                         'packing' => 'Daftar bobbin berubah atau tidak lagi valid. Mulai ulang packing.',
                     ]);

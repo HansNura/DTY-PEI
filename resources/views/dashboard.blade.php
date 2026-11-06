@@ -101,7 +101,7 @@
                         <table class="min-w-full divide-y divide-slate-100 text-sm">
                             <thead class="bg-slate-50/70">
                                 <tr>
-                                    <x-th>Kode / Lot</x-th>
+                                    <x-th>Nomor seri / Lot</x-th>
                                     <x-th>Spesifikasi</x-th>
                                     <x-th>Status</x-th>
                                 </tr>
@@ -110,7 +110,7 @@
                                 @forelse ($recentRolls as $roll)
                                     <tr>
                                         <x-td>
-                                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
+                                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
                                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                                         </x-td>
                                         <x-td class="tabular-nums">{{ $roll->denier }}D / {{ $roll->filamen }}F</x-td>

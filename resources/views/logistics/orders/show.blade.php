@@ -104,7 +104,7 @@
                 <table class="min-w-full divide-y divide-slate-100 text-sm">
                     <thead class="bg-slate-50/70">
                         <tr>
-                            <x-th>Kode rol</x-th>
+                            <x-th>Nomor seri</x-th>
                             <x-th>Kardus</x-th>
                             <x-th>Nomor lot</x-th>
                             <x-th>Spesifikasi</x-th>
@@ -115,7 +115,7 @@
                     <tbody class="divide-y divide-slate-100">
                         @foreach ($order->items as $item)
                             <tr>
-                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</span></x-td>
+                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->nomor_seri ?? '—' }}</span></x-td>
                                 <x-td>
                                     <span class="font-mono text-xs text-slate-700">{{ $item->dtyRoll->carton?->nomor_hu ?? '—' }}</span>
                                     @if ($item->dtyRoll->carton)
@@ -138,7 +138,7 @@
                 <x-timeline>
                     @foreach ($order->loadScans->sortByDesc('scanned_at') as $scan)
                         <x-timeline-item
-                            :title="$scan->dtyRoll?->kode_rol ?? 'Kode QR tidak dikenal'"
+                            :title="$scan->dtyRoll?->nomor_seri ?? 'Kode QR tidak dikenal'"
                             :meta="$scan->scanned_at->translatedFormat('d M Y, H:i:s').' · '.$scan->scanner->nama"
                             :tone="\App\Support\StatusTone::for($scan->result)"
                         >

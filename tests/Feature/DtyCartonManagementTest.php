@@ -30,15 +30,19 @@ class DtyCartonManagementTest extends TestCase
         ]);
     }
 
-    private function readyRoll(ProductionBatch $batch, float $weight = 5485, ?string $grade = 'AX'): DtyRoll
-    {
+    private function readyRoll(
+        ProductionBatch $batch,
+        float $weight = 5485,
+        ?string $grade = 'AX',
+        RollStatus $status = RollStatus::ReadyToPack,
+    ): DtyRoll {
         return DtyRoll::factory()->create([
             'production_batch_id' => $batch->id,
             'nomor_seri' => str_pad((string) self::$serial++, 5, '0', STR_PAD_LEFT).'0079'.'20261103',
             'grade' => $grade,
             'berat_gram' => $weight,
             'nomor_lot' => $batch->nomor_merge,
-            'status' => RollStatus::ReadyToPack,
+            'status' => $status,
             'created_by' => User::factory(),
         ]);
     }
@@ -116,6 +120,24 @@ class DtyCartonManagementTest extends TestCase
             ->assertStatus(422)
             ->assertJson(['success' => false])
             ->assertJsonPath('summary.count', 1);
+    }
+
+    public function test_packing_rejects_overweight_and_waste_bobbins(): void
+    {
+        $user = $this->warehouseUser();
+        $batch = $this->batch();
+        $overweight = $this->readyRoll($batch, 5700, 'OW', RollStatus::Overweight);
+        $waste = $this->readyRoll($batch, 450, 'WASTE', RollStatus::Waste);
+
+        $this->scan($user, $overweight)
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('summary.count', 0);
+
+        $this->scan($user, $waste)
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('summary.count', 0);
     }
 
     public function test_packing_rejects_bobbin_that_is_already_packed(): void

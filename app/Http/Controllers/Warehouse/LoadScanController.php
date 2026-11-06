@@ -59,7 +59,7 @@ class LoadScanController extends Controller
                 'message' => $result['message'],
                 'roll' => $result['roll'] ? [
                     'id' => $result['roll']->id,
-                    'kode_rol' => $result['roll']->kode_rol,
+                    'nomor_seri' => $result['roll']->nomor_seri,
                     'nomor_lot' => $result['roll']->nomor_lot,
                     'denier' => $result['roll']->denier,
                     'filamen' => $result['roll']->filamen,

@@ -36,10 +36,10 @@
     </table>
     <h2>Rincian barang</h2>
     <table class="items">
-        <thead><tr><th>No.</th><th>Kode rol</th><th>Nomor lot</th><th>Denier</th><th>Filamen</th><th>Berat (kg)</th></tr></thead>
+        <thead><tr><th>No.</th><th>Nomor seri</th><th>Nomor lot</th><th>Denier</th><th>Filamen</th><th>Berat (kg)</th></tr></thead>
         <tbody>
             @foreach ($order->items as $index => $item)
-                <tr><td>{{ $index + 1 }}</td><td>{{ $item->roll->kode_rol }}</td><td>{{ $item->roll->nomor_lot }}</td><td>{{ $item->roll->denier }}</td><td>{{ $item->roll->filamen }}</td><td>{{ str_replace('.', ',', $item->berat_kg) }}</td></tr>
+                <tr><td>{{ $index + 1 }}</td><td>{{ $item->roll->nomor_seri ?? '—' }}</td><td>{{ $item->roll->nomor_lot }}</td><td>{{ $item->roll->denier }}</td><td>{{ $item->roll->filamen }}</td><td>{{ str_replace('.', ',', $item->berat_kg) }}</td></tr>
             @endforeach
         </tbody>
         <tfoot><tr><th colspan="5">Total ({{ $order->items->count() }} rol)</th><th>{{ str_replace('.', ',', $order->totalWeightInKg()) }}</th></tr></tfoot>

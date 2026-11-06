@@ -206,7 +206,6 @@
                         <li class="flex items-center justify-between gap-3 py-3">
                             <div class="min-w-0">
                                 <p class="font-mono text-xs font-semibold text-slate-800" x-text="roll.nomor_seri"></p>
-                                <p class="mt-0.5 font-mono text-[10px] text-slate-400" x-text="roll.kode_rol"></p>
                                 <p class="mt-0.5 text-[11px] text-slate-500">
                                     <span x-text="Number(roll.berat_gram).toLocaleString('id-ID')"></span> g
                                     · Grade <span class="font-semibold" x-text="roll.grade ?? '—'"></span>

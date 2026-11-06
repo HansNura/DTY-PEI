@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @php
-    $serial = $roll->nomor_seri ?? $roll->kode_rol;
+    $serial = $roll->nomor_seri ?? '—';
     $carton = $roll->carton;
 @endphp
 
@@ -20,6 +20,13 @@
             <div class="mt-4">
                 <p data-qr-error class="hidden text-sm text-rose-700" role="alert"></p>
             </div>
+
+            @if ($roll->status === \App\Enums\RollStatus::Overweight)
+                <div class="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p class="font-semibold">OVERWEIGHT / HOLD — Grade OW</p>
+                    <p class="mt-1 text-xs leading-relaxed">Bobbin melebihi 5.600 g. Jangan dipacking ke box reguler; tunggu keputusan QC atau rewind. Label ini adalah label khusus, bukan grade AX.</p>
+                </div>
+            @endif
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] print:hidden">
@@ -96,10 +103,6 @@
                         <div class="sm:col-span-2 rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
                             <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri · payload QR</dt>
                             <dd class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ $serial }}</dd>
-                        </div>
-                        <div class="sm:col-span-2 rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
-                            <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Kode rol internal</dt>
-                            <dd class="mt-1 font-mono text-xs font-medium text-slate-700">{{ $roll->kode_rol }}</dd>
                         </div>
                         <div class="rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
                             <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Merge / lot</dt>

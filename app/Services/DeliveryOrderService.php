@@ -65,7 +65,7 @@ class DeliveryOrderService
             foreach ($rolls as $roll) {
                 if ($roll->status !== RollStatus::InStock) {
                     throw ValidationException::withMessages([
-                        'rolls' => "Rol {$roll->kode_rol} tidak lagi berstatus tersedia dalam stok.",
+                        'rolls' => "Bobbin {$roll->nomor_seri} tidak lagi berstatus tersedia dalam stok.",
                     ]);
                 }
             }

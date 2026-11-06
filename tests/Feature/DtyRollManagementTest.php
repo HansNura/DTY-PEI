@@ -67,20 +67,56 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('Merge / Lot');
     }
 
-    public function test_weight_outside_the_bobbin_standard_is_rejected(): void
+    public function test_weights_outside_the_standard_are_classified_as_anomalies(): void
     {
         $warehouseUser = $this->warehouseUser();
         $this->activeBatch();
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '499'])
-            ->assertSessionHasErrors('berat_gram');
+            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5601'])
+            ->assertRedirect();
+
+        $overweight = DtyRoll::where('berat_gram', 5601)->firstOrFail();
+        $this->assertSame(RollStatus::Overweight, $overweight->status);
+        $this->assertSame('OW', $overweight->grade);
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5601'])
-            ->assertSessionHasErrors('berat_gram');
+            ->get(route('warehouse.rolls.label', $overweight))
+            ->assertOk()
+            ->assertSee('OVERWEIGHT / HOLD')
+            ->assertSee('Grade OW');
 
-        $this->assertDatabaseCount('dty_rolls', 0);
+        $this->actingAs($warehouseUser)
+            ->post(route('warehouse.rolls.store'), ['berat_gram' => '499'])
+            ->assertRedirect(route('warehouse.rolls.index'));
+
+        $waste = DtyRoll::where('berat_gram', 499)->firstOrFail();
+        $this->assertSame(RollStatus::Waste, $waste->status);
+        $this->assertSame('WASTE', $waste->grade);
+        $this->actingAs($warehouseUser)->get(route('warehouse.rolls.label', $waste))->assertForbidden();
+    }
+
+    public function test_anomaly_bobbin_can_be_reweighed_back_to_a_standard_grade(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $roll = DtyRoll::factory()->create([
+            'status' => RollStatus::Waste,
+            'grade' => 'WASTE',
+            'berat_gram' => 450,
+            'created_by' => $warehouseUser->id,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.edit', $roll))
+            ->assertOk();
+
+        $this->actingAs($warehouseUser)
+            ->put(route('warehouse.rolls.update', $roll), ['berat_gram' => '5400'])
+            ->assertRedirect(route('warehouse.rolls.index'));
+
+        $roll->refresh();
+        $this->assertSame(RollStatus::ReadyToPack, $roll->status);
+        $this->assertSame('AX', $roll->grade);
     }
 
     public function test_ready_to_pack_bobbin_can_be_reweighed_and_cancelled_but_allocated_cannot(): void
@@ -90,6 +126,7 @@ class DtyRollManagementTest extends TestCase
 
         $roll = DtyRoll::factory()->create([
             'production_batch_id' => $batch->id,
+            'nomor_seri' => '20217007920261103',
             'status' => RollStatus::ReadyToPack,
             'grade' => 'AX',
             'berat_gram' => 5485,
@@ -102,7 +139,7 @@ class DtyRollManagementTest extends TestCase
 
         $this->assertSame(5250.0, (float) $roll->fresh()->berat_gram);
         $this->assertSame('AE', $roll->fresh()->grade);
-        $this->assertSame($roll->kode_rol, $roll->fresh()->kode_rol);
+        $this->assertSame('20217007920261103', $roll->fresh()->nomor_seri);
 
         $this->actingAs($warehouseUser)
             ->patch(route('warehouse.rolls.cancel', $roll))
@@ -125,12 +162,14 @@ class DtyRollManagementTest extends TestCase
         $warehouseUser = $this->warehouseUser();
         $ready = DtyRoll::factory()->create([
             'status' => RollStatus::ReadyToPack,
+            'nomor_seri' => '20217007920261103',
             'nomor_lot' => 'LOT-READY',
             'berat_gram' => 2500,
             'created_by' => $warehouseUser->id,
         ]);
         $inStock = DtyRoll::factory()->create([
             'status' => RollStatus::InStock,
+            'nomor_seri' => '20218007920261103',
             'nomor_lot' => 'LOT-STOCK',
             'berat_gram' => 1000,
             'created_by' => $warehouseUser->id,
@@ -145,20 +184,20 @@ class DtyRollManagementTest extends TestCase
                 && $summary['ready_to_pack'] === 1
                 && $summary['in_stock'] === 1
                 && (float) $summary['available_weight_kg'] === 3.5)
-            ->assertSee($ready->kode_rol)
-            ->assertSee($inStock->kode_rol);
+            ->assertSee('20217007920261103')
+            ->assertSee('20218007920261103');
 
         $this->actingAs($warehouseUser)
             ->get(route('warehouse.rolls.index', ['status' => RollStatus::ReadyToPack->value]))
             ->assertOk()
-            ->assertSee($ready->kode_rol)
-            ->assertDontSee($inStock->kode_rol);
+            ->assertSee('20217007920261103')
+            ->assertDontSee('20218007920261103');
 
         $this->actingAs($warehouseUser)
             ->get(route('warehouse.rolls.index', ['q' => 'LOT-READY']))
             ->assertOk()
-            ->assertSee($ready->kode_rol)
-            ->assertDontSee($inStock->kode_rol);
+            ->assertSee('20217007920261103')
+            ->assertDontSee('20218007920261103');
     }
 
     public function test_edit_weight_page_shows_the_bobbin_serial(): void
@@ -175,7 +214,7 @@ class DtyRollManagementTest extends TestCase
             ->assertOk()
             ->assertSee('20233007920261103')
             ->assertSee('Nomor seri')
-            ->assertSee($roll->kode_rol);
+            ->assertDontSee($roll->kode_rol);
     }
 
     public function test_weighing_form_shows_generated_identity_preview(): void
@@ -189,12 +228,11 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('Identitas bobbin')
             ->assertSee('Pratinjau otomatis')
             ->assertSee('Nomor seri')
-            ->assertSee('Kode rol')
+            ->assertDontSee('Kode rol')
             ->assertSee('name="nomor_seri"', false)
-            ->assertSee('name="kode_rol"', false);
+            ->assertDontSee('name="kode_rol"', false);
 
         $response->assertViewHas('previewSerial', fn (?string $serial): bool => is_string($serial) && preg_match('/^\d{5}0079\d{8}$/', $serial) === 1);
-        $response->assertViewHas('previewKodeRol', fn (?string $code): bool => is_string($code) && str_starts_with($code, 'DTY-'));
     }
 
     public function test_preview_identity_is_used_when_saving_the_bobbin(): void
@@ -206,13 +244,11 @@ class DtyRollManagementTest extends TestCase
             ->post(route('warehouse.rolls.store'), [
                 'berat_gram' => '5485',
                 'nomor_seri' => '99099007920261103',
-                'kode_rol' => 'DTY-PREVIEW-001',
             ])
             ->assertRedirect();
 
         $roll = DtyRoll::firstOrFail();
         $this->assertSame('99099007920261103', $roll->nomor_seri);
-        $this->assertSame('DTY-PREVIEW-001', $roll->kode_rol);
     }
 
     public function test_weighing_form_shows_active_batch_and_grade_table(): void
@@ -227,6 +263,8 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('DTY 150/48 NI Z')
             ->assertSee('Grade bobot otomatis')
             ->assertSee('Rentang bobot')
+            ->assertSee('Overweight / Hold')
+            ->assertSee('Waste / Scrap')
             ->assertSee('Contoh: 5485')
             ->assertDontSee('name="denier"', false)
             ->assertDontSee('name="filamen"', false)

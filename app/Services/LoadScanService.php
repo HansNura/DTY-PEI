@@ -83,7 +83,7 @@ class LoadScanService
                 return [
                     'success' => false,
                     'result' => LoadScanResult::WrongDo,
-                    'message' => "PERINGATAN: Rol {$roll->kode_rol} (Lot {$roll->nomor_lot}) bukan alokasi untuk Surat Jalan ini!",
+                    'message' => "PERINGATAN: Bobbin {$this->rollIdentity($roll)} (Lot {$roll->nomor_lot}) bukan alokasi untuk Surat Jalan ini!",
                     'roll' => $roll,
                     'loaded_count' => $order->loaded_count,
                     'total_rol' => $order->total_rol,
@@ -103,7 +103,7 @@ class LoadScanService
                 return [
                     'success' => false,
                     'result' => LoadScanResult::WrongDo,
-                    'message' => "Rol {$roll->kode_rol} berstatus {$roll->status->label()} dan tidak siap dimuat.",
+                    'message' => "Bobbin {$this->rollIdentity($roll)} berstatus {$roll->status->label()} dan tidak siap dimuat.",
                     'roll' => $roll,
                     'loaded_count' => $order->loaded_count,
                     'total_rol' => $order->total_rol,
@@ -123,7 +123,7 @@ class LoadScanService
                 return [
                     'success' => false,
                     'result' => LoadScanResult::Duplicate,
-                    'message' => "Rol {$roll->kode_rol} sudah pernah dipindai sebelumnya.",
+                    'message' => "Bobbin {$this->rollIdentity($roll)} sudah pernah dipindai sebelumnya.",
                     'roll' => $roll,
                     'loaded_count' => $order->loaded_count,
                     'total_rol' => $order->total_rol,
@@ -154,12 +154,17 @@ class LoadScanService
             return [
                 'success' => true,
                 'result' => LoadScanResult::Valid,
-                'message' => "Rol {$roll->kode_rol} berhasil divalidasi dan dimuat ke armada.",
+                'message' => "Bobbin {$this->rollIdentity($roll)} berhasil divalidasi dan dimuat ke armada.",
                 'roll' => $roll,
                 'loaded_count' => $loadedCount,
                 'total_rol' => $totalRol,
                 'is_complete' => $isComplete,
             ];
         });
+    }
+
+    private function rollIdentity(DtyRoll $roll): string
+    {
+        return $roll->nomor_seri ?: $roll->qr_token;
     }
 }

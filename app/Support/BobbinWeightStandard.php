@@ -20,6 +20,10 @@ class BobbinWeightStandard
 
     public const B_MAX_GRAM = 999;
 
+    public const OVERWEIGHT_GRADE = 'OW';
+
+    public const WASTE_GRADE = 'WASTE';
+
     public static function gradeFor(float $grams): ?string
     {
         // AX/AE diprioritaskan; A menampung 1.000–5.099 g dan B 500–999 g.
@@ -28,6 +32,15 @@ class BobbinWeightStandard
             $grams >= self::AE_MIN_GRAM && $grams <= self::AE_MAX_GRAM => 'AE',
             $grams >= self::A_MIN_GRAM && $grams < self::AE_MIN_GRAM => 'A',
             $grams >= self::B_MIN_GRAM && $grams <= self::B_MAX_GRAM => 'B',
+            default => null,
+        };
+    }
+
+    public static function anomalyFor(float $grams): ?string
+    {
+        return match (true) {
+            $grams > self::AX_MAX_GRAM => self::OVERWEIGHT_GRADE,
+            $grams < self::B_MIN_GRAM => self::WASTE_GRADE,
             default => null,
         };
     }

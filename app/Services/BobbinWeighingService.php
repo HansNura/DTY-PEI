@@ -22,19 +22,18 @@ class BobbinWeighingService
     }
 
     /**
-     * @return array{serial: ?string, code: ?string}
+     * @return array{serial: ?string}
      */
     public function preview(?ProductionBatch $batch = null): array
     {
         $batch ??= $this->activeBatch();
 
         if ($batch === null) {
-            return ['serial' => null, 'code' => null];
+            return ['serial' => null];
         }
 
         return [
             'serial' => $this->qrCodeService->generateRollSerial($batch->production_date),
-            'code' => $this->qrCodeService->generateRollCode(),
         ];
     }
 
@@ -42,7 +41,6 @@ class BobbinWeighingService
         float $beratGram,
         User $user,
         ?string $nomorSeri = null,
-        ?string $kodeRol = null,
     ): DtyRoll {
         $batch = $this->activeBatch();
 
@@ -52,23 +50,11 @@ class BobbinWeighingService
             ]);
         }
 
-        if ($beratGram < BobbinWeightStandard::B_MIN_GRAM || $beratGram > BobbinWeightStandard::AX_MAX_GRAM) {
-            throw ValidationException::withMessages([
-                'berat_gram' => 'Berat bobbin harus berada di rentang 500–5.600 gram.',
-            ]);
-        }
-
-        $grade = BobbinWeightStandard::gradeFor($beratGram);
-
-        if ($grade === null) {
-            throw ValidationException::withMessages([
-                'berat_gram' => 'Berat bobbin berada di luar standar grade AX/AE/A/B.',
-            ]);
-        }
+        [$grade, $status] = $this->classification($beratGram);
 
         return DtyRoll::create([
             'production_batch_id' => $batch->id,
-            'kode_rol' => $kodeRol ?: $this->qrCodeService->generateRollCode(),
+            'kode_rol' => $this->qrCodeService->generateRollCode(),
             'nomor_seri' => $nomorSeri ?: $this->qrCodeService->generateRollSerial($batch->production_date),
             'grade' => $grade,
             'denier' => $batch->denier,
@@ -76,8 +62,44 @@ class BobbinWeighingService
             'berat_gram' => $beratGram,
             'nomor_lot' => $batch->nomor_merge,
             'qr_token' => $this->qrCodeService->generateToken(),
-            'status' => RollStatus::ReadyToPack,
+            'status' => $status,
             'created_by' => $user->id,
         ]);
+    }
+
+    public function reweigh(DtyRoll $roll, float $beratGram): DtyRoll
+    {
+        [$grade, $status] = $this->classification($beratGram);
+
+        $roll->update([
+            'berat_gram' => $beratGram,
+            'grade' => $grade,
+            'status' => $status,
+        ]);
+
+        return $roll;
+    }
+
+    /**
+     * @return array{0: string, 1: RollStatus}
+     */
+    private function classification(float $beratGram): array
+    {
+        $anomaly = BobbinWeightStandard::anomalyFor($beratGram);
+        $grade = $anomaly ?? BobbinWeightStandard::gradeFor($beratGram);
+
+        if ($grade === null) {
+            throw ValidationException::withMessages([
+                'berat_gram' => 'Berat bobbin tidak dapat diklasifikasikan.',
+            ]);
+        }
+
+        $status = match ($anomaly) {
+            BobbinWeightStandard::OVERWEIGHT_GRADE => RollStatus::Overweight,
+            BobbinWeightStandard::WASTE_GRADE => RollStatus::Waste,
+            default => RollStatus::ReadyToPack,
+        };
+
+        return [$grade, $status];
     }
 }

@@ -98,7 +98,7 @@
                                                    x-on:change="$el.checked ? selectedRolls = @js($availableRolls->pluck('id')->map(fn ($id) => (int) $id)) : selectedRolls = []"
                                                    aria-label="Pilih semua gulungan">
                                         </x-th>
-                                        <x-th>Kode rol</x-th>
+                                        <x-th>Nomor seri</x-th>
                                         <x-th>Kardus</x-th>
                                         <x-th>Nomor lot</x-th>
                                         <x-th>Spesifikasi</x-th>
@@ -116,7 +116,7 @@
                                                        x-bind:checked="isSelected({{ $roll->id }})"
                                                        x-on:click.stop="toggleRoll({{ $roll->id }})">
                                             </x-td>
-                                            <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</span></x-td>
+                                            <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</span></x-td>
                                             <x-td>
                                                 <span class="font-mono text-xs text-slate-700">{{ $roll->carton?->nomor_hu ?? '—' }}</span>
                                                 @if ($roll->carton)

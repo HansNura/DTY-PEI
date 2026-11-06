@@ -60,6 +60,13 @@ Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
 > Bobbin baru hanya lahir dari penimbangan batch aktif. Kardus baru hanya lahir dari packing; form input kardus/bobbin manual lama sudah dihapus.
 
+### Anomali bobot bobbin
+
+- Berat **> 5.600 g** → status **Overweight / Hold**, grade **OW**. Tidak boleh dipacking ke box reguler; label khusus OW tetap bisa dicetak.
+- Berat **< 500 g** → status **Waste / Scrap**, grade **WASTE**. Label standar tidak dicetak; data tetap tersimpan untuk rekap limbah.
+- Bobbin anomali ditolak oleh scanner packing dan tidak bisa masuk kardus pelanggan.
+- Bobbin anomali tetap bisa diedit beratnya; jika kembali ke rentang standar, statusnya menjadi siap packing.
+
 ### Data demo produksi dan pelanggan
 
 `ProductionBatchSeeder` mengisi 5 batch demo, termasuk `4D9164` sebagai batch aktif. `DtyInventorySeeder` mengisi 9 kardus dummy dan 66 bobbin dengan variasi grade dan status. `CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
@@ -99,7 +106,7 @@ composer run dev                   # server + queue + log + Vite
 - Profil: ubah nama, email, dan kata sandi.
 - Dashboard ringkas per peran.
 - Security header dasar pada semua respons.
-- Admin Gudang dapat menginput kardus DTY lengkap dengan nomor HU, lot/merge, grade, tanggal produksi, gross/net weight, unit bobbin, dan pallet. Satu kardus otomatis membuat bobbin dengan kode rol dan QR unik; label kardus 100 × 150 mm dapat dicetak.
+- Admin Gudang mengelola batch produksi (merge/spesifikasi), menimbang bobbin, dan melakukan packing kardus dengan scan 6 bobbin. Net weight, unit, grade, HU, dan tanggal kardus dihitung otomatis; label bobbin dan kardus dapat dicetak.
 - Tim Logistik dapat mengelola pelanggan dengan kode internal, email, NPWP, alamat lengkap (kota/provinsi/kode pos), kontak penerima, dan titik lokasi yang dipilih langsung dari peta Leaflet.
 - Tim Logistik dapat menerbitkan Surat Jalan dengan alokasi rol, mencetaknya, dan membatalkannya sebelum armada berangkat.
 - Checker gudang dapat memindai QR rol (kamera, scanner USB, atau input manual) untuk memvalidasi muatan; salah DO, duplikat, dan kode tak dikenal ditolak.
