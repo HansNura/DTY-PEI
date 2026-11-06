@@ -92,6 +92,52 @@ class DtyCartonManagementTest extends TestCase
             ->assertRedirect(route('warehouse.cartons.label', DtyCarton::firstOrFail()));
     }
 
+    public function test_carton_index_shows_summary_filters_and_drawer(): void
+    {
+        $user = $this->warehouseUser();
+
+        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload())->assertRedirect();
+        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload([
+            'nomor_hu' => 'ADMG00055000',
+            'nomor_merge' => '4D9165',
+            'grade' => 'WA',
+            'production_date' => '2026-10-15',
+            'net_weight_kg' => '31.50',
+            'gross_weight_kg' => '34.00',
+        ]))->assertRedirect();
+
+        $axCarton = DtyCarton::where('nomor_hu', 'ADMG00054918')->firstOrFail();
+        $aeCarton = DtyCarton::where('nomor_hu', 'ADMG00055000')->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.index'))
+            ->assertOk()
+            ->assertSee('Total kardus')
+            ->assertSee('data-carton-drawer', false)
+            ->assertSee('Ringkasan kardus')
+            ->assertViewHas('summary', fn (array $summary) => $summary['cartons'] === 2
+                && $summary['bobbins'] === 12
+                && abs($summary['net_kg'] - 64.41) < 0.001);
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.index', ['grade' => 'WA']))
+            ->assertOk()
+            ->assertSee($aeCarton->nomor_hu)
+            ->assertDontSee($axCarton->nomor_hu);
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.index', ['weight_grade' => 'AE']))
+            ->assertOk()
+            ->assertSee($aeCarton->nomor_hu)
+            ->assertDontSee($axCarton->nomor_hu);
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.index', ['month' => '2026-10']))
+            ->assertOk()
+            ->assertSee($aeCarton->nomor_hu)
+            ->assertDontSee($axCarton->nomor_hu);
+    }
+
     public function test_net_weight_cannot_exceed_gross_weight(): void
     {
         $this->actingAs($this->warehouseUser())
