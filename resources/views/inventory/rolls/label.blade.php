@@ -43,8 +43,8 @@
                             </div>
 
                             <div class="mt-3 flex min-h-0 flex-1 gap-4">
-                                <div class="flex w-28 shrink-0 flex-col items-center justify-center">
-                                    <canvas data-qr-code data-qr-token="{{ $qrToken }}" aria-label="Kode QR serial {{ $serial }}" class="size-28 shrink-0"></canvas>
+                                <div class="flex w-32 shrink-0 flex-col items-center justify-center">
+                                    <canvas data-qr-code data-qr-token="{{ $qrToken }}" aria-label="Kode QR serial {{ $serial }}" class="size-32 shrink-0 rounded-sm bg-white"></canvas>
                                     <p class="mt-1.5 w-full break-all text-center font-mono text-[7px] font-semibold leading-tight text-black">{{ $serial }}</p>
                                 </div>
 
@@ -146,8 +146,8 @@
 
         {{-- Markup cetak: tetap, hanya terlihat saat print --}}
         <div class="thermal-label hidden items-center gap-1 overflow-hidden bg-white print:flex">
-            <div class="flex w-[22mm] shrink-0 flex-col items-center">
-                <canvas data-qr-code data-qr-token="{{ $qrToken }}" aria-label="Kode QR serial {{ $serial }}" class="size-20 shrink-0"></canvas>
+            <div class="flex w-[24mm] shrink-0 flex-col items-center">
+                <canvas data-qr-code data-qr-token="{{ $qrToken }}" aria-label="Kode QR serial {{ $serial }}" class="size-20 shrink-0 rounded-sm bg-white"></canvas>
                 <p class="mt-0.5 w-full break-all text-center font-mono text-[6px] font-semibold leading-tight text-black">{{ $serial }}</p>
             </div>
             <div class="min-w-0 flex-1 text-[7px] leading-[1.15] text-black">
@@ -179,7 +179,7 @@
                 height: 30mm;
                 padding: 1mm;
             }
-            .thermal-label canvas { width: 18mm; height: 18mm; }
+            .thermal-label canvas { width: 20mm; height: 20mm; }
         }
     </style>
 @endsection

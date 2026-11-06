@@ -12,9 +12,13 @@ document.querySelectorAll('[data-qr-code]').forEach((canvas) => {
     const errorMessage = document.querySelector('[data-qr-error]');
 
     QRCode.toCanvas(canvas, token, {
-        width: 240,
-        margin: 0,
+        width: 320,
+        margin: 4,
         errorCorrectionLevel: 'M',
+        color: {
+            dark: '#000000',
+            light: '#ffffff',
+        },
     }).then(() => {
         if (printButton) {
             printButton.disabled = false;
