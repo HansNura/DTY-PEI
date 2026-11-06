@@ -52,19 +52,7 @@ class BobbinWeighingService
             ]);
         }
 
-        if ($beratGram < BobbinWeightStandard::B_MIN_GRAM || $beratGram > BobbinWeightStandard::AX_MAX_GRAM) {
-            throw ValidationException::withMessages([
-                'berat_gram' => 'Berat bobbin harus berada di rentang 500–5.600 gram.',
-            ]);
-        }
-
-        $grade = BobbinWeightStandard::gradeFor($beratGram);
-
-        if ($grade === null) {
-            throw ValidationException::withMessages([
-                'berat_gram' => 'Berat bobbin berada di luar standar grade AX/AE/A/B.',
-            ]);
-        }
+        [$grade, $status] = $this->classification($beratGram);
 
         return DtyRoll::create([
             'production_batch_id' => $batch->id,
@@ -76,8 +64,44 @@ class BobbinWeighingService
             'berat_gram' => $beratGram,
             'nomor_lot' => $batch->nomor_merge,
             'qr_token' => $this->qrCodeService->generateToken(),
-            'status' => RollStatus::ReadyToPack,
+            'status' => $status,
             'created_by' => $user->id,
         ]);
+    }
+
+    public function reweigh(DtyRoll $roll, float $beratGram): DtyRoll
+    {
+        [$grade, $status] = $this->classification($beratGram);
+
+        $roll->update([
+            'berat_gram' => $beratGram,
+            'grade' => $grade,
+            'status' => $status,
+        ]);
+
+        return $roll;
+    }
+
+    /**
+     * @return array{0: string, 1: RollStatus}
+     */
+    private function classification(float $beratGram): array
+    {
+        $anomaly = BobbinWeightStandard::anomalyFor($beratGram);
+        $grade = $anomaly ?? BobbinWeightStandard::gradeFor($beratGram);
+
+        if ($grade === null) {
+            throw ValidationException::withMessages([
+                'berat_gram' => 'Berat bobbin tidak dapat diklasifikasikan.',
+            ]);
+        }
+
+        $status = match ($anomaly) {
+            BobbinWeightStandard::OVERWEIGHT_GRADE => RollStatus::Overweight,
+            BobbinWeightStandard::WASTE_GRADE => RollStatus::Waste,
+            default => RollStatus::ReadyToPack,
+        };
+
+        return [$grade, $status];
     }
 }

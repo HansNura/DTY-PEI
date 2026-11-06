@@ -18,6 +18,16 @@
             <x-stat-card label="Berat siap kirim" :value="number_format($summary['available_weight_kg'], 2, ',', '.').' kg'" icon="download" tone="brand" hint="Siap packing + tersedia" />
         </div>
 
+        @if (($summary['overweight'] + $summary['waste']) > 0)
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div>
+                    <p class="font-semibold">Anomali bobot perlu tindakan</p>
+                    <p class="mt-0.5 text-xs text-amber-800">{{ $summary['overweight'] }} Overweight / Hold · {{ $summary['waste'] }} Waste / Scrap. Bobbin anomali tidak dapat dipacking ke box reguler.</p>
+                </div>
+                <x-button href="{{ route('warehouse.rolls.index', ['status' => \App\Enums\RollStatus::Overweight->value]) }}" variant="secondary" size="sm">Lihat anomali</x-button>
+            </div>
+        @endif
+
         <x-card padding="p-3 sm:p-4">
             <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="space-y-3">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -35,6 +45,8 @@
                         $statusFilters = [
                             ['value' => '', 'label' => 'Semua', 'count' => $summary['total'], 'dot' => 'bg-slate-400'],
                             ['value' => \App\Enums\RollStatus::ReadyToPack->value, 'label' => 'Siap packing', 'count' => $summary['ready_to_pack'], 'dot' => 'bg-indigo-500'],
+                            ['value' => \App\Enums\RollStatus::Overweight->value, 'label' => 'Overweight', 'count' => $summary['overweight'], 'dot' => 'bg-orange-500'],
+                            ['value' => \App\Enums\RollStatus::Waste->value, 'label' => 'Waste', 'count' => $summary['waste'], 'dot' => 'bg-red-600'],
                             ['value' => \App\Enums\RollStatus::InStock->value, 'label' => 'Tersedia', 'count' => $summary['in_stock'], 'dot' => 'bg-emerald-500'],
                             ['value' => \App\Enums\RollStatus::Allocated->value, 'label' => 'Dialokasikan', 'count' => $summary['allocated'], 'dot' => 'bg-amber-500'],
                             ['value' => \App\Enums\RollStatus::Loaded->value, 'label' => 'Dimuat', 'count' => $summary['loaded'], 'dot' => 'bg-sky-500'],
@@ -103,7 +115,7 @@
                                 <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="font-mono text-xs font-medium text-brand-700 hover:text-brand-900">{{ $roll->carton->nomor_hu }}</a>
                                 <p class="text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
                             @else
-                                <span class="text-xs text-slate-400">{{ $roll->productionBatch ? 'Siap packing' : 'Input manual' }}</span>
+                                <span class="text-xs text-slate-400">{{ $roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : ($roll->productionBatch ? 'Belum packing' : 'Input manual') }}</span>
                             @endif
                         </x-td>
                         <x-td class="tabular-nums">{{ number_format($roll->denier) }} D / {{ number_format($roll->filamen) }} F</x-td>
@@ -116,10 +128,10 @@
                         </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-2">
-                                @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
+                                @if ($roll->status !== \App\Enums\RollStatus::Cancelled && $roll->status !== \App\Enums\RollStatus::Waste)
                                     <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="ghost" size="sm" icon="printer">Label</x-button>
                                 @endif
-                                @if ($roll->status === \App\Enums\RollStatus::ReadyToPack)
+                                @if (in_array($roll->status, [\App\Enums\RollStatus::ReadyToPack, \App\Enums\RollStatus::Overweight, \App\Enums\RollStatus::Waste], true))
                                     <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
                                     <x-confirm-button
                                         :action="route('warehouse.rolls.cancel', $roll)"
@@ -175,13 +187,13 @@
                     <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
                         <p>Spesifikasi: <span class="font-medium text-slate-700">{{ $roll->denier }}D / {{ $roll->filamen }}F</span></p>
                         <p>Berat: <span class="font-medium text-slate-700">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</span></p>
-                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? ($roll->productionBatch ? 'Siap packing' : 'Input manual') }}</span></p>
+                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? ($roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : ($roll->productionBatch ? 'Belum packing' : 'Input manual')) }}</span></p>
                     </div>
                     <div class="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
-                        @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
+                        @if ($roll->status !== \App\Enums\RollStatus::Cancelled && $roll->status !== \App\Enums\RollStatus::Waste)
                             <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="secondary" size="sm">Label</x-button>
                         @endif
-                        @if ($roll->status === \App\Enums\RollStatus::ReadyToPack)
+                        @if (in_array($roll->status, [\App\Enums\RollStatus::ReadyToPack, \App\Enums\RollStatus::Overweight, \App\Enums\RollStatus::Waste], true))
                             <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="secondary" size="sm">Edit</x-button>
                             <x-confirm-button
                                 :action="route('warehouse.rolls.cancel', $roll)"

@@ -18,7 +18,7 @@ class WeighDtyRollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'berat_gram' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'between:500,5600'],
+            'berat_gram' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999'],
             'nomor_seri' => ['nullable', 'string', 'max:32', 'unique:dty_rolls,nomor_seri'],
             'kode_rol' => ['nullable', 'string', 'max:50', 'unique:dty_rolls,kode_rol'],
         ];
@@ -34,7 +34,7 @@ class WeighDtyRollRequest extends FormRequest
             'berat_gram.numeric' => 'Berat bobbin harus berupa angka.',
             'berat_gram.gt' => 'Berat bobbin harus lebih besar dari 0.',
             'berat_gram.decimal' => 'Berat bobbin maksimal memiliki 2 angka desimal.',
-            'berat_gram.between' => 'Berat bobbin harus berada di rentang 500–5.600 gram.',
+            'berat_gram.max' => 'Berat bobbin tidak wajar. Periksa kembali timbangan.',
         ];
     }
 }

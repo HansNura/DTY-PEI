@@ -67,20 +67,56 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('Merge / Lot');
     }
 
-    public function test_weight_outside_the_bobbin_standard_is_rejected(): void
+    public function test_weights_outside_the_standard_are_classified_as_anomalies(): void
     {
         $warehouseUser = $this->warehouseUser();
         $this->activeBatch();
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '499'])
-            ->assertSessionHasErrors('berat_gram');
+            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5601'])
+            ->assertRedirect();
+
+        $overweight = DtyRoll::where('berat_gram', 5601)->firstOrFail();
+        $this->assertSame(RollStatus::Overweight, $overweight->status);
+        $this->assertSame('OW', $overweight->grade);
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5601'])
-            ->assertSessionHasErrors('berat_gram');
+            ->get(route('warehouse.rolls.label', $overweight))
+            ->assertOk()
+            ->assertSee('OVERWEIGHT / HOLD')
+            ->assertSee('Grade OW');
 
-        $this->assertDatabaseCount('dty_rolls', 0);
+        $this->actingAs($warehouseUser)
+            ->post(route('warehouse.rolls.store'), ['berat_gram' => '499'])
+            ->assertRedirect(route('warehouse.rolls.index'));
+
+        $waste = DtyRoll::where('berat_gram', 499)->firstOrFail();
+        $this->assertSame(RollStatus::Waste, $waste->status);
+        $this->assertSame('WASTE', $waste->grade);
+        $this->actingAs($warehouseUser)->get(route('warehouse.rolls.label', $waste))->assertForbidden();
+    }
+
+    public function test_anomaly_bobbin_can_be_reweighed_back_to_a_standard_grade(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $roll = DtyRoll::factory()->create([
+            'status' => RollStatus::Waste,
+            'grade' => 'WASTE',
+            'berat_gram' => 450,
+            'created_by' => $warehouseUser->id,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.edit', $roll))
+            ->assertOk();
+
+        $this->actingAs($warehouseUser)
+            ->put(route('warehouse.rolls.update', $roll), ['berat_gram' => '5400'])
+            ->assertRedirect(route('warehouse.rolls.index'));
+
+        $roll->refresh();
+        $this->assertSame(RollStatus::ReadyToPack, $roll->status);
+        $this->assertSame('AX', $roll->grade);
     }
 
     public function test_ready_to_pack_bobbin_can_be_reweighed_and_cancelled_but_allocated_cannot(): void
@@ -227,6 +263,8 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('DTY 150/48 NI Z')
             ->assertSee('Grade bobot otomatis')
             ->assertSee('Rentang bobot')
+            ->assertSee('Overweight / Hold')
+            ->assertSee('Waste / Scrap')
             ->assertSee('Contoh: 5485')
             ->assertDontSee('name="denier"', false)
             ->assertDontSee('name="filamen"', false)

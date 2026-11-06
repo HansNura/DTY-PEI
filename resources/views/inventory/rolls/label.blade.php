@@ -20,6 +20,13 @@
             <div class="mt-4">
                 <p data-qr-error class="hidden text-sm text-rose-700" role="alert"></p>
             </div>
+
+            @if ($roll->status === \App\Enums\RollStatus::Overweight)
+                <div class="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <p class="font-semibold">OVERWEIGHT / HOLD — Grade OW</p>
+                    <p class="mt-1 text-xs leading-relaxed">Bobbin melebihi 5.600 g. Jangan dipacking ke box reguler; tunggu keputusan QC atau rewind. Label ini adalah label khusus, bukan grade AX.</p>
+                </div>
+            @endif
         </div>
 
         <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] print:hidden">

@@ -60,6 +60,13 @@ Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
 > Bobbin baru hanya lahir dari penimbangan batch aktif. Kardus baru hanya lahir dari packing; form input kardus/bobbin manual lama sudah dihapus.
 
+### Anomali bobot bobbin
+
+- Berat **> 5.600 g** → status **Overweight / Hold**, grade **OW**. Tidak boleh dipacking ke box reguler; label khusus OW tetap bisa dicetak.
+- Berat **< 500 g** → status **Waste / Scrap**, grade **WASTE**. Label standar tidak dicetak; data tetap tersimpan untuk rekap limbah.
+- Bobbin anomali ditolak oleh scanner packing dan tidak bisa masuk kardus pelanggan.
+- Bobbin anomali tetap bisa diedit beratnya; jika kembali ke rentang standar, statusnya menjadi siap packing.
+
 ### Data demo produksi dan pelanggan
 
 `ProductionBatchSeeder` mengisi 5 batch demo, termasuk `4D9164` sebagai batch aktif. `DtyInventorySeeder` mengisi 9 kardus dummy dan 66 bobbin dengan variasi grade dan status. `CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.

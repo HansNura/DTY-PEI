@@ -17,6 +17,8 @@ class StatusTone
             'driver' => 'success',
 
             'ready_to_pack' => 'info',
+            'overweight' => 'warning',
+            'waste' => 'danger',
             'in_stock' => 'success',
             'allocated' => 'warning',
             'loaded' => 'info',

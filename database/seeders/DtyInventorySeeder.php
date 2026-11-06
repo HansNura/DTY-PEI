@@ -115,6 +115,10 @@ class DtyInventorySeeder extends Seeder
             ['merge' => '4D9168', 'grade' => 'B', 'weight' => 620],
             ['merge' => '4D9164', 'grade' => 'A', 'weight' => 3500],
             ['merge' => '4D9165', 'grade' => 'B', 'weight' => 750],
+            ['merge' => '4D9164', 'grade' => 'OW', 'weight' => 5700, 'status' => RollStatus::Overweight],
+            ['merge' => '4D9165', 'grade' => 'OW', 'weight' => 5820, 'status' => RollStatus::Overweight],
+            ['merge' => '4D9166', 'grade' => 'WASTE', 'weight' => 450, 'status' => RollStatus::Waste],
+            ['merge' => '4D9167', 'grade' => 'WASTE', 'weight' => 320, 'status' => RollStatus::Waste],
         ];
 
         foreach ($configs as $index => $config) {
@@ -136,7 +140,7 @@ class DtyInventorySeeder extends Seeder
                     'berat_gram' => $config['weight'],
                     'nomor_lot' => $batch->nomor_merge,
                     'qr_token' => substr(hash('sha256', $kodeRol), 0, 64),
-                    'status' => RollStatus::ReadyToPack,
+                    'status' => $config['status'] ?? RollStatus::ReadyToPack,
                     'created_by' => $user->id,
                 ],
             );
