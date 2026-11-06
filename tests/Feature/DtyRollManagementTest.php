@@ -40,6 +40,10 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('data-qr-code', false)
             ->assertSee('data-qr-token="'.$roll->nomor_seri.'"', false)
             ->assertSee($roll->nomor_seri)
+            ->assertSee('Pratinjau stiker')
+            ->assertSee('Detail bobbin')
+            ->assertSee('Grade bobot')
+            ->assertSee('Cara pakai stiker')
             ->assertSee('DTY 150/48 NI')
             ->assertSee('Merge / Lot');
     }
