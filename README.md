@@ -53,7 +53,7 @@ Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 ### Alur produksi dan packing
 
 1. **Produksi** — buat batch dengan merge dan spesifikasi, lalu aktifkan.
-2. **Timbang bobbin** — masukkan berat; grade bobot, serial, dan QR dibuat otomatis.
+2. **Timbang bobbin** — masukkan nomor seri 17 digit dan berat; QR mengikuti nomor seri, sedangkan grade bobot dihitung otomatis.
 3. **Packing kardus** — scan 6 bobbin dengan merge/grade sama; net, unit, grade, HU, dan tanggal dihitung otomatis, gross diisi dari timbangan fisik.
 4. **Surat jalan** — logistik memilih bobbin yang sudah dipacking.
 5. **Scan muatan → driver → POD** — alur pengiriman dan bukti terima seperti sebelumnya.

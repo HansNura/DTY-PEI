@@ -76,7 +76,7 @@ Kardus tidak lagi membuat bobbin secara manual. Kardus lahir dari proses **packi
 | dty_carton_id | bigint FK dty_cartons nullable | Kardus tujuan; null selama `ready_to_pack` |
 | production_batch_id | bigint FK production_batches nullable | Batch produksi asal |
 | kode_rol | varchar(50) unique | Kode internal rol |
-| nomor_seri | varchar(32) unique | Serial bobbin 17 digit: 5 digit spindle + `0079` + tanggal `YYYYMMDD`; payload QR label bobbin |
+| nomor_seri | varchar(32) unique | Nomor seri 17 digit yang diinput manual: 2 digit area/lini + 3 digit mesin/spindel + 3 digit doffing/section + 1 digit shift/sisi + 8 digit tanggal `YYYYMMDD`; payload QR label bobbin |
 | grade | varchar(10) nullable index | Grade bobot saat ditimbang (`AX`, `AE`, `A`, `B`) |
 | denier | integer | Snapshot spesifikasi batch |
 | filamen | integer | Snapshot spesifikasi batch |

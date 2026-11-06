@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mx-auto max-w-3xl space-y-6">
-        <x-page-header title="Timbang bobbin" description="Masukkan berat bersih bobbin. Serial, QR, merge, spesifikasi, dan grade dibuat otomatis.">
+        <x-page-header title="Timbang bobbin" description="Masukkan nomor seri dan berat bersih. QR, merge, spesifikasi, dan grade mengikuti data yang diisi.">
             <x-slot:actions>
                 <x-button href="{{ route('warehouse.rolls.index') }}" variant="ghost" icon="arrow-left">Kembali</x-button>
             </x-slot:actions>

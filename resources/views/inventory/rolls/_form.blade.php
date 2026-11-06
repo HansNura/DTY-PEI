@@ -2,11 +2,24 @@
     $isEdit = isset($roll);
     $batch = $isEdit ? $roll->productionBatch : ($activeBatch ?? null);
     $weight = old('berat_gram', $isEdit ? $roll->berat_gram : '');
+    $serialValue = old('nomor_seri', $isEdit ? $roll->nomor_seri : '');
 @endphp
 
 <div class="space-y-5"
      x-data="{
+        serial: '{{ $serialValue }}',
         weight: '{{ $weight }}',
+        get serialValid() {
+            return /^[0-9]{17}$/.test(this.serial);
+        },
+        get serialDate() {
+            const raw = this.serial.slice(9, 17);
+            if (! /^[0-9]{8}$/.test(raw)) return '—';
+            const date = new Date(raw.slice(0, 4) + '-' + raw.slice(4, 6) + '-' + raw.slice(6, 8) + 'T00:00:00');
+            return Number.isNaN(date.getTime())
+                ? '—'
+                : date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        },
         get weightValue() {
             const value = parseFloat(this.weight);
             return Number.isFinite(value) ? value : null;
@@ -22,28 +35,70 @@
             return 'B';
         }
      }">
-    @if ($isEdit)
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2">
             <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identitas bobbin</p>
-            <div class="mt-3">
-                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</p>
-                <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
-            </div>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">17 digit · manual</span>
         </div>
-    @elseif (! empty($previewSerial))
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identitas bobbin</p>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pratinjau otomatis</span>
-            </div>
-            <div class="mt-3">
-                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</p>
-                <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ old('nomor_seri', $previewSerial) }}</p>
-            </div>
-            <input type="hidden" name="nomor_seri" value="{{ old('nomor_seri', $previewSerial) }}">
-            <p class="mt-2 text-[10px] text-slate-400">Nomor seri ini dipakai saat bobbin disimpan.</p>
+
+        <div class="mt-3">
+            <label for="nomor_seri" class="block text-sm font-medium text-slate-700">Nomor seri <span class="text-rose-600">*</span></label>
+            <input id="nomor_seri" name="nomor_seri" type="text" inputmode="numeric" maxlength="17" pattern="[0-9]{17}"
+                   x-model="serial" value="{{ $serialValue }}" placeholder="99054007920261103" required
+                   class="mt-1.5 block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 font-mono text-sm tracking-wide text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none" />
+            <p class="mt-1.5 text-xs text-slate-500">Isi satu field 17 digit. Sistem memecahnya menjadi komponen di bawah; nilai inilah yang menjadi payload QR.</p>
+            <p x-show="serial.length > 0 && ! serialValid" x-cloak class="mt-1 text-xs font-medium text-rose-700">Nomor seri harus tepat 17 digit angka.</p>
         </div>
-    @endif
+
+        <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
+            <table class="w-full text-left text-[11px]" aria-label="Penjelasan komponen nomor seri">
+                <thead class="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
+                    <tr>
+                        <th scope="col" class="px-3 py-2 font-semibold">Potongan</th>
+                        <th scope="col" class="px-3 py-2 font-semibold">Digit</th>
+                        <th scope="col" class="px-3 py-2 font-semibold">Nilai</th>
+                        <th scope="col" class="px-3 py-2 font-semibold">Sumber data</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    <tr>
+                        <td class="px-3 py-2 font-semibold text-slate-700">2 digit awal</td>
+                        <td class="px-3 py-2 text-slate-500">1–2</td>
+                        <td class="px-3 py-2 font-mono font-semibold text-brand-700" x-text="serial.slice(0, 2) || '—'"></td>
+                        <td class="px-3 py-2 text-slate-500">Kode area / lini produksi / modul DTY</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3 py-2 font-semibold text-slate-700">3 digit berikutnya</td>
+                        <td class="px-3 py-2 text-slate-500">3–5</td>
+                        <td class="px-3 py-2 font-mono font-semibold text-brand-700" x-text="serial.slice(2, 5) || '—'"></td>
+                        <td class="px-3 py-2 text-slate-500">Nomor mesin / posisi spindel</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3 py-2 font-semibold text-slate-700">3 digit berikutnya</td>
+                        <td class="px-3 py-2 text-slate-500">6–8</td>
+                        <td class="px-3 py-2 font-mono font-semibold text-brand-700" x-text="serial.slice(5, 8) || '—'"></td>
+                        <td class="px-3 py-2 text-slate-500">Nomor siklus doffing / section posisi</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3 py-2 font-semibold text-slate-700">1 digit</td>
+                        <td class="px-3 py-2 text-slate-500">9</td>
+                        <td class="px-3 py-2 font-mono font-semibold text-brand-700" x-text="serial.slice(8, 9) || '—'"></td>
+                        <td class="px-3 py-2 text-slate-500">Kode shift kerja / sisi mesin</td>
+                    </tr>
+                    <tr>
+                        <td class="px-3 py-2 font-semibold text-slate-700">8 digit akhir</td>
+                        <td class="px-3 py-2 text-slate-500">10–17</td>
+                        <td class="px-3 py-2 font-mono font-semibold text-brand-700">
+                            <span x-text="serial.slice(9, 17) || '—'"></span>
+                            <span class="mt-0.5 block font-sans text-[10px] font-normal text-slate-500" x-text="serialDate"></span>
+                        </td>
+                        <td class="px-3 py-2 text-slate-500">Tanggal produksi doffing (YYYYMMDD)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="mt-2 text-[10px] text-slate-400">Contoh: 99054007920261103 → 99 · 054 · 007 · 9 · 20261103.</p>
+    </div>
 
     <div class="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
         <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Batch produksi</p>

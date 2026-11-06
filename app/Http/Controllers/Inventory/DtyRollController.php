@@ -65,12 +65,8 @@ class DtyRollController extends Controller
 
     public function create(BobbinWeighingService $weighingService): View
     {
-        $activeBatch = $weighingService->activeBatch();
-        $preview = $weighingService->preview($activeBatch);
-
         return view('inventory.rolls.create', [
-            'activeBatch' => $activeBatch,
-            'previewSerial' => $preview['serial'],
+            'activeBatch' => $weighingService->activeBatch(),
         ]);
     }
 
@@ -118,7 +114,11 @@ class DtyRollController extends Controller
             'Bobbin yang sudah dipacking tidak dapat diubah.',
         );
 
-        $roll = $weighingService->reweigh($roll, (float) $request->validated('berat_gram'));
+        $roll = $weighingService->reweigh(
+            $roll,
+            (float) $request->validated('berat_gram'),
+            $request->validated('nomor_seri'),
+        );
 
         $message = match ($roll->status) {
             RollStatus::Waste => 'Bobbin diperbarui sebagai WASTE / SCRAP. Label standar tidak dicetak.',

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Inventory;
 
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class WeighDtyRollRequest extends FormRequest
 {
@@ -19,7 +20,11 @@ class WeighDtyRollRequest extends FormRequest
     {
         return [
             'berat_gram' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999'],
-            'nomor_seri' => ['nullable', 'string', 'max:32', 'unique:dty_rolls,nomor_seri'],
+            'nomor_seri' => [
+                'required',
+                'digits:17',
+                Rule::unique('dty_rolls', 'nomor_seri')->ignore($this->route('roll')),
+            ],
         ];
     }
 
@@ -34,6 +39,9 @@ class WeighDtyRollRequest extends FormRequest
             'berat_gram.gt' => 'Berat bobbin harus lebih besar dari 0.',
             'berat_gram.decimal' => 'Berat bobbin maksimal memiliki 2 angka desimal.',
             'berat_gram.max' => 'Berat bobbin tidak wajar. Periksa kembali timbangan.',
+            'nomor_seri.required' => 'Nomor seri wajib diisi.',
+            'nomor_seri.digits' => 'Nomor seri harus 17 digit angka.',
+            'nomor_seri.unique' => 'Nomor seri sudah digunakan bobbin lain.',
         ];
     }
 }

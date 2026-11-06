@@ -21,26 +21,10 @@ class BobbinWeighingService
         return $this->batchService->active();
     }
 
-    /**
-     * @return array{serial: ?string}
-     */
-    public function preview(?ProductionBatch $batch = null): array
-    {
-        $batch ??= $this->activeBatch();
-
-        if ($batch === null) {
-            return ['serial' => null];
-        }
-
-        return [
-            'serial' => $this->qrCodeService->generateRollSerial($batch->production_date),
-        ];
-    }
-
     public function weigh(
         float $beratGram,
         User $user,
-        ?string $nomorSeri = null,
+        string $nomorSeri,
     ): DtyRoll {
         $batch = $this->activeBatch();
 
@@ -55,7 +39,7 @@ class BobbinWeighingService
         return DtyRoll::create([
             'production_batch_id' => $batch->id,
             'kode_rol' => $this->qrCodeService->generateRollCode(),
-            'nomor_seri' => $nomorSeri ?: $this->qrCodeService->generateRollSerial($batch->production_date),
+            'nomor_seri' => $nomorSeri,
             'grade' => $grade,
             'denier' => $batch->denier,
             'filamen' => $batch->filamen,
@@ -67,12 +51,13 @@ class BobbinWeighingService
         ]);
     }
 
-    public function reweigh(DtyRoll $roll, float $beratGram): DtyRoll
+    public function reweigh(DtyRoll $roll, float $beratGram, string $nomorSeri): DtyRoll
     {
         [$grade, $status] = $this->classification($beratGram);
 
         $roll->update([
             'berat_gram' => $beratGram,
+            'nomor_seri' => $nomorSeri,
             'grade' => $grade,
             'status' => $status,
         ]);

@@ -30,7 +30,10 @@ class DtyRollManagementTest extends TestCase
     public function test_active_batch_is_required_before_weighing_a_bobbin(): void
     {
         $this->actingAs($this->warehouseUser())
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5485'])
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '5485',
+                'nomor_seri' => '99054007920261103',
+            ])
             ->assertSessionHasErrors('berat_gram');
 
         $this->assertDatabaseCount('dty_rolls', 0);
@@ -43,6 +46,7 @@ class DtyRollManagementTest extends TestCase
 
         $response = $this->actingAs($warehouseUser)->post(route('warehouse.rolls.store'), [
             'berat_gram' => '5485.00',
+            'nomor_seri' => '99054007920261103',
         ]);
 
         $roll = DtyRoll::firstOrFail();
@@ -53,7 +57,8 @@ class DtyRollManagementTest extends TestCase
         $this->assertSame(RollStatus::ReadyToPack, $roll->status);
         $this->assertSame('4D9164', $roll->nomor_lot);
         $this->assertSame('DTY 150/48 NI Z', $roll->specification);
-        $this->assertMatchesRegularExpression('/^\d{5}0079\d{8}$/', $roll->nomor_seri);
+        $this->assertSame('99054007920261103', $roll->nomor_seri);
+        $this->assertMatchesRegularExpression('/^\d{17}$/', $roll->nomor_seri);
         $this->assertSame(64, strlen($roll->qr_token));
 
         $this->actingAs($warehouseUser)
@@ -73,7 +78,10 @@ class DtyRollManagementTest extends TestCase
         $this->activeBatch();
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '5601'])
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '5601',
+                'nomor_seri' => '99055007920261103',
+            ])
             ->assertRedirect();
 
         $overweight = DtyRoll::where('berat_gram', 5601)->firstOrFail();
@@ -87,7 +95,10 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('Grade OW');
 
         $this->actingAs($warehouseUser)
-            ->post(route('warehouse.rolls.store'), ['berat_gram' => '499'])
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '499',
+                'nomor_seri' => '99056007920261103',
+            ])
             ->assertRedirect(route('warehouse.rolls.index'));
 
         $waste = DtyRoll::where('berat_gram', 499)->firstOrFail();
@@ -103,6 +114,7 @@ class DtyRollManagementTest extends TestCase
             'status' => RollStatus::Waste,
             'grade' => 'WASTE',
             'berat_gram' => 450,
+            'nomor_seri' => '20219007920261103',
             'created_by' => $warehouseUser->id,
         ]);
 
@@ -111,7 +123,10 @@ class DtyRollManagementTest extends TestCase
             ->assertOk();
 
         $this->actingAs($warehouseUser)
-            ->put(route('warehouse.rolls.update', $roll), ['berat_gram' => '5400'])
+            ->put(route('warehouse.rolls.update', $roll), [
+                'berat_gram' => '5400',
+                'nomor_seri' => $roll->nomor_seri,
+            ])
             ->assertRedirect(route('warehouse.rolls.index'));
 
         $roll->refresh();
@@ -134,7 +149,10 @@ class DtyRollManagementTest extends TestCase
         ]);
 
         $this->actingAs($warehouseUser)
-            ->put(route('warehouse.rolls.update', $roll), ['berat_gram' => '5250.00'])
+            ->put(route('warehouse.rolls.update', $roll), [
+                'berat_gram' => '5250.00',
+                'nomor_seri' => '20217007920261103',
+            ])
             ->assertRedirect(route('warehouse.rolls.index'));
 
         $this->assertSame(5250.0, (float) $roll->fresh()->berat_gram);
@@ -217,25 +235,29 @@ class DtyRollManagementTest extends TestCase
             ->assertDontSee($roll->kode_rol);
     }
 
-    public function test_weighing_form_shows_generated_identity_preview(): void
+    public function test_weighing_form_has_manual_serial_and_component_explanation(): void
     {
         $warehouseUser = $this->warehouseUser();
         $this->activeBatch();
 
-        $response = $this->actingAs($warehouseUser)
+        $this->actingAs($warehouseUser)
             ->get(route('warehouse.rolls.create'))
             ->assertOk()
             ->assertSee('Identitas bobbin')
-            ->assertSee('Pratinjau otomatis')
+            ->assertSee('17 digit · manual')
             ->assertSee('Nomor seri')
-            ->assertDontSee('Kode rol')
             ->assertSee('name="nomor_seri"', false)
-            ->assertDontSee('name="kode_rol"', false);
-
-        $response->assertViewHas('previewSerial', fn (?string $serial): bool => is_string($serial) && preg_match('/^\d{5}0079\d{8}$/', $serial) === 1);
+            ->assertSee('99054007920261103')
+            ->assertSee('Kode area / lini produksi / modul DTY')
+            ->assertSee('Nomor mesin / posisi spindel')
+            ->assertSee('Nomor siklus doffing / section posisi')
+            ->assertSee('Kode shift kerja / sisi mesin')
+            ->assertSee('Tanggal produksi doffing')
+            ->assertDontSee('Kode rol')
+            ->assertDontSee('Pratinjau otomatis');
     }
 
-    public function test_preview_identity_is_used_when_saving_the_bobbin(): void
+    public function test_manual_serial_is_used_when_saving_the_bobbin(): void
     {
         $warehouseUser = $this->warehouseUser();
         $this->activeBatch();
@@ -249,6 +271,57 @@ class DtyRollManagementTest extends TestCase
 
         $roll = DtyRoll::firstOrFail();
         $this->assertSame('99099007920261103', $roll->nomor_seri);
+    }
+
+    public function test_nomor_seri_must_be_17_digits(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $this->activeBatch();
+
+        $this->actingAs($warehouseUser)
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '5485',
+                'nomor_seri' => '9905400792026110',
+            ])
+            ->assertSessionHasErrors('nomor_seri');
+
+        $this->assertDatabaseCount('dty_rolls', 0);
+    }
+
+    public function test_nomor_seri_must_be_unique(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $this->activeBatch();
+        DtyRoll::factory()->create([
+            'nomor_seri' => '99054007920261103',
+            'created_by' => $warehouseUser->id,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '5485',
+                'nomor_seri' => '99054007920261103',
+            ])
+            ->assertSessionHasErrors('nomor_seri');
+    }
+
+    public function test_nomor_seri_can_be_corrected_when_editing_weight(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $roll = DtyRoll::factory()->create([
+            'nomor_seri' => '20233007920261103',
+            'status' => RollStatus::ReadyToPack,
+            'created_by' => $warehouseUser->id,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->put(route('warehouse.rolls.update', $roll), [
+                'berat_gram' => '5485',
+                'nomor_seri' => '99054007920261103',
+            ])
+            ->assertRedirect(route('warehouse.rolls.index'));
+
+        $this->assertSame('99054007920261103', $roll->fresh()->nomor_seri);
     }
 
     public function test_weighing_form_shows_active_batch_and_grade_table(): void
