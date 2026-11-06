@@ -12,6 +12,7 @@ class Fleet extends Model
     use HasFactory;
 
     protected $fillable = [
+        'kode_armada',
         'nomor_polisi',
         'jenis_kendaraan',
         'kapasitas_kg',

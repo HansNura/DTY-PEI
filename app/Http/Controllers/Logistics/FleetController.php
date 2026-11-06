@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class FleetController extends Controller
@@ -40,15 +41,23 @@ class FleetController extends Controller
     {
         return view('logistics.fleets.create', [
             'drivers' => $this->activeDrivers(),
+            'previewCode' => $this->nextFleetCode(),
         ]);
     }
 
     public function store(SaveFleetRequest $request): RedirectResponse
     {
-        Fleet::create($request->validated());
+        $fleet = DB::transaction(function () use ($request): Fleet {
+            $fleet = Fleet::create($request->validated());
+            $fleet->update([
+                'kode_armada' => $this->nextFleetCode($fleet->id, $fleet->id),
+            ]);
+
+            return $fleet;
+        });
 
         return redirect()->route('logistics.fleets.index')
-            ->with('status', 'Data armada berhasil ditambahkan.');
+            ->with('status', "Data armada {$fleet->kode_armada} berhasil ditambahkan.");
     }
 
     public function edit(Fleet $fleet): View
@@ -86,5 +95,23 @@ class FleetController extends Controller
             ->where('is_active', true)
             ->orderBy('nama')
             ->get(['id', 'nama']);
+    }
+
+    private function nextFleetCode(?int $id = null, ?int $ignoreId = null): string
+    {
+        $id ??= ((int) Fleet::max('id')) + 1;
+        $base = 'ARM-'.str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+        $code = $base;
+        $suffix = 1;
+
+        while (Fleet::query()
+            ->where('kode_armada', $code)
+            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->exists()) {
+            $suffix++;
+            $code = "{$base}-{$suffix}";
+        }
+
+        return $code;
     }
 }

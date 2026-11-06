@@ -92,13 +92,14 @@ Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu 
 | is_active | boolean | |
 | created_at / updated_at | timestamp | |
 
-Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk relasi pengiriman. Titik koordinat dipilih lewat peta Leaflet pada form (klik peta, geser marker, atau gunakan lokasi perangkat).
+Pelanggan dinonaktifkan melalui `is_active`; data tidak dihapus agar aman untuk relasi pengiriman. Titik koordinat dipilih lewat peta Leaflet pada form (klik peta, geser marker, atau input koordinat manual).
 
 ### `fleets`
 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
+| kode_armada | varchar(30) unique nullable | Dibuat otomatis oleh sistem saat armada dibuat (format `ARM-0001`) |
 | nomor_polisi | varchar(20) unique | |
 | jenis_kendaraan | varchar(50) | |
 | kapasitas_kg | decimal(10,2) | |

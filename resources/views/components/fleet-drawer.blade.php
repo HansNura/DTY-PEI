@@ -34,11 +34,11 @@
 
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-mono text-xs font-semibold tracking-wide text-slate-900">{{ $fleet->nomor_polisi }}</span>
+                                <span class="font-mono text-[11px] font-medium text-brand-700">{{ $fleet->kode_armada ?? '—' }}</span>
                                 <x-badge :tone="$fleet->is_active ? 'success' : 'danger'" dot>{{ $fleet->is_active ? 'Aktif' : 'Nonaktif' }}</x-badge>
                             </div>
-                            <h2 id="{{ $drawerId }}-title" class="mt-1.5 truncate text-lg font-semibold tracking-tight text-slate-900">{{ $fleet->jenis_kendaraan }}</h2>
-                            <p class="mt-1 text-xs text-slate-500">Armada #{{ $fleet->id }}</p>
+                            <h2 id="{{ $drawerId }}-title" class="mt-1.5 truncate text-lg font-semibold tracking-tight text-slate-900">{{ $fleet->nomor_polisi }}</h2>
+                            <p class="mt-1 text-xs text-slate-500">{{ $fleet->jenis_kendaraan }}</p>
                         </div>
 
                         <button type="button" x-on:click="open = false" class="-mr-1 -mt-1 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600" aria-label="Tutup info armada">

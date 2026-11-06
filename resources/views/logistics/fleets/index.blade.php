@@ -71,7 +71,12 @@
             <tbody class="divide-y divide-slate-100">
                 @forelse ($fleets as $fleet)
                     <tr class="hover:bg-slate-50/60">
-                        <x-td><span class="font-mono text-xs font-semibold text-slate-900">{{ $fleet->nomor_polisi }}</span></x-td>
+                        <x-td>
+                            @if ($fleet->kode_armada)
+                                <p class="font-mono text-[11px] font-medium text-brand-700">{{ $fleet->kode_armada }}</p>
+                            @endif
+                            <span class="font-mono text-xs font-semibold text-slate-900">{{ $fleet->nomor_polisi }}</span>
+                        </x-td>
                         <x-td>{{ $fleet->jenis_kendaraan }}</x-td>
                         <x-td class="tabular-nums">{{ number_format((float) $fleet->kapasitas_kg, 2, ',', '.') }} kg</x-td>
                         <x-td>{{ $fleet->driver?->nama ?? 'Belum ditentukan' }}</x-td>
@@ -109,6 +114,9 @@
                 <x-card padding="p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div>
+                            @if ($fleet->kode_armada)
+                                <p class="font-mono text-[11px] font-medium text-brand-700">{{ $fleet->kode_armada }}</p>
+                            @endif
                             <p class="font-mono text-sm font-semibold text-slate-900">{{ $fleet->nomor_polisi }}</p>
                             <p class="text-xs text-slate-500">{{ $fleet->jenis_kendaraan }}</p>
                         </div>

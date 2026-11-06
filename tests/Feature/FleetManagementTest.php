@@ -19,6 +19,7 @@ class FleetManagementTest extends TestCase
 
         $this->actingAs($logisticsUser)
             ->post(route('logistics.fleets.store'), [
+                'kode_armada' => 'MANUAL-999',
                 'nomor_polisi' => ' b 1234 cde ',
                 'jenis_kendaraan' => 'Truk Engkel',
                 'kapasitas_kg' => '5000.00',
@@ -27,25 +28,30 @@ class FleetManagementTest extends TestCase
             ->assertRedirect(route('logistics.fleets.index'));
 
         $fleet = Fleet::firstOrFail();
+        $this->assertSame('ARM-0001', $fleet->kode_armada);
         $this->assertSame('B 1234 CDE', $fleet->nomor_polisi);
         $this->assertSame($driver->id, $fleet->driver_id);
+        $this->assertDatabaseMissing('fleets', ['kode_armada' => 'MANUAL-999']);
 
         $this->actingAs($logisticsUser)
             ->get(route('logistics.fleets.index'))
             ->assertOk()
             ->assertSee('Budi Driver')
+            ->assertSee('ARM-0001')
             ->assertSee('data-fleet-drawer', false)
-            ->assertSee('Armada #', false)
             ->assertSee('Ringkasan');
     }
 
-    public function test_fleet_form_has_placeholders(): void
+    public function test_fleet_form_has_automatic_code_and_placeholders(): void
     {
         $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
 
         $this->actingAs($logisticsUser)
             ->get(route('logistics.fleets.create'))
             ->assertOk()
+            ->assertSee('ARM-0001')
+            ->assertSee('Otomatis')
+            ->assertDontSee('name="kode_armada"', false)
             ->assertSee('Contoh: D 1234 AB')
             ->assertSee('Contoh: Truk Wingbox')
             ->assertSee('Contoh: 8000');
