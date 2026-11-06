@@ -20,6 +20,9 @@ document.querySelectorAll('[data-qr-code]').forEach((canvas) => {
             light: '#ffffff',
         },
     }).then(() => {
+        canvas.style.removeProperty('width');
+        canvas.style.removeProperty('height');
+
         if (printButton) {
             printButton.disabled = false;
         }
