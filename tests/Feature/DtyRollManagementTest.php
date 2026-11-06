@@ -178,6 +178,43 @@ class DtyRollManagementTest extends TestCase
             ->assertSee($roll->kode_rol);
     }
 
+    public function test_weighing_form_shows_generated_identity_preview(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $this->activeBatch();
+
+        $response = $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.create'))
+            ->assertOk()
+            ->assertSee('Identitas bobbin')
+            ->assertSee('Pratinjau otomatis')
+            ->assertSee('Nomor seri')
+            ->assertSee('Kode rol')
+            ->assertSee('name="nomor_seri"', false)
+            ->assertSee('name="kode_rol"', false);
+
+        $response->assertViewHas('previewSerial', fn (?string $serial): bool => is_string($serial) && preg_match('/^\d{5}0079\d{8}$/', $serial) === 1);
+        $response->assertViewHas('previewKodeRol', fn (?string $code): bool => is_string($code) && str_starts_with($code, 'DTY-'));
+    }
+
+    public function test_preview_identity_is_used_when_saving_the_bobbin(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $this->activeBatch();
+
+        $this->actingAs($warehouseUser)
+            ->post(route('warehouse.rolls.store'), [
+                'berat_gram' => '5485',
+                'nomor_seri' => '99099007920261103',
+                'kode_rol' => 'DTY-PREVIEW-001',
+            ])
+            ->assertRedirect();
+
+        $roll = DtyRoll::firstOrFail();
+        $this->assertSame('99099007920261103', $roll->nomor_seri);
+        $this->assertSame('DTY-PREVIEW-001', $roll->kode_rol);
+    }
+
     public function test_weighing_form_shows_active_batch_and_grade_table(): void
     {
         $warehouseUser = $this->warehouseUser();

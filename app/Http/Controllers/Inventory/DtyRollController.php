@@ -65,14 +65,24 @@ class DtyRollController extends Controller
 
     public function create(BobbinWeighingService $weighingService): View
     {
+        $activeBatch = $weighingService->activeBatch();
+        $preview = $weighingService->preview($activeBatch);
+
         return view('inventory.rolls.create', [
-            'activeBatch' => $weighingService->activeBatch(),
+            'activeBatch' => $activeBatch,
+            'previewSerial' => $preview['serial'],
+            'previewKodeRol' => $preview['code'],
         ]);
     }
 
     public function store(WeighDtyRollRequest $request, BobbinWeighingService $weighingService): RedirectResponse
     {
-        $roll = $weighingService->weigh((float) $request->validated('berat_gram'), $request->user());
+        $roll = $weighingService->weigh(
+            (float) $request->validated('berat_gram'),
+            $request->user(),
+            $request->validated('nomor_seri'),
+            $request->validated('kode_rol'),
+        );
 
         return redirect()->route('warehouse.rolls.label', $roll)
             ->with('status', "Bobbin {$roll->nomor_seri} berhasil ditimbang. Stiker siap dicetak.");

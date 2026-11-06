@@ -35,6 +35,26 @@
                 </div>
             </dl>
         </div>
+    @elseif (! empty($previewSerial))
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identitas bobbin</p>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pratinjau otomatis</span>
+            </div>
+            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</dt>
+                    <dd class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ old('nomor_seri', $previewSerial) }}</dd>
+                </div>
+                <div>
+                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Kode rol</dt>
+                    <dd class="mt-1 font-mono text-xs font-medium text-slate-700">{{ old('kode_rol', $previewKodeRol) }}</dd>
+                </div>
+            </dl>
+            <input type="hidden" name="nomor_seri" value="{{ old('nomor_seri', $previewSerial) }}">
+            <input type="hidden" name="kode_rol" value="{{ old('kode_rol', $previewKodeRol) }}">
+            <p class="mt-2 text-[10px] text-slate-400">Nilai ini dipakai saat bobbin disimpan.</p>
+        </div>
     @endif
 
     <div class="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
