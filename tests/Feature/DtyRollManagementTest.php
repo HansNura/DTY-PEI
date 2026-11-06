@@ -161,6 +161,23 @@ class DtyRollManagementTest extends TestCase
             ->assertDontSee($inStock->kode_rol);
     }
 
+    public function test_edit_weight_page_shows_the_bobbin_serial(): void
+    {
+        $warehouseUser = $this->warehouseUser();
+        $roll = DtyRoll::factory()->create([
+            'nomor_seri' => '20233007920261103',
+            'status' => RollStatus::ReadyToPack,
+            'created_by' => $warehouseUser->id,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.edit', $roll))
+            ->assertOk()
+            ->assertSee('20233007920261103')
+            ->assertSee('Nomor seri')
+            ->assertSee($roll->kode_rol);
+    }
+
     public function test_weighing_form_shows_active_batch_and_grade_table(): void
     {
         $warehouseUser = $this->warehouseUser();
