@@ -62,7 +62,7 @@ Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
 ### Data demo produksi dan pelanggan
 
-`ProductionBatchSeeder` mengisi batch demo `4D9164` dengan spesifikasi `DTY 150/48 NI Z`. `CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
+`ProductionBatchSeeder` mengisi 5 batch demo, termasuk `4D9164` sebagai batch aktif. `DtyInventorySeeder` mengisi 9 kardus dummy dan 66 bobbin dengan variasi grade dan status. `CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
 
 ```bash
 php artisan db:seed --class=CustomerSeeder
@@ -79,7 +79,7 @@ php artisan db:seed --class=FleetSeeder
 ## Perintah berguna
 
 ```bash
-php artisan migrate:fresh --seed   # reset database + akun, batch, pelanggan & armada demo
+php artisan migrate:fresh --seed   # reset database + batch, kardus, bobbin, pelanggan & armada demo
 php artisan test                   # seluruh test
 composer ci                        # Pint check + seluruh test
 composer lint                      # perbaiki format kode otomatis

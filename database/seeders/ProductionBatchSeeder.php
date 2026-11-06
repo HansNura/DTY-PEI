@@ -20,20 +20,28 @@ class ProductionBatchSeeder extends Seeder
             return;
         }
 
-        $batch = ProductionBatch::updateOrCreate(
-            ['nomor_merge' => '4D9164'],
-            [
-                'denier' => 150,
-                'filamen' => 48,
-                'intermingled' => false,
-                'twist_direction' => 'Z',
-                'production_date' => '2026-11-03',
-                'created_by' => $user->id,
-            ],
-        );
+        $batches = [
+            ['nomor_merge' => '4D9164', 'denier' => 150, 'filamen' => 48, 'intermingled' => false, 'twist_direction' => 'Z', 'production_date' => '2026-11-03'],
+            ['nomor_merge' => '4D9165', 'denier' => 150, 'filamen' => 48, 'intermingled' => false, 'twist_direction' => 'Z', 'production_date' => '2026-11-01'],
+            ['nomor_merge' => '4D9166', 'denier' => 150, 'filamen' => 48, 'intermingled' => false, 'twist_direction' => 'Z', 'production_date' => '2026-10-28'],
+            ['nomor_merge' => '4D9167', 'denier' => 150, 'filamen' => 48, 'intermingled' => false, 'twist_direction' => 'S', 'production_date' => '2026-10-20'],
+            ['nomor_merge' => '4D9168', 'denier' => 300, 'filamen' => 72, 'intermingled' => true, 'twist_direction' => 'Z', 'production_date' => '2026-10-10'],
+        ];
+
+        $created = [];
+
+        foreach ($batches as $batch) {
+            $created[$batch['nomor_merge']] = ProductionBatch::updateOrCreate(
+                ['nomor_merge' => $batch['nomor_merge']],
+                [
+                    ...$batch,
+                    'created_by' => $user->id,
+                ],
+            );
+        }
 
         if (! ProductionBatch::query()->active()->exists()) {
-            app(ProductionBatchService::class)->activate($batch);
+            app(ProductionBatchService::class)->activate($created['4D9164']);
         }
     }
 }
