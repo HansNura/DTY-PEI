@@ -21,6 +21,7 @@ class FleetController extends Controller
 
         $fleets = Fleet::query()
             ->with('driver')
+            ->withCount('deliveryOrders')
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('nomor_polisi', 'like', "%{$search}%")
                     ->orWhere('jenis_kendaraan', 'like', "%{$search}%")

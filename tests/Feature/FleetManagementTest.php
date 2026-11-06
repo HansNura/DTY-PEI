@@ -33,7 +33,49 @@ class FleetManagementTest extends TestCase
         $this->actingAs($logisticsUser)
             ->get(route('logistics.fleets.index'))
             ->assertOk()
-            ->assertSee('Budi Driver');
+            ->assertSee('Budi Driver')
+            ->assertSee('data-fleet-drawer', false)
+            ->assertSee('Armada #', false)
+            ->assertSee('Ringkasan');
+    }
+
+    public function test_fleet_form_has_placeholders(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.fleets.create'))
+            ->assertOk()
+            ->assertSee('Contoh: D 1234 AB')
+            ->assertSee('Contoh: Truk Wingbox')
+            ->assertSee('Contoh: 8000');
+    }
+
+    public function test_fleet_index_filters_by_search_and_status(): void
+    {
+        $logisticsUser = User::factory()->role(UserRole::Logistik)->create();
+        Fleet::factory()->create([
+            'nomor_polisi' => 'B 1001 AKT',
+            'jenis_kendaraan' => 'Truk Aktif',
+            'is_active' => true,
+        ]);
+        Fleet::factory()->create([
+            'nomor_polisi' => 'B 1002 NON',
+            'jenis_kendaraan' => 'Truk Nonaktif',
+            'is_active' => false,
+        ]);
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.fleets.index', ['q' => 'Truk Aktif']))
+            ->assertOk()
+            ->assertSee('Truk Aktif')
+            ->assertDontSee('Truk Nonaktif');
+
+        $this->actingAs($logisticsUser)
+            ->get(route('logistics.fleets.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertSee('Truk Nonaktif')
+            ->assertDontSee('Truk Aktif');
     }
 
     public function test_only_active_driver_accounts_can_be_assigned(): void
