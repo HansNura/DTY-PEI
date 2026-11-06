@@ -44,6 +44,9 @@ Dibuat oleh `UserSeeder`:
 | Admin Gudang | `gudang@pmt.test` | `password` |
 | Tim Logistik | `logistik@pmt.test` | `password` |
 | Driver | `driver@pmt.test` | `password` |
+| Driver 2 | `driver2@pmt.test` | `password` |
+| Driver 3 | `driver3@pmt.test` | `password` |
+| Driver 4 | `driver4@pmt.test` | `password` |
 
 Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
@@ -55,10 +58,18 @@ Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 php artisan db:seed --class=CustomerSeeder
 ```
 
+### Data demo armada
+
+`FleetSeeder` mengisi 6 armada dummy (`ARM-0001` sampai `ARM-0006`) dengan jenis kendaraan, kapasitas, dan pengemudi. Seeder ini juga memastikan akun driver demo tersedia.
+
+```bash
+php artisan db:seed --class=FleetSeeder
+```
+
 ## Perintah berguna
 
 ```bash
-php artisan migrate:fresh --seed   # reset database + akun & pelanggan demo
+php artisan migrate:fresh --seed   # reset database + akun, pelanggan & armada demo
 php artisan test                   # seluruh test
 composer ci                        # Pint check + seluruh test
 composer lint                      # perbaiki format kode otomatis

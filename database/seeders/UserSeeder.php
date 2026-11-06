@@ -31,6 +31,21 @@ class UserSeeder extends Seeder
                 'email' => 'driver@pmt.test',
                 'role' => UserRole::Driver,
             ],
+            [
+                'nama' => 'Joko Santoso',
+                'email' => 'driver2@pmt.test',
+                'role' => UserRole::Driver,
+            ],
+            [
+                'nama' => 'Asep Sunandar',
+                'email' => 'driver3@pmt.test',
+                'role' => UserRole::Driver,
+            ],
+            [
+                'nama' => 'Rudi Hartono',
+                'email' => 'driver4@pmt.test',
+                'role' => UserRole::Driver,
+            ],
         ];
 
         foreach ($accounts as $account) {

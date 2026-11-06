@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Fleet;
 use App\Models\User;
+use Database\Seeders\FleetSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -131,5 +132,23 @@ class FleetManagementTest extends TestCase
         $driver = User::factory()->role(UserRole::Driver)->create();
 
         $this->actingAs($driver)->get(route('logistics.fleets.index'))->assertForbidden();
+    }
+
+    public function test_fleet_seeder_creates_multiple_demo_fleets(): void
+    {
+        $this->seed(FleetSeeder::class);
+        $this->seed(FleetSeeder::class);
+
+        $this->assertDatabaseCount('fleets', 6);
+        $this->assertDatabaseHas('fleets', [
+            'kode_armada' => 'ARM-0002',
+            'nomor_polisi' => 'B 9876 XYZ',
+            'jenis_kendaraan' => 'Truk Fuso',
+        ]);
+        $this->assertDatabaseHas('users', [
+            'email' => 'driver2@pmt.test',
+            'role' => 'driver',
+            'nama' => 'Joko Santoso',
+        ]);
     }
 }
