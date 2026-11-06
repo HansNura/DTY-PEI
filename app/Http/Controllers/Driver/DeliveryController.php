@@ -47,7 +47,7 @@ class DeliveryController extends Controller
             'customer',
             'fleet',
             'driver',
-            'items.dtyRoll',
+            'items.dtyRoll.carton',
             'trackingEvents.recorder',
             'latestTrackingEvent',
             'proofOfDelivery',
@@ -113,7 +113,7 @@ class DeliveryController extends Controller
         }
 
         return match ($order->status) {
-            DeliveryOrderStatus::Departed => [TrackingStatus::InTransit, TrackingStatus::Arrived],
+            DeliveryOrderStatus::Departed => [TrackingStatus::InTransit],
             DeliveryOrderStatus::InTransit => [TrackingStatus::InTransit, TrackingStatus::Arrived],
             default => [],
         };

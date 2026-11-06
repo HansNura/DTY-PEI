@@ -31,21 +31,17 @@ class DtyInventorySeeder extends Seeder
     private function seedCartons(User $user): void
     {
         $inStock = RollStatus::InStock;
-        $allocated = RollStatus::Allocated;
-        $loaded = RollStatus::Loaded;
-        $delivered = RollStatus::Delivered;
-        $cancelled = RollStatus::Cancelled;
 
         $configs = [
-            ['merge' => '4D9164', 'grade' => 'AX', 'weight' => 5485, 'date' => '2026-11-04', 'pallet' => 'ADP100001', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9165', 'grade' => 'AX', 'weight' => 5420, 'date' => '2026-11-02', 'pallet' => 'ADP100002', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9166', 'grade' => 'AE', 'weight' => 5240, 'date' => '2026-10-29', 'pallet' => 'ADP100003', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9167', 'grade' => 'A', 'weight' => 3200, 'date' => '2026-10-21', 'pallet' => 'ADP100004', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9168', 'grade' => 'B', 'weight' => 780, 'date' => '2026-10-11', 'pallet' => 'ADP100005', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9164', 'grade' => 'AX', 'weight' => 5480, 'date' => '2026-11-05', 'pallet' => 'ADP100006', 'statuses' => [$allocated, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9165', 'grade' => 'AE', 'weight' => 5200, 'date' => '2026-11-03', 'pallet' => 'ADP100007', 'statuses' => [$loaded, $inStock, $inStock, $inStock, $inStock, $inStock]],
-            ['merge' => '4D9167', 'grade' => 'A', 'weight' => 2500, 'date' => '2026-10-22', 'pallet' => 'ADP100008', 'statuses' => [$delivered, $delivered, $delivered, $delivered, $delivered, $delivered]],
-            ['merge' => '4D9168', 'grade' => 'B', 'weight' => 650, 'date' => '2026-10-12', 'pallet' => 'ADP100009', 'statuses' => [$cancelled, $cancelled, $cancelled, $cancelled, $cancelled, $cancelled]],
+            ['merge' => '4D9164', 'grade' => 'AX', 'weight' => 5485, 'date' => '2026-11-04', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9165', 'grade' => 'AX', 'weight' => 5420, 'date' => '2026-11-02', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9166', 'grade' => 'AE', 'weight' => 5240, 'date' => '2026-10-29', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9167', 'grade' => 'A', 'weight' => 3200, 'date' => '2026-10-21', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9168', 'grade' => 'B', 'weight' => 780, 'date' => '2026-10-11', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9164', 'grade' => 'AX', 'weight' => 5480, 'date' => '2026-11-05', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9165', 'grade' => 'AE', 'weight' => 5200, 'date' => '2026-11-03', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9167', 'grade' => 'A', 'weight' => 2500, 'date' => '2026-10-22', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
+            ['merge' => '4D9168', 'grade' => 'B', 'weight' => 650, 'date' => '2026-10-12', 'statuses' => [$inStock, $inStock, $inStock, $inStock, $inStock, $inStock]],
         ];
 
         foreach ($configs as $cartonIndex => $config) {
@@ -71,7 +67,7 @@ class DtyInventorySeeder extends Seeder
                     'gross_weight_kg' => $grossKg,
                     'net_weight_kg' => $netKg,
                     'unit_bobbins' => 6,
-                    'pallet_number' => $config['pallet'],
+                    'pallet_number' => null,
                     'qr_token' => substr(hash('sha256', 'carton-'.$cartonIndex.$batch->nomor_merge), 0, 64),
                     'created_by' => $user->id,
                 ],

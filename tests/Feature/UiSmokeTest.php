@@ -73,6 +73,7 @@ class UiSmokeTest extends TestCase
             route('admin.users.index'),
             route('admin.users.create'),
             route('admin.users.edit', $other),
+            route('admin.access.index'),
             route('profile.edit'),
         ];
 

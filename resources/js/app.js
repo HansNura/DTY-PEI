@@ -39,8 +39,12 @@ const receiptForm = document.querySelector('[data-receipt-form]');
 
 if (receiptForm) {
     const scanInput = receiptForm.querySelector('[data-scan-input]');
+    const manualInput = receiptForm.querySelector('[data-manual-input]');
+    const addManualButton = receiptForm.querySelector('[data-add-manual]');
     const scanList = receiptForm.querySelector('[data-scan-list]');
     const scanMessage = receiptForm.querySelector('[data-scan-message]');
+    const scanProgress = receiptForm.querySelector('[data-scan-progress]');
+    const scanItems = [...receiptForm.querySelectorAll('[data-scan-item]')];
     const video = receiptForm.querySelector('[data-scan-video]');
     const cameraButton = receiptForm.querySelector('[data-start-camera]');
     const stopButton = receiptForm.querySelector('[data-stop-camera]');
@@ -64,10 +68,57 @@ if (receiptForm) {
         hasSignature = false;
     };
 
+    const scannedTokens = () => [...receiptForm.querySelectorAll('[data-scanned-token]')].map((input) => input.value);
+
+    const updateScanProgress = () => {
+        const scanned = scanItems.filter((item) => item.dataset.scanned === '1').length;
+
+        if (scanProgress) {
+            scanProgress.textContent = `${scanned}/${scanItems.length}`;
+        }
+    };
+
+    const markScanItem = (item) => {
+        item.dataset.scanned = '1';
+        item.classList.add('bg-emerald-50/60');
+
+        const status = item.querySelector('[data-scan-status]');
+        if (status) {
+            status.textContent = 'Sudah';
+            status.className = 'shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700';
+        }
+    };
+
+    const appendChip = (value) => {
+        const chip = document.createElement('span');
+        chip.className = 'rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700';
+        chip.textContent = `${value} · scan ${receiptForm.querySelectorAll('[data-scanned-token]').length}`;
+        scanList.append(chip);
+    };
+
     const addScan = (token) => {
         const value = token.trim();
 
         if (!value) {
+            return;
+        }
+
+        if (scannedTokens().includes(value)) {
+            scanMessage.textContent = 'Kode ini sudah ditambahkan.';
+            return;
+        }
+
+        const match = scanItems.find((item) => item.dataset.scanSerial === value
+            || item.dataset.scanToken === value
+            || item.dataset.scanHu === value);
+
+        if (!match) {
+            scanMessage.textContent = 'Kode tidak ada dalam daftar kardus/bobbin Surat Jalan ini.';
+            return;
+        }
+
+        if (match.dataset.scanned === '1') {
+            scanMessage.textContent = 'Kardus/bobbin ini sudah discan.';
             return;
         }
 
@@ -78,14 +129,24 @@ if (receiptForm) {
         input.dataset.scannedToken = '';
         receiptForm.append(input);
 
-        const chip = document.createElement('span');
-        chip.className = 'rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700';
-        chip.textContent = `${value} · scan ${receiptForm.querySelectorAll('[data-scanned-token]').length}`;
-        scanList.append(chip);
-        scanMessage.textContent = `${receiptForm.querySelectorAll('[data-scanned-token]').length} QR dipindai.`;
+        markScanItem(match);
+        appendChip(value);
+        updateScanProgress();
+        scanMessage.textContent = `${scannedTokens().length} dari ${scanItems.length} bobbin discan.`;
         scanInput.value = '';
+        if (manualInput) manualInput.value = '';
         scanInput.focus();
     };
+
+    scannedTokens().forEach((value) => {
+        const match = scanItems.find((item) => item.dataset.scanSerial === value || item.dataset.scanToken === value);
+
+        if (match) {
+            markScanItem(match);
+            appendChip(value);
+        }
+    });
+    updateScanProgress();
 
     receiptForm.querySelector('[data-add-scan]').addEventListener('click', () => addScan(scanInput.value));
     scanInput.addEventListener('keydown', (event) => {
@@ -94,6 +155,16 @@ if (receiptForm) {
             addScan(scanInput.value);
         }
     });
+
+    if (addManualButton && manualInput) {
+        addManualButton.addEventListener('click', () => addScan(manualInput.value));
+        manualInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addScan(manualInput.value);
+            }
+        });
+    }
 
     cameraButton.addEventListener('click', async () => {
         try {
@@ -168,11 +239,11 @@ if (receiptForm) {
     });
 
     receiptForm.addEventListener('submit', (event) => {
-        const scans = receiptForm.querySelectorAll('[data-scanned-token]').length;
+        const scanned = scanItems.filter((item) => item.dataset.scanned === '1').length;
 
-        if (scans === 0) {
+        if (scanItems.length > 0 && scanned < scanItems.length) {
             event.preventDefault();
-            scanMessage.textContent = 'Pindai semua QR gulungan sebelum menyimpan konfirmasi.';
+            scanMessage.textContent = `Masih ada ${scanItems.length - scanned} kardus/bobbin yang belum discan.`;
             scanInput.focus();
             return;
         }

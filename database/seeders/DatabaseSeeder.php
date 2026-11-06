@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             DtyInventorySeeder::class,
             CustomerSeeder::class,
             FleetSeeder::class,
+            DemoDeliverySeeder::class,
         ]);
     }
 }

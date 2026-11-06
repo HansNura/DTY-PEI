@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\ProofOfDelivery;
@@ -91,6 +92,7 @@ class DeliveryWorkflowTest extends TestCase
 
         $this->assertSame(DeliveryOrderStatus::Received, $order->fresh()->status);
         $this->assertSame(RollStatus::Delivered, $roll->fresh()->status);
+        $this->assertSame(1, $order->fresh()->loaded_count);
         $this->assertDatabaseHas('delivery_order_receipt_scans', [
             'delivery_order_id' => $order->id,
             'dty_roll_id' => $roll->id,
@@ -152,6 +154,46 @@ class DeliveryWorkflowTest extends TestCase
             'result' => 'unknown',
         ]);
         $this->assertSame(DeliveryOrderStatus::Arrived, $order->fresh()->status);
+    }
+
+    public function test_receipt_can_scan_cartons_instead_of_bobbins(): void
+    {
+        Storage::fake('local');
+
+        $driver = User::factory()->role(UserRole::Driver)->create();
+        $customer = Customer::factory()->create();
+        $fleet = Fleet::factory()->create(['driver_id' => $driver->id]);
+        $order = DeliveryOrder::factory()->create([
+            'driver_id' => $driver->id,
+            'customer_id' => $customer->id,
+            'fleet_id' => $fleet->id,
+            'status' => DeliveryOrderStatus::Arrived,
+        ]);
+        $carton = DtyCarton::factory()->create(['unit_bobbins' => 6]);
+        $rolls = DtyRoll::factory(6)->create([
+            'dty_carton_id' => $carton->id,
+            'status' => RollStatus::Loaded,
+        ]);
+
+        foreach ($rolls as $roll) {
+            DeliveryOrderItem::create([
+                'delivery_order_id' => $order->id,
+                'dty_roll_id' => $roll->id,
+                'berat_kg' => 5.48,
+            ]);
+        }
+
+        $this->actingAs($driver)
+            ->post(route('driver.deliveries.confirm', $order), [
+                'received_by_name' => 'Penerima Kardus',
+                'scanned_tokens' => [$carton->nomor_hu],
+                'signature' => $this->signatureData(),
+            ])
+            ->assertRedirect(route('driver.deliveries.show', $order));
+
+        $this->assertSame(DeliveryOrderStatus::Received, $order->fresh()->status);
+        $this->assertSame(6, $rolls->filter(fn (DtyRoll $roll) => $roll->fresh()->status === RollStatus::Delivered)->count());
+        $this->assertDatabaseCount('delivery_order_receipt_scans', 6);
     }
 
     public function test_receipt_requires_every_roll_on_the_delivery_order(): void

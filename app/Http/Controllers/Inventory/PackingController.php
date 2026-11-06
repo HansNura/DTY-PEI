@@ -17,6 +17,7 @@ class PackingController extends Controller
     {
         return view('inventory.packing.create', [
             'summary' => $packingService->summary(),
+            'availableRolls' => $packingService->availableRolls(),
         ]);
     }
 

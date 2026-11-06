@@ -40,8 +40,8 @@ class ConfirmDeliveryOrderRequest extends FormRequest
         return [
             'received_by_name.required' => 'Nama penerima wajib diisi.',
             'received_by_name.max' => 'Nama penerima maksimal 100 karakter.',
-            'scanned_tokens.required' => 'Pindai semua QR gulungan sebelum konfirmasi.',
-            'scanned_tokens.min' => 'Pindai semua QR gulungan sebelum konfirmasi.',
+            'scanned_tokens.required' => 'Pindai semua QR bobbin sebelum konfirmasi.',
+            'scanned_tokens.min' => 'Pindai semua QR bobbin sebelum konfirmasi.',
             'scanned_tokens.max' => 'Jumlah scan melebihi batas untuk satu surat jalan.',
             'scanned_tokens.*.string' => 'Data QR tidak valid.',
             'signature.required' => 'Tanda tangan penerima wajib diisi.',

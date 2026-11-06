@@ -106,9 +106,9 @@ class DeliveryTrackingService
             return;
         }
 
-        if (! in_array($order->status, [DeliveryOrderStatus::Departed, DeliveryOrderStatus::InTransit], true)) {
+        if (! in_array($order->status, [DeliveryOrderStatus::InTransit], true)) {
             throw ValidationException::withMessages([
-                'status' => 'Status Tiba di Tujuan hanya dapat dipilih setelah armada berangkat.',
+                'status' => 'Status Tiba di Tujuan hanya dapat dipilih setelah status Dalam Perjalanan.',
             ]);
         }
     }

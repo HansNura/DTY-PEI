@@ -6,6 +6,7 @@ use App\Enums\DeliveryOrderStatus;
 use App\Enums\LoadScanResult;
 use App\Enums\RollStatus;
 use App\Models\DeliveryOrder;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\LoadScan;
 use App\Models\User;
@@ -18,38 +19,64 @@ class LoadScanService
      *     success: bool,
      *     result: LoadScanResult,
      *     message: string,
+     *     carton: ?DtyCarton,
      *     roll: ?DtyRoll,
      *     loaded_count: int,
      *     total_rol: int,
+     *     loaded_box_count: int,
+     *     total_box: int,
      *     is_complete?: bool
      * }
      */
-    public function scan(DeliveryOrder $order, string $qrToken, User $checker): array
+    public function scan(DeliveryOrder $order, string $token, User $checker): array
     {
-        return DB::transaction(function () use ($order, $qrToken, $checker) {
+        return DB::transaction(function () use ($order, $token, $checker) {
             $order = DeliveryOrder::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
             if (! in_array($order->status, [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading], true)) {
-                return [
-                    'success' => false,
-                    'result' => LoadScanResult::InvalidOrder,
-                    'message' => "Surat Jalan {$order->nomor_do} sudah tidak dalam tahap pemuatan (status: {$order->status->label()}).",
-                    'roll' => null,
-                    'loaded_count' => $order->loaded_count,
-                    'total_rol' => $order->total_rol,
-                    'is_complete' => false,
-                ];
+                return $this->result(
+                    $order,
+                    LoadScanResult::InvalidOrder,
+                    "Surat Jalan {$order->nomor_do} sudah tidak dalam tahap pemuatan (status: {$order->status->label()}).",
+                );
             }
 
-            $trimmedToken = trim($qrToken);
-            $roll = DtyRoll::query()
-                ->where(fn ($query) => $query
-                    ->where('qr_token', $trimmedToken)
-                    ->orWhere('nomor_seri', $trimmedToken))
+            $trimmed = trim($token);
+            $normalized = strtoupper($trimmed);
+
+            $carton = DtyCarton::query()
+                ->where(function ($query) use ($trimmed, $normalized): void {
+                    $query->where('nomor_hu', $trimmed)
+                        ->orWhere('nomor_hu', $normalized)
+                        ->orWhere('qr_token', $trimmed);
+                })
                 ->lockForUpdate()
                 ->first();
 
-            if (! $roll) {
+            if ($carton === null) {
+                $roll = DtyRoll::query()
+                    ->where(fn ($query) => $query
+                        ->where('qr_token', $trimmed)
+                        ->orWhere('nomor_seri', $trimmed))
+                    ->first();
+
+                if ($roll !== null) {
+                    LoadScan::create([
+                        'delivery_order_id' => $order->id,
+                        'dty_roll_id' => $roll->id,
+                        'scanned_by' => $checker->id,
+                        'result' => LoadScanResult::WrongUnit,
+                        'scanned_at' => now(),
+                    ]);
+
+                    return $this->result(
+                        $order,
+                        LoadScanResult::WrongUnit,
+                        "QR ini milik bobbin {$roll->nomor_seri}. Scanner muatan memvalidasi kardus; scan QR atau masukkan nomor HU kardus.",
+                        roll: $roll,
+                    );
+                }
+
                 LoadScan::create([
                     'delivery_order_id' => $order->id,
                     'dty_roll_id' => null,
@@ -58,113 +85,128 @@ class LoadScanService
                     'scanned_at' => now(),
                 ]);
 
-                return [
-                    'success' => false,
-                    'result' => LoadScanResult::Unknown,
-                    'message' => 'Kode QR tidak dikenali di sistem PMT.',
-                    'roll' => null,
-                    'loaded_count' => $order->loaded_count,
-                    'total_rol' => $order->total_rol,
-                    'is_complete' => false,
-                ];
+                return $this->result($order, LoadScanResult::Unknown, 'Kode QR / nomor HU kardus tidak dikenali di sistem PMT.');
             }
 
-            $isAllocatedInThisDo = $order->items()->where('dty_roll_id', $roll->id)->exists();
+            $cartonRolls = $carton->rolls()->lockForUpdate()->get();
+            $orderRollIds = $order->items()->pluck('dty_roll_id')->map(fn ($id): int => (int) $id);
 
-            if (! $isAllocatedInThisDo) {
-                LoadScan::create([
-                    'delivery_order_id' => $order->id,
-                    'dty_roll_id' => $roll->id,
-                    'scanned_by' => $checker->id,
-                    'result' => LoadScanResult::WrongDo,
-                    'scanned_at' => now(),
-                ]);
+            if ($cartonRolls->isEmpty()
+                || $cartonRolls->pluck('id')->diff($orderRollIds)->isNotEmpty()
+                || $orderRollIds->intersect($cartonRolls->pluck('id'))->count() !== $cartonRolls->count()) {
+                $this->record($order, $checker, LoadScanResult::WrongDo, carton: $carton);
 
-                return [
-                    'success' => false,
-                    'result' => LoadScanResult::WrongDo,
-                    'message' => "PERINGATAN: Bobbin {$this->rollIdentity($roll)} (Lot {$roll->nomor_lot}) bukan alokasi untuk Surat Jalan ini!",
-                    'roll' => $roll,
-                    'loaded_count' => $order->loaded_count,
-                    'total_rol' => $order->total_rol,
-                    'is_complete' => false,
-                ];
+                return $this->result(
+                    $order,
+                    LoadScanResult::WrongDo,
+                    "Kardus {$carton->nomor_hu} bukan bagian dari Surat Jalan ini.",
+                    carton: $carton,
+                );
             }
 
-            if (! in_array($roll->status, [RollStatus::Allocated, RollStatus::Loaded], true)) {
-                LoadScan::create([
-                    'delivery_order_id' => $order->id,
-                    'dty_roll_id' => $roll->id,
-                    'scanned_by' => $checker->id,
-                    'result' => LoadScanResult::WrongDo,
-                    'scanned_at' => now(),
-                ]);
+            if ($cartonRolls->contains(fn (DtyRoll $roll): bool => ! in_array($roll->status, [RollStatus::Allocated, RollStatus::Loaded], true))) {
+                $this->record($order, $checker, LoadScanResult::WrongDo, carton: $carton);
 
-                return [
-                    'success' => false,
-                    'result' => LoadScanResult::WrongDo,
-                    'message' => "Bobbin {$this->rollIdentity($roll)} berstatus {$roll->status->label()} dan tidak siap dimuat.",
-                    'roll' => $roll,
-                    'loaded_count' => $order->loaded_count,
-                    'total_rol' => $order->total_rol,
-                    'is_complete' => false,
-                ];
+                return $this->result(
+                    $order,
+                    LoadScanResult::WrongDo,
+                    "Ada bobbin dalam kardus {$carton->nomor_hu} yang tidak siap dimuat.",
+                    carton: $carton,
+                );
             }
 
-            if ($roll->status === RollStatus::Loaded) {
-                LoadScan::create([
-                    'delivery_order_id' => $order->id,
-                    'dty_roll_id' => $roll->id,
-                    'scanned_by' => $checker->id,
-                    'result' => LoadScanResult::Duplicate,
-                    'scanned_at' => now(),
-                ]);
+            if ($cartonRolls->every(fn (DtyRoll $roll): bool => $roll->status === RollStatus::Loaded)) {
+                $this->record($order, $checker, LoadScanResult::Duplicate, carton: $carton);
 
-                return [
-                    'success' => false,
-                    'result' => LoadScanResult::Duplicate,
-                    'message' => "Bobbin {$this->rollIdentity($roll)} sudah pernah dipindai sebelumnya.",
-                    'roll' => $roll,
-                    'loaded_count' => $order->loaded_count,
-                    'total_rol' => $order->total_rol,
-                    'is_complete' => false,
-                ];
+                return $this->result(
+                    $order,
+                    LoadScanResult::Duplicate,
+                    "Kardus {$carton->nomor_hu} sudah pernah dipindai sebelumnya.",
+                    carton: $carton,
+                );
             }
 
-            // Mark roll as loaded
-            $roll->update(['status' => RollStatus::Loaded]);
+            DtyRoll::query()
+                ->whereIn('id', $cartonRolls->pluck('id'))
+                ->update(['status' => RollStatus::Loaded->value]);
 
-            // If order was issued, change status to loading
             if ($order->status === DeliveryOrderStatus::Issued) {
                 $order->update(['status' => DeliveryOrderStatus::Loading]);
             }
 
-            LoadScan::create([
-                'delivery_order_id' => $order->id,
-                'dty_roll_id' => $roll->id,
-                'scanned_by' => $checker->id,
-                'result' => LoadScanResult::Valid,
-                'scanned_at' => now(),
-            ]);
+            $this->record($order, $checker, LoadScanResult::Valid, carton: $carton);
 
-            $loadedCount = $order->fresh()->loaded_count;
-            $totalRol = $order->total_rol;
-            $isComplete = ($loadedCount >= $totalRol) && ($totalRol > 0);
-
-            return [
-                'success' => true,
-                'result' => LoadScanResult::Valid,
-                'message' => "Bobbin {$this->rollIdentity($roll)} berhasil divalidasi dan dimuat ke armada.",
-                'roll' => $roll,
-                'loaded_count' => $loadedCount,
-                'total_rol' => $totalRol,
-                'is_complete' => $isComplete,
-            ];
+            return $this->result(
+                $order,
+                LoadScanResult::Valid,
+                "Kardus {$carton->nomor_hu} berhasil divalidasi. {$cartonRolls->count()} bobbin dimuat ke armada.",
+                carton: $carton,
+            );
         });
     }
 
-    private function rollIdentity(DtyRoll $roll): string
-    {
-        return $roll->nomor_seri ?: $roll->qr_token;
+    /**
+     * @return array{
+     *     success: bool,
+     *     result: LoadScanResult,
+     *     message: string,
+     *     carton: ?DtyCarton,
+     *     roll: ?DtyRoll,
+     *     loaded_count: int,
+     *     total_rol: int,
+     *     loaded_box_count: int,
+     *     total_box: int,
+     *     is_complete: bool
+     * }
+     */
+    private function result(
+        DeliveryOrder $order,
+        LoadScanResult $result,
+        string $message,
+        ?DtyCarton $carton = null,
+        ?DtyRoll $roll = null,
+    ): array {
+        $order->load('items.dtyRoll.carton');
+
+        $items = $order->items;
+        $totalRol = $items->count();
+        $loadedCount = $items->filter(fn ($item): bool => $item->dtyRoll?->status === RollStatus::Loaded)->count();
+        $cartonGroups = $items
+            ->filter(fn ($item): bool => $item->dtyRoll?->carton !== null)
+            ->groupBy(fn ($item): int => $item->dtyRoll->carton->id);
+        $totalBox = $cartonGroups->count();
+        $loadedBoxCount = $cartonGroups
+            ->filter(fn ($group): bool => $group->every(fn ($item): bool => $item->dtyRoll->status === RollStatus::Loaded))
+            ->count();
+
+        return [
+            'success' => $result === LoadScanResult::Valid,
+            'result' => $result,
+            'message' => $message,
+            'carton' => $carton,
+            'roll' => $roll,
+            'loaded_count' => $loadedCount,
+            'total_rol' => $totalRol,
+            'loaded_box_count' => $loadedBoxCount,
+            'total_box' => $totalBox,
+            'is_complete' => $totalRol > 0 && $loadedCount >= $totalRol,
+        ];
+    }
+
+    private function record(
+        DeliveryOrder $order,
+        User $checker,
+        LoadScanResult $result,
+        ?DtyCarton $carton = null,
+        ?DtyRoll $roll = null,
+    ): void {
+        LoadScan::create([
+            'delivery_order_id' => $order->id,
+            'dty_roll_id' => $roll?->id,
+            'dty_carton_id' => $carton?->id,
+            'scanned_by' => $checker->id,
+            'result' => $result,
+            'scanned_at' => now(),
+        ]);
     }
 }

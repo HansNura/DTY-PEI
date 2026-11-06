@@ -90,8 +90,8 @@ php artisan migrate:fresh --seed   # reset database + batch, kardus, bobbin, pel
 php artisan test                   # seluruh test
 composer ci                        # Pint check + seluruh test
 composer lint                      # perbaiki format kode otomatis
-bash .ai/scripts/run-checks.sh     # Pint + test + build asset
-bash .ai/scripts/db-reset.sh       # reset database lokal + seed
+bash scripts/run-checks.sh        # Pint + test + build asset
+bash scripts/db-reset.sh          # reset database lokal + seed
 php artisan route:list             # daftar route
 npm run dev                        # Vite dev server
 composer run dev                   # server + queue + log + Vite
@@ -123,7 +123,6 @@ composer run dev                   # server + queue + log + Vite
 - App shell: sidebar di desktop dan bottom navigation di mobile, dengan menu berbeda per peran.
 - Komponen Blade reusable di `resources/views/components/` (button, card, stat, badge, table, form, modal, timeline, stepper).
 - Token warna, tipografi, dan bayangan ada di `resources/css/app.css`.
-- Aturan UI lengkap: [`.ai/rules/ui-tailwind.md`](.ai/rules/ui-tailwind.md).
 
 ## Kontribusi tim
 
@@ -139,9 +138,7 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 - [`docs/sprint-4.md`](docs/sprint-4.md) — driver interface dan live tracking.
 - [`docs/sprint-5.md`](docs/sprint-5.md) — POD dan rekap pengiriman PDF/Excel.
 - [`Rencana Kerja Tim PMT.xlsx`](Rencana%20Kerja%20Tim%20PMT.xlsx) — backlog dan target sprint.
-- [`AGENTS.md`](AGENTS.md) — panduan kerja seluruh AI agent.
-- [`.ai/rules/`](.ai/rules/) — aturan arsitektur, database, dan UI.
-- [`.ai/scripts/`](.ai/scripts/) — skrip verifikasi dan reset database.
+- [`scripts/`](scripts/) — skrip verifikasi dan reset database.
 
 ## Status backlog
 

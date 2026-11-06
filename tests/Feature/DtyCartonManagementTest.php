@@ -40,6 +40,8 @@ class DtyCartonManagementTest extends TestCase
             'production_batch_id' => $batch->id,
             'nomor_seri' => str_pad((string) self::$serial++, 5, '0', STR_PAD_LEFT).'0079'.'20261103',
             'grade' => $grade,
+            'denier' => $batch->denier,
+            'filamen' => $batch->filamen,
             'berat_gram' => $weight,
             'nomor_lot' => $batch->nomor_merge,
             'status' => $status,
@@ -237,6 +239,92 @@ class DtyCartonManagementTest extends TestCase
             ->assertOk()
             ->assertSee('ADMG00055000')
             ->assertDontSee('ADMG00054918');
+    }
+
+    public function test_edit_packing_replaces_a_bobbin_and_recalculates_the_carton(): void
+    {
+        $user = $this->warehouseUser();
+        $batch = $this->batch();
+        $rolls = collect(range(1, 6))->map(fn () => $this->readyRoll($batch));
+
+        foreach ($rolls as $roll) {
+            $this->scan($user, $roll)->assertOk();
+        }
+
+        $this->actingAs($user)->post(route('warehouse.packing.store'), [
+            'gross_weight_kg' => '35.56',
+        ])->assertRedirect();
+
+        $carton = DtyCarton::firstOrFail();
+        $oldRoll = $carton->rolls->firstOrFail();
+        $replacement = $this->readyRoll($batch, 5400, 'AX');
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.edit', $carton))
+            ->assertOk()
+            ->assertSee('Mode edit isi kardus')
+            ->assertSee('Kembalikan isi awal')
+            ->assertViewHas('summary', fn (array $summary): bool => $summary['count'] === 6);
+
+        $this->actingAs($user)
+            ->deleteJson(route('warehouse.cartons.packing.remove', [$carton, $oldRoll]))
+            ->assertOk()
+            ->assertJsonPath('summary.count', 5);
+
+        $this->actingAs($user)
+            ->postJson(route('warehouse.cartons.packing.scan', $carton), [
+                'token' => $replacement->nomor_seri,
+            ])
+            ->assertOk()
+            ->assertJsonPath('summary.count', 6);
+
+        $this->actingAs($user)
+            ->put(route('warehouse.cartons.packing.update', $carton), [
+                'gross_weight_kg' => '35.56',
+            ])
+            ->assertRedirect();
+
+        $carton->refresh();
+        $this->assertSame(6, $carton->unit_bobbins);
+        $this->assertSame(32.83, (float) $carton->net_weight_kg);
+        $this->assertSame(35.56, (float) $carton->gross_weight_kg);
+
+        $this->assertSame(RollStatus::ReadyToPack, $oldRoll->fresh()->status);
+        $this->assertNull($oldRoll->fresh()->dty_carton_id);
+        $this->assertSame(RollStatus::InStock, $replacement->fresh()->status);
+        $this->assertSame($carton->id, $replacement->fresh()->dty_carton_id);
+        $this->assertSame(6, $carton->fresh()->rolls()->count());
+    }
+
+    public function test_edit_packing_rejects_a_replacement_with_a_different_grade(): void
+    {
+        $user = $this->warehouseUser();
+        $batch = $this->batch();
+        $rolls = collect(range(1, 6))->map(fn () => $this->readyRoll($batch));
+
+        foreach ($rolls as $roll) {
+            $this->scan($user, $roll)->assertOk();
+        }
+
+        $this->actingAs($user)->post(route('warehouse.packing.store'), [
+            'gross_weight_kg' => '35.56',
+        ]);
+
+        $carton = DtyCarton::firstOrFail();
+        $oldRoll = $carton->rolls->firstOrFail();
+        $wrongGrade = $this->readyRoll($batch, 5250, 'AE');
+
+        $this->actingAs($user)->get(route('warehouse.cartons.edit', $carton))->assertOk();
+        $this->actingAs($user)
+            ->deleteJson(route('warehouse.cartons.packing.remove', [$carton, $oldRoll]))
+            ->assertOk();
+
+        $this->actingAs($user)
+            ->postJson(route('warehouse.cartons.packing.scan', $carton), [
+                'token' => $wrongGrade->nomor_seri,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
     }
 
     public function test_packed_carton_edit_only_updates_gross_pallet_and_notes(): void

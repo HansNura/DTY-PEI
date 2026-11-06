@@ -29,10 +29,6 @@ class DtyInventorySeederTest extends TestCase
         $this->assertSame(12, DtyRoll::where('status', RollStatus::ReadyToPack)->count());
         $this->assertSame(2, DtyRoll::where('status', RollStatus::Overweight)->count());
         $this->assertSame(2, DtyRoll::where('status', RollStatus::Waste)->count());
-        $this->assertSame(40, DtyRoll::where('status', RollStatus::InStock)->count());
-        $this->assertSame(1, DtyRoll::where('status', RollStatus::Allocated)->count());
-        $this->assertSame(1, DtyRoll::where('status', RollStatus::Loaded)->count());
-        $this->assertSame(6, DtyRoll::where('status', RollStatus::Delivered)->count());
-        $this->assertSame(6, DtyRoll::where('status', RollStatus::Cancelled)->count());
+        $this->assertSame(54, DtyRoll::where('status', RollStatus::InStock)->count());
     }
 }

@@ -65,7 +65,7 @@ Buka `http://localhost:8000`. Akun demo ada di `README.md`.
 ### 2.4 Verifikasi awal
 
 ```bash
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 ```
 
 Harus lulus sebelum mulai berkontribusi.
@@ -138,7 +138,7 @@ git switch -c feat/salman/DTY-002-master-data
 
 ```bash
 # setelah menulis kode + test
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 ```
 
 Jangan menunggu akhir sprint untuk menjalankan test. Jalankan minimal sebelum setiap commit besar.
@@ -178,7 +178,7 @@ git rebase origin/main
 Jika ada konflik, selesaikan (lihat bagian 6), lalu:
 
 ```bash
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 git push -u origin HEAD
 ```
 
@@ -243,7 +243,7 @@ git branch -d feat/salman/DTY-002-master-data
 ```bash
 git fetch origin
 git rebase origin/main
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 git push
 ```
 
@@ -303,7 +303,7 @@ Konflik pada migrasi: **jangan menghapus migrasi orang lain**. Buat migrasi baru
 ### WAJIB
 
 - ✅ `git status` dan `git diff` sebelum commit.
-- ✅ Jalankan `bash .ai/scripts/run-checks.sh` sebelum push.
+- ✅ Jalankan `bash scripts/run-checks.sh` sebelum push.
 - ✅ Satu PR untuk satu tiket, deskripsi jelas, reviewer ditunjuk.
 - ✅ Pull/rebase dari `main` sebelum push.
 - ✅ Tulis test untuk fitur baru dan kasus akses ditolak.
@@ -338,7 +338,7 @@ Tempel checklist ini di deskripsi PR (template tersedia di `.github/pull_request
 
 - [ ] Branch dibuat dari `main` terbaru.
 - [ ] Hanya berisi perubahan untuk tiket ini.
-- [ ] `bash .ai/scripts/run-checks.sh` lulus.
+- [ ] `bash scripts/run-checks.sh` lulus.
 - [ ] Test baru mencakup jalur utama dan otorisasi.
 - [ ] Migrasi baru punya `down()` dan tidak mengedit migrasi lama.
 - [ ] Dokumentasi/ERD diperbarui bila perlu.
@@ -358,8 +358,8 @@ Sprint dianggap selesai dan siap dilanjutkan jika **semua** poin ini terpenuhi:
 5. Database lokal bisa dibangun ulang dari nol:
 
    ```bash
-   bash .ai/scripts/db-reset.sh
-   bash .ai/scripts/run-checks.sh
+   bash scripts/db-reset.sh
+   bash scripts/run-checks.sh
    ```
 
 6. Tag rilis sprint (opsional tetapi disarankan):
@@ -397,7 +397,7 @@ Gunakan `docs/sprint-1.md` sebagai contoh. Ringkas, berbasis bukti (nama test), 
 | Test gagal setelah rebase | Selesaikan konflik, jalankan ulang `run-checks.sh` |
 | Asset tidak muncul | `npm install --include=dev && npm run build` |
 | `Vite manifest not found` | Jalankan `npm run build` atau `npm run dev` |
-| Database kacau | `bash .ai/scripts/db-reset.sh` (lokal saja) |
+| Database kacau | `bash scripts/db-reset.sh` (lokal saja) |
 | Ingin membatalkan commit terakhir (belum push) | `git reset --soft HEAD~1` |
 | Ingin membatalkan commit yang sudah push | Buat commit baru yang membalik perubahan; jangan rewrite `main` |
 | CI hijau di lokal tetapi merah di GitHub | Cek versi PHP/Node, jalankan `composer install` dan `npm ci --include=dev` |
@@ -418,7 +418,7 @@ git commit -m "feat(<tiket>): <ringkasan>"
 
 # sebelum push
 git fetch origin && git rebase origin/main
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 git push -u origin HEAD
 
 # buka PR

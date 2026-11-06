@@ -61,6 +61,26 @@
         </p>
     @endif
 
+    @php
+        $palletGroups = $order->palletGroups();
+    @endphp
+    @if ($palletGroups !== [])
+        <h3 style="font-size:12px; margin:0 0 6px;">Palletisasi (kapasitas maks. 30 kardus per pallet)</h3>
+        <table>
+            <thead><tr><th>Pallet</th><th>Jumlah kardus</th><th>Bobbin</th><th style="text-align:right">Netto (kg)</th></tr></thead>
+            <tbody>
+                @foreach ($palletGroups as $pallet)
+                    <tr>
+                        <td>{{ $pallet['number'] }}</td>
+                        <td>{{ $pallet['box_count'] }}/30</td>
+                        <td>{{ $pallet['bobbin_count'] }}</td>
+                        <td style="text-align:right">{{ number_format($pallet['net_kg'], 2, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
     <table>
         <thead>
             <tr>

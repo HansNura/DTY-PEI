@@ -14,6 +14,7 @@ class LoadScan extends Model
     protected $fillable = [
         'delivery_order_id',
         'dty_roll_id',
+        'dty_carton_id',
         'scanned_by',
         'result',
         'scanned_at',
@@ -35,6 +36,11 @@ class LoadScan extends Model
     public function dtyRoll(): BelongsTo
     {
         return $this->belongsTo(DtyRoll::class);
+    }
+
+    public function dtyCarton(): BelongsTo
+    {
+        return $this->belongsTo(DtyCarton::class);
     }
 
     public function scanner(): BelongsTo

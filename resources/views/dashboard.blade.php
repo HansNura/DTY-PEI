@@ -24,6 +24,7 @@
             <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
                 <x-card padding="p-0" title="Pengguna terbaru" description="Lima akun yang paling baru dibuat">
                     <x-slot:actions>
+                        <x-button href="{{ route('admin.access.index') }}" variant="ghost" size="sm" icon="shield">Hak akses</x-button>
                         <x-button href="{{ route('admin.users.index') }}" variant="ghost" size="sm" icon-right="arrow-right">Kelola</x-button>
                     </x-slot:actions>
 
@@ -91,6 +92,13 @@
                 <x-stat-card label="Dimuat" :value="$rollStats['loaded']" icon="truck" tone="info" />
             </x-kpi-grid>
 
+            @if ($anomalyCount > 0)
+                <x-alert tone="warning" title="Bobbin perlu ditinjau">
+                    {{ $anomalyCount }} bobbin berstatus overweight atau waste. Periksa sebelum dipakai untuk packing.
+                    <a href="{{ route('warehouse.rolls.index', ['status' => \App\Enums\RollStatus::Overweight->value]) }}" class="mt-1 inline-flex font-medium underline underline-offset-2">Tinjau stok bobbin</a>
+                </x-alert>
+            @endif
+
             <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
                 <x-card padding="p-0" title="Gulungan terbaru" description="Lima gulungan DTY yang terakhir dicatat">
                     <x-slot:actions>
@@ -103,6 +111,7 @@
                                 <tr>
                                     <x-th>Nomor seri / Lot</x-th>
                                     <x-th>Spesifikasi</x-th>
+                                    <x-th>Kardus</x-th>
                                     <x-th>Status</x-th>
                                 </tr>
                             </thead>
@@ -114,10 +123,17 @@
                                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                                         </x-td>
                                         <x-td class="tabular-nums">{{ $roll->denier }}D / {{ $roll->filamen }}F</x-td>
+                                        <x-td>
+                                            @if ($roll->carton)
+                                                <span class="font-mono text-xs text-slate-700">{{ $roll->carton->nomor_hu }}</span>
+                                            @else
+                                                <span class="text-xs text-slate-400">Belum packing</span>
+                                            @endif
+                                        </x-td>
                                         <x-td><x-status-badge :status="$roll->status" /></x-td>
                                     </tr>
                                 @empty
-                                    <tr><x-td colspan="3" class="py-8 text-center text-slate-500">Belum ada gulungan.</x-td></tr>
+                                    <tr><x-td colspan="4" class="py-8 text-center text-slate-500">Belum ada gulungan.</x-td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -129,8 +145,14 @@
                         <x-button href="{{ route('warehouse.packing.create') }}" class="w-full" icon="boxes">Packing kardus</x-button>
                         <x-button href="{{ route('warehouse.rolls.create') }}" variant="secondary" class="w-full" icon="plus">Timbang bobbin</x-button>
                         <x-button href="{{ route('warehouse.scans.index') }}" variant="secondary" class="w-full" icon="scan">Buka scanner muatan</x-button>
+                        <x-button href="{{ route('warehouse.batches.index') }}" variant="secondary" class="w-full" icon="activity">Produksi &amp; merge</x-button>
+                        <x-button href="{{ route('warehouse.cartons.index') }}" variant="secondary" class="w-full" icon="boxes">Kardus DTY</x-button>
                     </div>
                     <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                        <div class="rounded-xl bg-slate-50 px-4 py-3">
+                            <p class="font-medium text-slate-900">{{ $batchStats['active'] }}/{{ $batchStats['total'] }}</p>
+                            <p class="text-xs text-slate-500">batch aktif</p>
+                        </div>
                         <div class="rounded-xl bg-slate-50 px-4 py-3">
                             <p class="font-medium text-slate-900">{{ $cartonsCount }}</p>
                             <p class="text-xs text-slate-500">kardus terdaftar</p>
@@ -138,6 +160,10 @@
                         <div class="rounded-xl bg-slate-50 px-4 py-3">
                             <p class="font-medium text-slate-900">{{ $loadingOrders }}</p>
                             <p class="text-xs text-slate-500">DO menunggu muat</p>
+                        </div>
+                        <div class="rounded-xl {{ $anomalyCount > 0 ? 'bg-amber-50' : 'bg-slate-50' }} px-4 py-3">
+                            <p class="font-medium {{ $anomalyCount > 0 ? 'text-amber-800' : 'text-slate-900' }}">{{ $anomalyCount }}</p>
+                            <p class="text-xs {{ $anomalyCount > 0 ? 'text-amber-700' : 'text-slate-500' }}">bobbin perlu tinjau</p>
                         </div>
                     </div>
                 </x-card>
@@ -151,6 +177,12 @@
                 <x-stat-card label="Dalam perjalanan" :value="$orderStats['in_transit']" icon="truck" tone="info" />
                 <x-stat-card label="Tiba di tujuan" :value="$orderStats['arrived']" icon="map-pin" tone="success" />
             </x-kpi-grid>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <x-badge tone="success" dot>Diterima {{ $orderStats['received'] }}</x-badge>
+                <x-badge tone="danger" dot>Dibatalkan {{ $orderStats['cancelled'] }}</x-badge>
+                <span>Total DO aktif: {{ $orderStats['active'] }}</span>
+            </div>
 
             <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
                 <x-card title="Pengiriman aktif" description="Pantau progres muatan dan perjalanan">
@@ -169,8 +201,13 @@
                                     <x-status-badge :status="$order->status" />
                                 </div>
                                 <div class="mt-3 flex items-center gap-3">
-                                    <x-progress :value="$order->loaded_count" :max="$order->total_rol" class="flex-1" />
-                                    <span class="text-xs tabular-nums text-slate-500">{{ $order->loaded_count }}/{{ $order->total_rol }}</span>
+                                    @if ($order->total_box > 0)
+                                        <x-progress :value="$order->loaded_box_count" :max="$order->total_box" class="flex-1" />
+                                        <span class="text-xs tabular-nums text-slate-500">{{ $order->loaded_box_count }}/{{ $order->total_box }} kardus</span>
+                                    @else
+                                        <x-progress :value="$order->loaded_count" :max="$order->total_rol" class="flex-1" />
+                                        <span class="text-xs tabular-nums text-slate-500">{{ $order->loaded_count }}/{{ $order->total_rol }}</span>
+                                    @endif
                                 </div>
                             </a>
                         @empty
@@ -185,6 +222,10 @@
                             <x-button href="{{ route('logistics.orders.create') }}" class="w-full" icon="plus">Terbitkan Surat Jalan</x-button>
                             <x-button href="{{ route('logistics.tracking.index') }}" variant="secondary" class="w-full" icon="route">Buka live tracking</x-button>
                             <x-button href="{{ route('logistics.reports.deliveries') }}" variant="secondary" class="w-full" icon="download">Rekap pengiriman</x-button>
+                        </div>
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <x-button href="{{ route('logistics.customers.index') }}" variant="ghost" size="sm" icon="building">Pelanggan</x-button>
+                            <x-button href="{{ route('logistics.fleets.index') }}" variant="ghost" size="sm" icon="truck">Armada</x-button>
                         </div>
                     </x-card>
 
@@ -209,24 +250,35 @@
 
         @if ($user->hasRole(\App\Enums\UserRole::Driver))
             @if ($activeTrip)
+                @php $isArrived = $activeTrip->status === \App\Enums\DeliveryOrderStatus::Arrived; @endphp
                 <x-card class="overflow-hidden" padding="p-0">
-                    <div class="bg-gradient-to-br from-brand-700 via-brand-600 to-teal-500 p-6 text-white">
+                    <div class="{{ $isArrived ? 'bg-gradient-to-br from-purple-700 via-purple-600 to-fuchsia-500' : 'bg-gradient-to-br from-brand-700 via-brand-600 to-teal-500' }} p-6 text-white">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                                <p class="text-xs font-medium uppercase tracking-wider text-white/70">Perjalanan aktif</p>
+                                <p class="text-xs font-medium uppercase tracking-wider text-white/70">{{ $isArrived ? 'Menunggu konfirmasi penerimaan' : 'Perjalanan aktif' }}</p>
                                 <p class="mt-1 font-mono text-xl font-semibold">{{ $activeTrip->nomor_do }}</p>
                                 <p class="mt-1 text-sm text-white/80">{{ $activeTrip->customer->nama_pabrik }} &middot; {{ $activeTrip->fleet->nomor_polisi }}</p>
                             </div>
-                            <x-badge tone="success" dot>{{ $activeTrip->status->label() }}</x-badge>
+                            <x-badge :tone="$isArrived ? 'warning' : 'success'" dot>{{ $activeTrip->status->label() }}</x-badge>
                         </div>
                         <div class="mt-5 flex items-center gap-3">
-                            <x-progress :value="$activeTrip->loaded_count" :max="$activeTrip->total_rol" tone="success" class="flex-1" />
-                            <span class="text-xs tabular-nums text-white/80">{{ $activeTrip->loaded_count }}/{{ $activeTrip->total_rol }} rol</span>
+                            @if ($activeTrip->total_box > 0)
+                                <x-progress :value="$activeTrip->loaded_box_count" :max="$activeTrip->total_box" tone="success" class="flex-1" />
+                                <span class="text-xs tabular-nums text-white/80">{{ $activeTrip->loaded_box_count }}/{{ $activeTrip->total_box }} kardus</span>
+                            @else
+                                <x-progress :value="$activeTrip->loaded_count" :max="$activeTrip->total_rol" tone="success" class="flex-1" />
+                                <span class="text-xs tabular-nums text-white/80">{{ $activeTrip->loaded_count }}/{{ $activeTrip->total_rol }} rol</span>
+                            @endif
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center justify-between gap-3 p-5">
-                        <p class="text-sm text-slate-500">Perbarui status perjalanan dan kirim posisi terbaru.</p>
-                        <x-button href="{{ route('driver.deliveries.show', $activeTrip) }}" icon-right="arrow-right">Buka perjalanan</x-button>
+                        @if ($isArrived)
+                            <p class="text-sm text-slate-500">Armada sudah tiba. Selesaikan konfirmasi penerimaan pelanggan.</p>
+                            <x-button href="{{ route('driver.deliveries.show', $activeTrip) }}#konfirmasi-penerimaan" icon="check">Konfirmasi penerimaan</x-button>
+                        @else
+                            <p class="text-sm text-slate-500">Perbarui status perjalanan dan kirim posisi terbaru.</p>
+                            <x-button href="{{ route('driver.deliveries.show', $activeTrip) }}" icon-right="arrow-right">Buka perjalanan</x-button>
+                        @endif
                     </div>
                 </x-card>
             @else
@@ -241,9 +293,9 @@
 
             <x-kpi-grid>
                 <x-stat-card label="Perjalanan hari ini" :value="$todayCount" icon="calendar" tone="brand" />
-                <x-stat-card label="Total ditugaskan" :value="$assignedOrders->count()" icon="clipboard" tone="info" />
-                <x-stat-card label="Perjalanan aktif" :value="$activeTrip ? 1 : 0" icon="truck" tone="success" />
-                <x-stat-card label="Status akun" value="Aktif" icon="shield" tone="success" />
+                <x-stat-card label="Total ditugaskan" :value="$assignedCount" icon="clipboard" tone="info" />
+                <x-stat-card label="Perlu POD" :value="$podPendingCount" icon="check" tone="warning" />
+                <x-stat-card label="Selesai" :value="$completedCount" icon="check" tone="success" />
             </x-kpi-grid>
 
             <x-card padding="p-0" title="Perjalanan terbaru">

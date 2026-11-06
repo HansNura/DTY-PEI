@@ -28,8 +28,8 @@ class ScanRollRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'qr_token.required' => 'Token QR atau kode gulungan wajib diisi.',
-            'qr_token.string' => 'Format token QR tidak valid.',
+            'qr_token.required' => 'QR atau nomor HU kardus wajib diisi.',
+            'qr_token.string' => 'Format QR / nomor HU kardus tidak valid.',
         ];
     }
 }

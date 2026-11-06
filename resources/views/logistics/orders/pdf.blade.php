@@ -35,6 +35,25 @@
         <tr><td class="label">Pengemudi</td><td>{{ $order->driver->nama }}</td><td class="label">Catatan</td><td>{{ $order->catatan ?: '—' }}</td></tr>
     </table>
     <h2>Rincian barang</h2>
+    @php
+        $palletGroups = $order->palletGroups();
+    @endphp
+    @if ($palletGroups !== [])
+        <h2>Palletisasi (kapasitas maks. 30 kardus per pallet)</h2>
+        <table class="items">
+            <thead><tr><th>Pallet</th><th>Jumlah kardus</th><th>Bobbin</th><th>Netto (kg)</th></tr></thead>
+            <tbody>
+                @foreach ($palletGroups as $pallet)
+                    <tr>
+                        <td>{{ $pallet['number'] }}</td>
+                        <td>{{ $pallet['box_count'] }}/30</td>
+                        <td>{{ $pallet['bobbin_count'] }}</td>
+                        <td>{{ str_replace('.', ',', number_format($pallet['net_kg'], 2, '.', '')) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
     <table class="items">
         <thead><tr><th>No.</th><th>Nomor seri</th><th>Nomor lot</th><th>Denier</th><th>Filamen</th><th>Berat (kg)</th></tr></thead>
         <tbody>

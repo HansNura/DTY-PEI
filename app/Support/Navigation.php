@@ -20,6 +20,7 @@ class Navigation
                 ['label' => 'Operasional', 'items' => [
                     $dashboard,
                     ['label' => 'Pengguna', 'route' => 'admin.users.index', 'icon' => 'users', 'active' => 'admin.users.*'],
+                    ['label' => 'Hak Akses', 'route' => 'admin.access.index', 'icon' => 'shield', 'active' => 'admin.access.*'],
                 ]],
                 ['label' => 'Akun', 'items' => [$profile]],
             ],
@@ -71,6 +72,7 @@ class Navigation
             UserRole::Admin => [
                 $dashboard,
                 ['label' => 'Pengguna', 'route' => 'admin.users.index', 'icon' => 'users', 'active' => 'admin.users.*'],
+                ['label' => 'Akses', 'route' => 'admin.access.index', 'icon' => 'shield', 'active' => 'admin.access.*'],
                 $profile,
             ],
             UserRole::AdminGudang => [

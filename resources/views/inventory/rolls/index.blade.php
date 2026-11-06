@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gulungan DTY')
+@section('title', 'Stok Bobbin')
 
 @section('content')
     <div class="space-y-6">
@@ -24,7 +24,14 @@
                     <p class="font-semibold">Anomali bobot perlu tindakan</p>
                     <p class="mt-0.5 text-xs text-amber-800">{{ $summary['overweight'] }} Overweight / Hold · {{ $summary['waste'] }} Waste / Scrap. Bobbin anomali tidak dapat dipacking ke box reguler.</p>
                 </div>
-                <x-button href="{{ route('warehouse.rolls.index', ['status' => \App\Enums\RollStatus::Overweight->value]) }}" variant="secondary" size="sm">Lihat anomali</x-button>
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($summary['overweight'] > 0)
+                        <x-button href="{{ route('warehouse.rolls.index', ['status' => \App\Enums\RollStatus::Overweight->value]) }}" variant="secondary" size="sm">Overweight · {{ $summary['overweight'] }}</x-button>
+                    @endif
+                    @if ($summary['waste'] > 0)
+                        <x-button href="{{ route('warehouse.rolls.index', ['status' => \App\Enums\RollStatus::Waste->value]) }}" variant="secondary" size="sm">Waste · {{ $summary['waste'] }}</x-button>
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -90,46 +97,82 @@
         <x-table class="hidden md:block" padding="p-0">
             <x-slot:footer><x-pagination :paginator="$rolls" class="!mt-0" /></x-slot:footer>
 
-            <thead class="bg-slate-50/70">
+            <thead class="bg-slate-50/80">
                 <tr>
-                    <x-th>Nomor seri</x-th>
-                    <x-th>Kardus</x-th>
+                    <x-th class="pl-6">Bobbin</x-th>
+                    <x-th>Status &amp; Grade</x-th>
+                    <x-th>Kardus / Batch</x-th>
                     <x-th>Spesifikasi</x-th>
-                    <x-th>Berat</x-th>
-                    <x-th>Status</x-th>
-                    <x-th align="right">Aksi</x-th>
+                    <x-th align="right">Berat</x-th>
+                    <x-th align="right" class="pr-6">Aksi</x-th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($rolls as $roll)
-                    <tr class="hover:bg-slate-50/60">
+                    @php
+                        $grade = $roll->bobbin_weight_grade;
+                        $gradeTone = match ($grade) {
+                            'AX' => 'success',
+                            'AE' => 'info',
+                            'A' => 'warning',
+                            'B' => 'neutral',
+                            'OW' => 'warning',
+                            'WASTE' => 'danger',
+                            default => 'neutral',
+                        };
+                        $isAnomaly = in_array($roll->status, [\App\Enums\RollStatus::Overweight, \App\Enums\RollStatus::Waste], true);
+                        $rowTone = $roll->status === \App\Enums\RollStatus::Waste
+                            ? 'bg-rose-50/40'
+                            : ($roll->status === \App\Enums\RollStatus::Overweight ? 'bg-amber-50/40' : '');
+                    @endphp
+
+                    <tr class="{{ $rowTone }} transition hover:bg-slate-50/70">
+                        <x-td class="pl-6">
+                            <div class="flex items-start gap-2">
+                                @if ($isAnomaly)
+                                    <x-icon name="alert" class="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+                                @endif
+                                <div class="min-w-0">
+                                    <p class="font-mono text-[13px] font-semibold tracking-wide text-slate-900">{{ $roll->nomor_seri ?? '—' }}</p>
+                                    <p class="mt-0.5 text-[11px] text-slate-500">Lot <span class="font-medium text-slate-600">{{ $roll->nomor_lot }}</span></p>
+                                </div>
+                            </div>
+                        </x-td>
                         <x-td>
-                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
-                            <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <x-status-badge :status="$roll->status" />
+                                <x-badge :tone="$gradeTone">Grade {{ $grade ?? '—' }}</x-badge>
+                            </div>
                         </x-td>
                         <x-td>
                             @if ($roll->carton)
-                                <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="font-mono text-xs font-medium text-brand-700 hover:text-brand-900">{{ $roll->carton->nomor_hu }}</a>
-                                <p class="text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
+                                <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-brand-700 transition hover:text-brand-900">
+                                    <x-icon name="boxes" class="size-3.5" />
+                                    {{ $roll->carton->nomor_hu }}
+                                </a>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
+                            @elseif ($roll->productionBatch)
+                                <p class="text-xs font-semibold text-slate-700">Batch {{ $roll->productionBatch->nomor_merge }}</p>
+                                <p class="mt-0.5 text-[11px] text-slate-500">{{ $roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : 'Belum packing' }}</p>
                             @else
-                                <span class="text-xs text-slate-400">{{ $roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : ($roll->productionBatch ? 'Belum packing' : 'Input manual') }}</span>
+                                <p class="text-xs text-slate-400">Tanpa kardus</p>
                             @endif
                         </x-td>
-                        <x-td class="tabular-nums">{{ number_format($roll->denier) }} D / {{ number_format($roll->filamen) }} F</x-td>
-                        <x-td class="tabular-nums">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</x-td>
                         <x-td>
-                            <div class="space-y-1">
-                                <x-status-badge :status="$roll->status" />
-                                <p class="text-[10px] text-slate-500">Bobot {{ $roll->bobbin_weight_grade ?? '—' }}</p>
-                            </div>
+                            <p class="text-xs font-medium text-slate-700">{{ $roll->specification }}</p>
+                            <p class="mt-0.5 text-[11px] tabular-nums text-slate-500">{{ number_format($roll->denier) }}D · {{ number_format($roll->filamen) }}F</p>
                         </x-td>
                         <x-td align="right">
-                            <div class="flex items-center justify-end gap-2">
+                            <p class="font-semibold tabular-nums text-slate-900">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} <span class="text-[11px] font-normal text-slate-500">g</span></p>
+                            <p class="text-[11px] tabular-nums text-slate-500">{{ number_format((float) $roll->berat_gram / 1000, 2, ',', '.') }} kg</p>
+                        </x-td>
+                        <x-td align="right" class="pr-6">
+                            <div class="flex items-center justify-end gap-1">
                                 @if ($roll->status !== \App\Enums\RollStatus::Cancelled && $roll->status !== \App\Enums\RollStatus::Waste)
-                                    <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="ghost" size="sm" icon="printer">Label</x-button>
+                                    <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="ghost" size="sm" icon="printer" title="Cetak label">Label</x-button>
                                 @endif
                                 @if (in_array($roll->status, [\App\Enums\RollStatus::ReadyToPack, \App\Enums\RollStatus::Overweight, \App\Enums\RollStatus::Waste], true))
-                                    <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
+                                    <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="ghost" size="sm" icon="edit" title="Edit berat / nomor seri">Edit</x-button>
                                     <x-confirm-button
                                         :action="route('warehouse.rolls.cancel', $roll)"
                                         method="PATCH"
@@ -160,30 +203,78 @@
                         </x-td>
                     </tr>
                 @empty
-                    <tr><x-td colspan="6" class="py-8 text-center text-slate-500">Belum ada gulungan yang cocok dengan filter.</x-td></tr>
+                    <tr>
+                        <x-td colspan="6" class="py-12 text-center">
+                            <x-icon name="package" class="mx-auto size-7 text-slate-300" />
+                            <p class="mt-2 text-sm font-medium text-slate-600">Belum ada bobbin yang cocok</p>
+                            <p class="mt-1 text-xs text-slate-500">Coba ubah filter status atau kata kunci pencarian.</p>
+                        </x-td>
+                    </tr>
                 @endforelse
             </tbody>
         </x-table>
 
         <div class="space-y-3 md:hidden">
             @forelse ($rolls as $roll)
-                <x-card padding="p-4">
+                @php
+                    $grade = $roll->bobbin_weight_grade;
+                    $gradeTone = match ($grade) {
+                        'AX' => 'success',
+                        'AE' => 'info',
+                        'A' => 'warning',
+                        'B' => 'neutral',
+                        'OW' => 'warning',
+                        'WASTE' => 'danger',
+                        default => 'neutral',
+                    };
+                    $isAnomaly = in_array($roll->status, [\App\Enums\RollStatus::Overweight, \App\Enums\RollStatus::Waste], true);
+                    $rowTone = $roll->status === \App\Enums\RollStatus::Waste
+                        ? 'bg-rose-50/40'
+                        : ($roll->status === \App\Enums\RollStatus::Overweight ? 'bg-amber-50/40' : '');
+                @endphp
+
+                <x-card padding="p-4" class="{{ $isAnomaly ? ($roll->status === \App\Enums\RollStatus::Waste ? 'ring-1 ring-inset ring-rose-200' : 'ring-1 ring-inset ring-amber-200') : '' }}">
                     <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
-                            <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
+                        <div class="flex min-w-0 items-start gap-2">
+                            @if ($isAnomaly)
+                                <x-icon name="alert" class="mt-0.5 size-3.5 shrink-0 text-amber-600" />
+                            @endif
+                            <div class="min-w-0">
+                                <p class="font-mono text-[13px] font-semibold tracking-wide text-slate-900">{{ $roll->nomor_seri ?? '—' }}</p>
+                                <p class="mt-0.5 text-[11px] text-slate-500">Lot <span class="font-medium text-slate-600">{{ $roll->nomor_lot }}</span></p>
+                            </div>
                         </div>
-                        <div class="text-right">
+                        <div class="shrink-0 text-right">
                             <x-status-badge :status="$roll->status" />
-                            <p class="mt-1 text-[10px] text-slate-500">Bobot {{ $roll->bobbin_weight_grade ?? '—' }}</p>
+                            <div class="mt-1"><x-badge :tone="$gradeTone">Grade {{ $grade ?? '—' }}</x-badge></div>
                         </div>
                     </div>
-                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
-                        <p>Spesifikasi: <span class="font-medium text-slate-700">{{ $roll->denier }}D / {{ $roll->filamen }}F</span></p>
-                        <p>Berat: <span class="font-medium text-slate-700">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</span></p>
-                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? ($roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : ($roll->productionBatch ? 'Belum packing' : 'Input manual')) }}</span></p>
+
+                    <div class="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-slate-100/80 pt-3 text-xs">
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-slate-400">Spesifikasi</p>
+                            <p class="mt-0.5 font-medium text-slate-700">{{ $roll->specification }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-wide text-slate-400">Berat</p>
+                            <p class="mt-0.5 font-medium tabular-nums text-slate-700">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g <span class="font-normal text-slate-400">/ {{ number_format((float) $roll->berat_gram / 1000, 2, ',', '.') }} kg</span></p>
+                        </div>
+                        <div class="col-span-2">
+                            <p class="text-[10px] uppercase tracking-wide text-slate-400">Kardus / Batch</p>
+                            @if ($roll->carton)
+                                <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="mt-0.5 inline-flex items-center gap-1 font-mono font-semibold text-brand-700">
+                                    <x-icon name="boxes" class="size-3.5" /> {{ $roll->carton->nomor_hu }}
+                                </a>
+                                <span class="ml-1 text-slate-500">· Merge {{ $roll->carton->nomor_merge }}</span>
+                            @elseif ($roll->productionBatch)
+                                <p class="mt-0.5 font-medium text-slate-700">Batch {{ $roll->productionBatch->nomor_merge }} <span class="font-normal text-slate-400">· {{ $roll->status === \App\Enums\RollStatus::ReadyToPack ? 'Siap packing' : 'Belum packing' }}</span></p>
+                            @else
+                                <p class="mt-0.5 text-slate-400">Tanpa kardus</p>
+                            @endif
+                        </div>
                     </div>
-                    <div class="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
+
+                    <div class="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100/80 pt-3">
                         @if ($roll->status !== \App\Enums\RollStatus::Cancelled && $roll->status !== \App\Enums\RollStatus::Waste)
                             <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="secondary" size="sm">Label</x-button>
                         @endif

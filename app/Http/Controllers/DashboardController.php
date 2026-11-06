@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\DeliveryOrder;
 use App\Models\DtyCarton;
 use App\Models\DtyRoll;
+use App\Models\ProductionBatch;
 use App\Models\User;
 use Illuminate\View\View;
 
@@ -37,11 +38,19 @@ class DashboardController extends Controller
                     'in_stock' => DtyRoll::where('status', RollStatus::InStock)->count(),
                     'allocated' => DtyRoll::where('status', RollStatus::Allocated)->count(),
                     'loaded' => DtyRoll::where('status', RollStatus::Loaded)->count(),
+                    'delivered' => DtyRoll::where('status', RollStatus::Delivered)->count(),
+                    'overweight' => DtyRoll::where('status', RollStatus::Overweight)->count(),
+                    'waste' => DtyRoll::where('status', RollStatus::Waste)->count(),
                     'cancelled' => DtyRoll::where('status', RollStatus::Cancelled)->count(),
                 ],
-                'recentRolls' => DtyRoll::latest()->take(5)->get(),
+                'recentRolls' => DtyRoll::with('carton')->latest()->take(5)->get(),
                 'cartonsCount' => DtyCarton::count(),
                 'loadingOrders' => DeliveryOrder::whereIn('status', [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading])->count(),
+                'batchStats' => [
+                    'active' => ProductionBatch::active()->count(),
+                    'total' => ProductionBatch::count(),
+                ],
+                'anomalyCount' => DtyRoll::whereIn('status', [RollStatus::Overweight, RollStatus::Waste])->count(),
             ];
         } elseif ($user->hasRole(UserRole::Logistik)) {
             $data += [
@@ -56,9 +65,11 @@ class DashboardController extends Controller
                     'loading' => DeliveryOrder::whereIn('status', [DeliveryOrderStatus::Issued, DeliveryOrderStatus::Loading])->count(),
                     'in_transit' => DeliveryOrder::whereIn('status', [DeliveryOrderStatus::Departed, DeliveryOrderStatus::InTransit])->count(),
                     'arrived' => DeliveryOrder::where('status', DeliveryOrderStatus::Arrived)->count(),
+                    'received' => DeliveryOrder::where('status', DeliveryOrderStatus::Received)->count(),
+                    'cancelled' => DeliveryOrder::where('status', DeliveryOrderStatus::Cancelled)->count(),
                 ],
                 'activeOrders' => DeliveryOrder::query()
-                    ->with(['customer', 'fleet', 'driver', 'latestTrackingEvent', 'items'])
+                    ->with(['customer', 'fleet', 'driver', 'latestTrackingEvent', 'items.dtyRoll.carton'])
                     ->whereIn('status', [
                         DeliveryOrderStatus::Issued,
                         DeliveryOrderStatus::Loading,
@@ -77,9 +88,9 @@ class DashboardController extends Controller
         } else {
             $data += [
                 'activeTrip' => DeliveryOrder::query()
-                    ->with(['customer', 'fleet', 'items.dtyRoll', 'latestTrackingEvent'])
+                    ->with(['customer', 'fleet', 'items.dtyRoll.carton', 'latestTrackingEvent'])
                     ->where('driver_id', $user->id)
-                    ->whereIn('status', [DeliveryOrderStatus::Departed, DeliveryOrderStatus::InTransit])
+                    ->whereIn('status', [DeliveryOrderStatus::Departed, DeliveryOrderStatus::InTransit, DeliveryOrderStatus::Arrived])
                     ->latest('tanggal')
                     ->first(),
                 'assignedOrders' => DeliveryOrder::query()
@@ -90,6 +101,14 @@ class DashboardController extends Controller
                     ->get(),
                 'todayCount' => DeliveryOrder::where('driver_id', $user->id)
                     ->whereDate('tanggal', today())
+                    ->count(),
+                'assignedCount' => DeliveryOrder::where('driver_id', $user->id)->count(),
+                'podPendingCount' => DeliveryOrder::where('driver_id', $user->id)
+                    ->where('status', DeliveryOrderStatus::Arrived)
+                    ->whereDoesntHave('proofOfDelivery')
+                    ->count(),
+                'completedCount' => DeliveryOrder::where('driver_id', $user->id)
+                    ->where('status', DeliveryOrderStatus::Received)
                     ->count(),
             ];
         }

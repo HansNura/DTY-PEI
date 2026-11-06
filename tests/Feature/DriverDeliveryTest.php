@@ -110,6 +110,40 @@ class DriverDeliveryTest extends TestCase
         $this->assertDatabaseCount('delivery_tracking_events', 0);
     }
 
+    public function test_driver_cannot_skip_to_arrived_from_departed(): void
+    {
+        $driver = $this->driver();
+        $order = $this->makeOrder($driver, DeliveryOrderStatus::Departed);
+
+        $this->actingAs($driver)
+            ->patch(route('driver.deliveries.status', $order), ['status' => TrackingStatus::Arrived->value])
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(DeliveryOrderStatus::Departed, $order->fresh()->status);
+        $this->assertDatabaseCount('delivery_tracking_events', 0);
+    }
+
+    public function test_driver_sees_map_and_only_the_next_status_action(): void
+    {
+        $driver = $this->driver();
+        $departed = $this->makeOrder($driver, DeliveryOrderStatus::Departed);
+
+        $this->actingAs($driver)
+            ->get(route('driver.deliveries.show', $departed))
+            ->assertOk()
+            ->assertSee('driver-trip-map', false)
+            ->assertSee('Mulai perjalanan')
+            ->assertDontSee('Tiba di Tujuan');
+
+        $departed->update(['status' => DeliveryOrderStatus::InTransit]);
+
+        $this->actingAs($driver)
+            ->get(route('driver.deliveries.show', $departed))
+            ->assertOk()
+            ->assertSee('Perbarui posisi')
+            ->assertSee('Tiba di Tujuan');
+    }
+
     public function test_driver_can_update_location_in_transit_and_arrive(): void
     {
         $driver = $this->driver();

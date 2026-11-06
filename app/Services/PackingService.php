@@ -61,6 +61,7 @@ class PackingService
             'net_kg' => round($rolls->sum(fn (DtyRoll $roll): float => (float) $roll->berat_gram) / 1000, 2),
             'grade' => $first?->grade,
             'merge' => $first?->nomor_lot,
+            'production_date' => $first?->productionBatch?->production_date?->translatedFormat('d M Y'),
             'specification' => $first?->specification,
             'rolls' => $rolls->map(fn (DtyRoll $roll): array => [
                 'id' => $roll->id,
@@ -185,6 +186,21 @@ class PackingService
     }
 
     /**
+     * @return Collection<int, DtyRoll>
+     */
+    public function availableRolls(): Collection
+    {
+        return DtyRoll::query()
+            ->with('productionBatch')
+            ->where('status', RollStatus::ReadyToPack)
+            ->whereNull('dty_carton_id')
+            ->whereNotNull('nomor_seri')
+            ->orderBy('nomor_lot')
+            ->orderBy('nomor_seri')
+            ->get();
+    }
+
+    /**
      * @param  array{gross_weight_kg: float|string, pallet_number?: ?string, catatan?: ?string}  $data
      */
     public function finalize(array $data, User $user): DtyCarton
@@ -250,6 +266,17 @@ class PackingService
             if ($range !== null && ($grossKg < $range['min'] || $grossKg > $range['max'])) {
                 throw ValidationException::withMessages([
                     'gross_weight_kg' => 'Untuk Grade AX isi 6 bobbin, gross weight harus antara 34,74 dan 36,25 kg.',
+                ]);
+            }
+
+            $palletNumber = $data['pallet_number'] ?? null;
+
+            if ($palletNumber !== null
+                && DtyCarton::query()
+                    ->where('pallet_number', $palletNumber)
+                    ->count() >= DtyCarton::PALLET_BOX_CAPACITY) {
+                throw ValidationException::withMessages([
+                    'pallet_number' => 'Pallet '.$palletNumber.' sudah berisi 30 kardus. Gunakan nomor pallet baru.',
                 ]);
             }
 

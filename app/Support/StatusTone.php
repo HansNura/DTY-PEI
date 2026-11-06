@@ -35,6 +35,7 @@ class StatusTone
 
             'valid' => 'success',
             'wrong_do' => 'danger',
+            'wrong_unit' => 'warning',
             'duplicate' => 'warning',
             'unknown' => 'neutral',
             'invalid_order' => 'danger',

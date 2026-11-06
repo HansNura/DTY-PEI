@@ -15,7 +15,7 @@ Jelaskan perubahan ini dalam 1–3 kalimat.
 ## Cara menguji
 
 ```bash
-bash .ai/scripts/run-checks.sh
+bash scripts/run-checks.sh
 ```
 
 Langkah manual (bila ada):
@@ -34,7 +34,7 @@ Langkah manual (bila ada):
 
 - [ ] Branch dibuat dari `main` terbaru.
 - [ ] Hanya berisi perubahan untuk tiket ini.
-- [ ] `bash .ai/scripts/run-checks.sh` lulus.
+- [ ] `bash scripts/run-checks.sh` lulus.
 - [ ] Test baru mencakup jalur utama dan otorisasi.
 - [ ] Migrasi baru punya `down()` dan tidak mengedit migrasi lama.
 - [ ] Dokumentasi/ERD diperbarui bila perlu.

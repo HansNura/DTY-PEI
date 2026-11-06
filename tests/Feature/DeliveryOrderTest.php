@@ -7,6 +7,8 @@ use App\Enums\RollStatus;
 use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
+use App\Models\DeliveryOrderItem;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
@@ -111,6 +113,49 @@ class DeliveryOrderTest extends TestCase
         $response = $this->actingAs($user)->post(route('logistics.orders.store'), $this->basePayload($customer, $fleet, $driver, [$roll->id]));
         $response->assertSessionHasErrors();
         $this->assertSame(1, DeliveryOrder::count());
+    }
+
+    public function test_pallet_groups_are_chunked_automatically_every_30_cartons(): void
+    {
+        $order = DeliveryOrder::factory()->create();
+
+        foreach (range(1, 31) as $index) {
+            $carton = DtyCarton::factory()->create([
+                'nomor_hu' => 'ADMG-PALLET-'.str_pad((string) $index, 3, '0', STR_PAD_LEFT),
+                'unit_bobbins' => 6,
+            ]);
+            $roll = DtyRoll::factory()->create(['dty_carton_id' => $carton->id]);
+
+            DeliveryOrderItem::create([
+                'delivery_order_id' => $order->id,
+                'dty_roll_id' => $roll->id,
+                'berat_kg' => 5.50,
+            ]);
+        }
+
+        $order->load('items.dtyRoll.carton');
+
+        $pallets = $order->palletGroups();
+        $this->assertCount(2, $pallets);
+        $this->assertSame(30, $pallets[0]['box_count']);
+        $this->assertSame(165.0, $pallets[0]['net_kg']);
+        $this->assertSame(1, $pallets[1]['box_count']);
+    }
+
+    public function test_driver_must_match_the_fleets_primary_driver(): void
+    {
+        $user = $this->logistikUser();
+        $customer = Customer::factory()->create(['is_active' => true]);
+        $driverA = User::factory()->create(['role' => UserRole::Driver, 'is_active' => true]);
+        $driverB = User::factory()->create(['role' => UserRole::Driver, 'is_active' => true]);
+        $fleet = Fleet::factory()->create(['is_active' => true, 'driver_id' => $driverA->id]);
+        $rolls = $this->makeRolls(1);
+
+        $this->actingAs($user)
+            ->post(route('logistics.orders.store'), $this->basePayload($customer, $fleet, $driverB, $rolls->pluck('id')->toArray()))
+            ->assertSessionHasErrors('driver_id');
+
+        $this->assertDatabaseCount('delivery_orders', 0);
     }
 
     public function test_cancel_delivery_order_returns_rolls_to_stock(): void

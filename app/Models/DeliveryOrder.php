@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 
 class DeliveryOrder extends Model
 {
@@ -117,6 +118,69 @@ class DeliveryOrder extends Model
 
     public function getLoadedCountAttribute(): int
     {
-        return $this->rolls->filter(fn (DtyRoll $roll) => $roll->status === RollStatus::Loaded)->count();
+        return $this->rolls
+            ->filter(fn (DtyRoll $roll) => in_array($roll->status, [RollStatus::Loaded, RollStatus::Delivered], true))
+            ->count();
+    }
+
+    public function getTotalBoxAttribute(): int
+    {
+        return $this->items
+            ->filter(fn (DeliveryOrderItem $item): bool => $item->dtyRoll?->carton !== null)
+            ->map(fn (DeliveryOrderItem $item): int => $item->dtyRoll->carton->id)
+            ->unique()
+            ->count();
+    }
+
+    public function getLoadedBoxCountAttribute(): int
+    {
+        return $this->items
+            ->filter(fn (DeliveryOrderItem $item): bool => $item->dtyRoll?->carton !== null)
+            ->groupBy(fn (DeliveryOrderItem $item): int => $item->dtyRoll->carton->id)
+            ->filter(fn ($items): bool => $items->every(
+                fn (DeliveryOrderItem $item): bool => in_array($item->dtyRoll->status, [RollStatus::Loaded, RollStatus::Delivered], true)
+            ))
+            ->count();
+    }
+
+    /**
+     * Palletisasi otomatis per 30 kardus pada saat DO diterbitkan.
+     *
+     * @return array<int, array{number: string, cartons: Collection, box_count: int, bobbin_count: int, net_kg: float}>
+     */
+    public function palletGroups(): array
+    {
+        return $this->cartonGroups()
+            ->chunk(DtyCarton::PALLET_BOX_CAPACITY)
+            ->values()
+            ->map(fn ($chunk, int $index): array => [
+                'number' => 'P'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT),
+                'cartons' => $chunk,
+                'box_count' => $chunk->count(),
+                'bobbin_count' => (int) $chunk->sum('bobbin_count'),
+                'net_kg' => round((float) $chunk->sum('net_kg'), 2),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return Collection<int, array{carton: DtyCarton, net_kg: float, bobbin_count: int}>
+     */
+    private function cartonGroups(): Collection
+    {
+        return $this->items
+            ->filter(fn (DeliveryOrderItem $item): bool => $item->dtyRoll?->carton !== null)
+            ->groupBy(fn (DeliveryOrderItem $item): int => $item->dtyRoll->carton->id)
+            ->map(function ($items): array {
+                $carton = $items->first()->dtyRoll->carton;
+
+                return [
+                    'carton' => $carton,
+                    'net_kg' => round($items->sum(fn (DeliveryOrderItem $item): float => (float) $item->berat_kg), 2),
+                    'bobbin_count' => $items->count(),
+                ];
+            })
+            ->sortBy(fn (array $group): string => $group['carton']->nomor_hu)
+            ->values();
     }
 }

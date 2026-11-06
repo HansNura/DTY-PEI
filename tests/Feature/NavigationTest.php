@@ -22,6 +22,7 @@ class NavigationTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Pengguna')
+            ->assertSee('Hak Akses')
             ->assertDontSee('Live Tracking')
             ->assertDontSee('Scanner Muatan');
     }

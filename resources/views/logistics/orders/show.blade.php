@@ -3,6 +3,12 @@
 @section('title', 'Detail — ' . $order->nomor_do)
 
 @section('content')
+    @php
+        $palletGroups = $order->palletGroups();
+        $boxCount = (int) collect($palletGroups)->sum('box_count');
+        $palletCount = count($palletGroups);
+    @endphp
+
     <div class="mx-auto max-w-5xl space-y-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -50,8 +56,9 @@
 
             <x-card title="Ringkasan muatan">
                 <p class="text-3xl font-semibold tabular-nums text-slate-900">{{ $order->total_rol }}</p>
-                <p class="text-sm text-slate-500">rol benang DTY</p>
-                <p class="mt-2 text-sm font-medium text-slate-700">Total {{ number_format($order->total_berat_kg, 2) }} kg</p>
+                <p class="text-sm text-slate-500">bobbin DTY</p>
+                <p class="mt-1 text-sm text-slate-600">{{ $boxCount }} kardus · {{ $palletCount }} pallet</p>
+                <p class="mt-2 text-sm font-medium text-slate-700">Total {{ number_format($order->total_berat_kg, 2) }} kg netto</p>
             </x-card>
         </div>
 
@@ -59,6 +66,23 @@
             <x-alert tone="warning" title="Catatan">
                 {{ $order->catatan }}
             </x-alert>
+        @endif
+
+        @if ($palletGroups !== [])
+            <x-card title="Palletisasi pengiriman" description="Pallet dibentuk otomatis dengan kapasitas maksimal 30 kardus per pallet.">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach ($palletGroups as $pallet)
+                        <div class="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-800">Pallet {{ $pallet['number'] }}</p>
+                                <x-badge :tone="$pallet['box_count'] < 30 ? 'warning' : 'neutral'">{{ $pallet['box_count'] }}/30 kardus</x-badge>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-600">{{ $pallet['bobbin_count'] }} bobbin · <span class="font-semibold tabular-nums">{{ number_format($pallet['net_kg'], 2, ',', '.') }} kg netto</span></p>
+                            <p class="mt-1 line-clamp-2 text-[10px] text-slate-400">{{ $pallet['cartons']->pluck('carton.nomor_hu')->join(', ') }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </x-card>
         @endif
 
         @if ($order->proofOfDelivery)
@@ -138,13 +162,15 @@
                 <x-timeline>
                     @foreach ($order->loadScans->sortByDesc('scanned_at') as $scan)
                         <x-timeline-item
-                            :title="$scan->dtyRoll?->nomor_seri ?? 'Kode QR tidak dikenal'"
+                            :title="$scan->dtyCarton?->nomor_hu ?? $scan->dtyRoll?->nomor_seri ?? 'Kode tidak dikenal'"
                             :meta="$scan->scanned_at->translatedFormat('d M Y, H:i:s').' · '.$scan->scanner->nama"
                             :tone="\App\Support\StatusTone::for($scan->result)"
                         >
                             <div class="flex flex-wrap items-center gap-2">
                                 <x-status-badge :status="$scan->result" />
-                                @if ($scan->dtyRoll)
+                                @if ($scan->dtyCarton)
+                                    <span class="text-xs text-slate-500">Merge {{ $scan->dtyCarton->nomor_merge }} · {{ $scan->dtyCarton->unit_bobbins }} bobbin</span>
+                                @elseif ($scan->dtyRoll)
                                     <span class="text-xs text-slate-500">Lot {{ $scan->dtyRoll->nomor_lot }}</span>
                                 @endif
                             </div>

@@ -62,6 +62,12 @@ class DeliveryOrderService
                 throw ValidationException::withMessages(['driver_id' => 'Pengemudi harus merupakan akun driver yang aktif.']);
             }
 
+            if ($fleet->driver_id !== null && (int) $fleet->driver_id !== (int) $driver->id) {
+                throw ValidationException::withMessages([
+                    'driver_id' => 'Driver harus sesuai dengan pengemudi utama armada '.$fleet->nomor_polisi.'.',
+                ]);
+            }
+
             foreach ($rolls as $roll) {
                 if ($roll->status !== RollStatus::InStock) {
                     throw ValidationException::withMessages([

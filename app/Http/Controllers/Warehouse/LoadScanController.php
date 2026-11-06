@@ -41,7 +41,7 @@ class LoadScanController extends Controller
             'Surat Jalan ini sudah tidak dalam tahap pemuatan.',
         );
 
-        $order->load(['customer', 'fleet', 'driver', 'items.dtyRoll', 'loadScans.scanner', 'loadScans.dtyRoll']);
+        $order->load(['customer', 'fleet', 'driver', 'items.dtyRoll.carton', 'loadScans.scanner', 'loadScans.dtyCarton', 'loadScans.dtyRoll']);
 
         return view('warehouse.scans.scanner', compact('order'));
     }
@@ -57,6 +57,13 @@ class LoadScanController extends Controller
                 'result' => $result['result']->value,
                 'result_label' => $result['result']->label(),
                 'message' => $result['message'],
+                'carton' => $result['carton'] ? [
+                    'id' => $result['carton']->id,
+                    'nomor_hu' => $result['carton']->nomor_hu,
+                    'nomor_merge' => $result['carton']->nomor_merge,
+                    'unit_bobbins' => $result['carton']->unit_bobbins,
+                    'net_weight_kg' => $result['carton']->net_weight_kg,
+                ] : null,
                 'roll' => $result['roll'] ? [
                     'id' => $result['roll']->id,
                     'nomor_seri' => $result['roll']->nomor_seri,
@@ -67,6 +74,8 @@ class LoadScanController extends Controller
                 ] : null,
                 'loaded_count' => $result['loaded_count'],
                 'total_rol' => $result['total_rol'],
+                'loaded_box_count' => $result['loaded_box_count'],
+                'total_box' => $result['total_box'],
                 'is_complete' => $result['is_complete'] ?? false,
             ], $result['success'] ? 200 : 422);
         }

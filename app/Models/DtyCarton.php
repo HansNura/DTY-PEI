@@ -13,6 +13,8 @@ class DtyCarton extends Model
 {
     use HasFactory;
 
+    public const PALLET_BOX_CAPACITY = 30;
+
     protected $fillable = [
         'nomor_hu',
         'nomor_merge',
@@ -50,6 +52,11 @@ class DtyCarton extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function loadScans(): HasMany
+    {
+        return $this->hasMany(LoadScan::class);
     }
 
     public function getSpecificationAttribute(): string

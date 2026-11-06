@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AccessReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -49,6 +50,8 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('/access', [AccessReportController::class, 'index'])->name('access.index');
+
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -64,6 +67,10 @@ Route::middleware(['auth', 'role:admin_gudang'])
         Route::get('/cartons', [DtyCartonController::class, 'index'])->name('cartons.index');
         Route::get('/cartons/{carton}/edit', [DtyCartonController::class, 'edit'])->name('cartons.edit');
         Route::put('/cartons/{carton}', [DtyCartonController::class, 'update'])->name('cartons.update');
+        Route::post('/cartons/{carton}/packing/scan', [DtyCartonController::class, 'scanPacking'])->name('cartons.packing.scan');
+        Route::delete('/cartons/{carton}/packing/scan/{roll}', [DtyCartonController::class, 'removePacking'])->name('cartons.packing.remove');
+        Route::post('/cartons/{carton}/packing/reset', [DtyCartonController::class, 'resetPacking'])->name('cartons.packing.reset');
+        Route::put('/cartons/{carton}/packing', [DtyCartonController::class, 'updatePacking'])->name('cartons.packing.update');
         Route::get('/cartons/{carton}/label', [DtyCartonController::class, 'label'])->name('cartons.label');
 
         Route::get('/batches', [ProductionBatchController::class, 'index'])->name('batches.index');

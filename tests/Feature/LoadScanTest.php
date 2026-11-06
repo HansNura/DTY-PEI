@@ -9,10 +9,12 @@ use App\Enums\UserRole;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\DeliveryOrderItem;
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use App\Models\Fleet;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Tests\TestCase;
 
 class LoadScanTest extends TestCase
@@ -24,7 +26,10 @@ class LoadScanTest extends TestCase
         return User::factory()->create(['role' => UserRole::AdminGudang]);
     }
 
-    private function makeOrderWithRolls(int $count = 2): array
+    /**
+     * @return array{0: DeliveryOrder, 1: Collection<int, DtyCarton>, 2: Collection<int, DtyRoll>}
+     */
+    private function makeOrderWithCartons(int $cartonCount = 1): array
     {
         $driver = User::factory()->create(['role' => UserRole::Driver, 'is_active' => true]);
         $creator = User::factory()->create(['role' => UserRole::Logistik]);
@@ -39,104 +44,148 @@ class LoadScanTest extends TestCase
             'created_by' => $creator->id,
         ]);
 
-        $warehouseUser = User::factory()->create(['role' => UserRole::AdminGudang]);
-        $rolls = DtyRoll::factory($count)->create([
-            'status' => RollStatus::Allocated,
-            'created_by' => $warehouseUser->id,
-        ]);
+        $warehouseUser = $this->warehouseUser();
+        $cartons = collect();
+        $rolls = collect();
 
-        foreach ($rolls as $roll) {
-            DeliveryOrderItem::create([
-                'delivery_order_id' => $order->id,
-                'dty_roll_id' => $roll->id,
-                'berat_kg' => round($roll->berat_gram / 1000, 2),
+        foreach (range(1, $cartonCount) as $cartonIndex) {
+            $carton = DtyCarton::factory()->create([
+                'nomor_hu' => 'ADMG-SCAN-'.str_pad((string) $cartonIndex, 3, '0', STR_PAD_LEFT),
+                'nomor_merge' => '4D9164',
+                'grade' => 'AX',
+                'unit_bobbins' => 6,
+                'created_by' => $warehouseUser->id,
             ]);
+
+            $cartons->push($carton);
+
+            foreach (range(1, 6) as $rollIndex) {
+                $roll = DtyRoll::factory()->create([
+                    'dty_carton_id' => $carton->id,
+                    'status' => RollStatus::Allocated,
+                    'denier' => 150,
+                    'filamen' => 48,
+                    'nomor_lot' => $carton->nomor_merge,
+                    'created_by' => $warehouseUser->id,
+                ]);
+
+                $rolls->push($roll);
+
+                DeliveryOrderItem::create([
+                    'delivery_order_id' => $order->id,
+                    'dty_roll_id' => $roll->id,
+                    'berat_kg' => round($roll->berat_gram / 1000, 2),
+                ]);
+            }
         }
 
-        return [$order, $rolls];
+        return [$order, $cartons, $rolls];
     }
 
-    public function test_valid_qr_scan_marks_roll_as_loaded_and_records_scan(): void
+    public function test_valid_carton_scan_loads_all_bobbins_and_records_one_scan(): void
     {
         $checker = $this->warehouseUser();
-        [$order, $rolls] = $this->makeOrderWithRolls(2);
-        $targetRoll = $rolls->first();
+        [$order, $cartons, $rolls] = $this->makeOrderWithCartons(1);
+        $carton = $cartons->first();
 
         $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $targetRoll->qr_token]);
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $carton->nomor_hu]);
 
         $response->assertOk()
-            ->assertJson(['success' => true, 'result' => LoadScanResult::Valid->value]);
+            ->assertJson([
+                'success' => true,
+                'result' => LoadScanResult::Valid->value,
+                'loaded_box_count' => 1,
+                'total_box' => 1,
+            ]);
 
-        $this->assertSame(RollStatus::Loaded->value, $targetRoll->fresh()->status->value);
+        $this->assertSame(6, $rolls->filter(fn (DtyRoll $roll) => $roll->fresh()->status === RollStatus::Loaded)->count());
         $this->assertDatabaseHas('load_scans', [
             'delivery_order_id' => $order->id,
-            'dty_roll_id' => $targetRoll->id,
+            'dty_carton_id' => $carton->id,
             'result' => LoadScanResult::Valid->value,
             'scanned_by' => $checker->id,
         ]);
+        $this->assertDatabaseCount('load_scans', 1);
         $this->assertSame(DeliveryOrderStatus::Loading->value, $order->fresh()->status->value);
     }
 
-    public function test_scanning_by_bobbin_serial_is_accepted(): void
+    public function test_carton_can_be_scanned_by_qr_token_or_manual_hu(): void
     {
         $checker = $this->warehouseUser();
-        [$order, $rolls] = $this->makeOrderWithRolls(1);
-        $targetRoll = $rolls->first();
-        $targetRoll->update(['nomor_seri' => '20217007920261103']);
+        [$order, $cartons] = $this->makeOrderWithCartons(2);
+
+        $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $cartons[0]->qr_token])
+            ->assertOk()
+            ->assertJson(['success' => true, 'loaded_box_count' => 1]);
+
+        $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $cartons[1]->nomor_hu])
+            ->assertOk()
+            ->assertJson(['success' => true, 'loaded_box_count' => 2, 'is_complete' => true]);
+    }
+
+    public function test_scanning_a_bobbin_qr_is_rejected_as_wrong_unit(): void
+    {
+        $checker = $this->warehouseUser();
+        [$order, , $rolls] = $this->makeOrderWithCartons(1);
+        $roll = $rolls->first();
 
         $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $targetRoll->nomor_seri]);
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
 
-        $response->assertOk()
-            ->assertJson(['success' => true, 'result' => LoadScanResult::Valid->value]);
+        $response->assertStatus(422)
+            ->assertJson(['success' => false, 'result' => LoadScanResult::WrongUnit->value]);
 
-        $this->assertSame(RollStatus::Loaded->value, $targetRoll->fresh()->status->value);
+        $this->assertSame(RollStatus::Allocated->value, $roll->fresh()->status->value);
         $this->assertDatabaseHas('load_scans', [
             'delivery_order_id' => $order->id,
-            'dty_roll_id' => $targetRoll->id,
-            'result' => LoadScanResult::Valid->value,
+            'dty_roll_id' => $roll->id,
+            'result' => LoadScanResult::WrongUnit->value,
         ]);
     }
 
-    public function test_scanning_roll_not_in_do_returns_wrong_do(): void
+    public function test_carton_not_in_do_returns_wrong_do(): void
     {
         $checker = $this->warehouseUser();
-        [$order] = $this->makeOrderWithRolls(1);
-
-        $otherRoll = DtyRoll::factory()->create([
-            'status' => RollStatus::InStock,
-            'created_by' => $checker->id,
+        [$order] = $this->makeOrderWithCartons(1);
+        $otherCarton = DtyCarton::factory()->create([
+            'nomor_hu' => 'ADMG-LAIN-001',
+            'nomor_merge' => '4D9999',
+        ]);
+        DtyRoll::factory(6)->create([
+            'dty_carton_id' => $otherCarton->id,
+            'status' => RollStatus::Allocated,
+            'nomor_lot' => $otherCarton->nomor_merge,
         ]);
 
         $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $otherRoll->qr_token]);
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $otherCarton->nomor_hu]);
 
         $response->assertStatus(422)
             ->assertJson(['success' => false, 'result' => LoadScanResult::WrongDo->value]);
 
-        $this->assertSame(RollStatus::InStock->value, $otherRoll->fresh()->status->value);
         $this->assertDatabaseHas('load_scans', [
             'delivery_order_id' => $order->id,
+            'dty_carton_id' => $otherCarton->id,
             'result' => LoadScanResult::WrongDo->value,
         ]);
     }
 
-    public function test_scanning_already_loaded_roll_returns_duplicate(): void
+    public function test_scanning_already_loaded_carton_returns_duplicate(): void
     {
         $checker = $this->warehouseUser();
-        [$order, $rolls] = $this->makeOrderWithRolls(2);
-        $roll = $rolls->first();
+        [$order, $cartons] = $this->makeOrderWithCartons(1);
+        $carton = $cartons->first();
 
-        // First scan — valid
         $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $carton->nomor_hu])
+            ->assertOk();
 
-        // Second scan of same roll — duplicate
-        $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
-
-        $response->assertStatus(422)
+        $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $carton->nomor_hu])
+            ->assertStatus(422)
             ->assertJson(['success' => false, 'result' => LoadScanResult::Duplicate->value]);
 
         $this->assertDatabaseCount('load_scans', 2);
@@ -145,16 +194,17 @@ class LoadScanTest extends TestCase
     public function test_scanning_unknown_qr_returns_unknown_result(): void
     {
         $checker = $this->warehouseUser();
-        [$order] = $this->makeOrderWithRolls(1);
+        [$order] = $this->makeOrderWithCartons(1);
 
         $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => 'qr-tidak-ada-di-sistem-xyz']);
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => 'HU-TIDAK-ADA-XYZ']);
 
         $response->assertStatus(422)
             ->assertJson(['success' => false, 'result' => LoadScanResult::Unknown->value]);
 
         $this->assertDatabaseHas('load_scans', [
             'delivery_order_id' => $order->id,
+            'dty_carton_id' => null,
             'dty_roll_id' => null,
             'result' => LoadScanResult::Unknown->value,
         ]);
@@ -162,7 +212,7 @@ class LoadScanTest extends TestCase
 
     public function test_only_warehouse_users_can_access_scanner(): void
     {
-        [$order] = $this->makeOrderWithRolls(1);
+        [$order] = $this->makeOrderWithCartons(1);
 
         $this->actingAs(User::factory()->create(['role' => UserRole::Logistik]))
             ->get(route('warehouse.scans.index'))
@@ -180,7 +230,7 @@ class LoadScanTest extends TestCase
     public function test_qr_token_is_required_to_scan(): void
     {
         $checker = $this->warehouseUser();
-        [$order] = $this->makeOrderWithRolls(1);
+        [$order] = $this->makeOrderWithCartons(1);
 
         $this->actingAs($checker)
             ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => ''])
@@ -191,25 +241,22 @@ class LoadScanTest extends TestCase
     public function test_cancelled_order_cannot_be_scanned(): void
     {
         $checker = $this->warehouseUser();
-        [$order, $rolls] = $this->makeOrderWithRolls(1);
-        $roll = $rolls->first();
+        [$order, $cartons] = $this->makeOrderWithCartons(1);
+        $carton = $cartons->first();
 
         $order->update(['status' => DeliveryOrderStatus::Cancelled]);
-        $roll->update(['status' => RollStatus::InStock]);
 
-        $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
-
-        $response->assertStatus(422)
+        $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $carton->nomor_hu])
+            ->assertStatus(422)
             ->assertJson(['success' => false, 'result' => LoadScanResult::InvalidOrder->value]);
 
-        $this->assertSame(RollStatus::InStock->value, $roll->fresh()->status->value);
         $this->assertDatabaseCount('load_scans', 0);
     }
 
     public function test_scanner_page_is_forbidden_for_closed_order(): void
     {
-        [$order] = $this->makeOrderWithRolls(1);
+        [$order] = $this->makeOrderWithCartons(1);
         $order->update(['status' => DeliveryOrderStatus::Cancelled]);
 
         $this->actingAs($this->warehouseUser())
@@ -217,19 +264,18 @@ class LoadScanTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_roll_with_invalid_status_is_not_loaded(): void
+    public function test_carton_with_unready_bobbin_is_rejected(): void
     {
         $checker = $this->warehouseUser();
-        [$order, $rolls] = $this->makeOrderWithRolls(1);
-        $roll = $rolls->first();
-        $roll->update(['status' => RollStatus::Cancelled]);
+        [$order, $cartons, $rolls] = $this->makeOrderWithCartons(1);
+        $carton = $cartons->first();
+        $rolls->first()->update(['status' => RollStatus::Cancelled]);
 
-        $response = $this->actingAs($checker)
-            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $roll->qr_token]);
-
-        $response->assertStatus(422)
+        $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $carton->nomor_hu])
+            ->assertStatus(422)
             ->assertJson(['success' => false, 'result' => LoadScanResult::WrongDo->value]);
 
-        $this->assertSame(RollStatus::Cancelled->value, $roll->fresh()->status->value);
+        $this->assertDatabaseCount('load_scans', 1);
     }
 }
