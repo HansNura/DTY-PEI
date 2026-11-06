@@ -7,6 +7,8 @@ use App\Http\Controllers\DeliverySignatureController;
 use App\Http\Controllers\Driver\DeliveryController as DriverDeliveryController;
 use App\Http\Controllers\Inventory\DtyCartonController;
 use App\Http\Controllers\Inventory\DtyRollController;
+use App\Http\Controllers\Inventory\PackingController;
+use App\Http\Controllers\Inventory\ProductionBatchController;
 use App\Http\Controllers\Logistics\CustomerController;
 use App\Http\Controllers\Logistics\DeliveryOrderController;
 use App\Http\Controllers\Logistics\DeliveryReportController;
@@ -60,11 +62,22 @@ Route::middleware(['auth', 'role:admin_gudang'])
     ->name('warehouse.')
     ->group(function () {
         Route::get('/cartons', [DtyCartonController::class, 'index'])->name('cartons.index');
-        Route::get('/cartons/create', [DtyCartonController::class, 'create'])->name('cartons.create');
-        Route::post('/cartons', [DtyCartonController::class, 'store'])->name('cartons.store');
         Route::get('/cartons/{carton}/edit', [DtyCartonController::class, 'edit'])->name('cartons.edit');
         Route::put('/cartons/{carton}', [DtyCartonController::class, 'update'])->name('cartons.update');
         Route::get('/cartons/{carton}/label', [DtyCartonController::class, 'label'])->name('cartons.label');
+
+        Route::get('/batches', [ProductionBatchController::class, 'index'])->name('batches.index');
+        Route::get('/batches/create', [ProductionBatchController::class, 'create'])->name('batches.create');
+        Route::post('/batches', [ProductionBatchController::class, 'store'])->name('batches.store');
+        Route::get('/batches/{batch}/edit', [ProductionBatchController::class, 'edit'])->name('batches.edit');
+        Route::put('/batches/{batch}', [ProductionBatchController::class, 'update'])->name('batches.update');
+        Route::patch('/batches/{batch}/activate', [ProductionBatchController::class, 'activate'])->name('batches.activate');
+
+        Route::get('/packing', [PackingController::class, 'create'])->name('packing.create');
+        Route::post('/packing/scan', [PackingController::class, 'scan'])->name('packing.scan');
+        Route::delete('/packing/scan/{roll}', [PackingController::class, 'remove'])->name('packing.remove');
+        Route::post('/packing/reset', [PackingController::class, 'reset'])->name('packing.reset');
+        Route::post('/packing', [PackingController::class, 'store'])->name('packing.store');
 
         Route::get('/rolls', [DtyRollController::class, 'index'])->name('rolls.index');
         Route::get('/rolls/create', [DtyRollController::class, 'create'])->name('rolls.create');

@@ -26,9 +26,11 @@ class Navigation
             UserRole::AdminGudang => [
                 ['label' => 'Operasional', 'items' => [
                     $dashboard,
+                    ['label' => 'Packing Kardus', 'route' => 'warehouse.packing.create', 'icon' => 'boxes', 'active' => 'warehouse.packing.*'],
                     ['label' => 'Scanner Muatan', 'route' => 'warehouse.scans.index', 'icon' => 'scan', 'active' => 'warehouse.scans.*'],
                 ]],
                 ['label' => 'Master Data', 'items' => [
+                    ['label' => 'Produksi', 'route' => 'warehouse.batches.index', 'icon' => 'activity', 'active' => 'warehouse.batches.*'],
                     ['label' => 'Kardus DTY', 'route' => 'warehouse.cartons.index', 'icon' => 'boxes', 'active' => 'warehouse.cartons.*'],
                     ['label' => 'Stok Bobbin', 'route' => 'warehouse.rolls.index', 'icon' => 'package', 'active' => 'warehouse.rolls.*'],
                 ]],

@@ -7,7 +7,7 @@
         <x-page-header title="Kardus DTY" description="Input per kardus: nomor HU, lot/merge, spesifikasi, berat, dan jumlah bobbin.">
             <x-slot:actions>
                 <x-button href="{{ route('warehouse.rolls.index') }}" variant="secondary" icon="package">Stok bobbin</x-button>
-                <x-button href="{{ route('warehouse.cartons.create') }}" icon="plus">Tambah kardus</x-button>
+                <x-button href="{{ route('warehouse.packing.create') }}" icon="boxes">Packing kardus</x-button>
             </x-slot:actions>
         </x-page-header>
 

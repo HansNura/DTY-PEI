@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Enums\RollStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Inventory\SaveDtyRollRequest;
+use App\Http\Requests\Inventory\WeighDtyRollRequest;
 use App\Models\DtyRoll;
-use App\Services\QrCodeService;
+use App\Services\BobbinWeighingService;
+use App\Support\BobbinWeightStandard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ class DtyRollController extends Controller
         $status = (string) $request->query('status');
 
         $rolls = DtyRoll::query()
-            ->with('carton')
+            ->with(['carton', 'productionBatch'])
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('kode_rol', 'like', "%{$search}%")
                     ->orWhere('nomor_seri', 'like', "%{$search}%")
@@ -39,11 +40,12 @@ class DtyRollController extends Controller
             ->pluck('total', 'status');
 
         $availableWeight = (float) DtyRoll::query()
-            ->where('status', RollStatus::InStock)
+            ->whereIn('status', [RollStatus::ReadyToPack, RollStatus::InStock])
             ->sum('berat_gram');
 
         $summary = [
             'total' => (int) $statusCounts->sum(),
+            'ready_to_pack' => (int) ($statusCounts[RollStatus::ReadyToPack->value] ?? 0),
             'in_stock' => (int) ($statusCounts[RollStatus::InStock->value] ?? 0),
             'allocated' => (int) ($statusCounts[RollStatus::Allocated->value] ?? 0),
             'loaded' => (int) ($statusCounts[RollStatus::Loaded->value] ?? 0),
@@ -61,57 +63,67 @@ class DtyRollController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(BobbinWeighingService $weighingService): View
     {
-        return view('inventory.rolls.create');
+        return view('inventory.rolls.create', [
+            'activeBatch' => $weighingService->activeBatch(),
+        ]);
     }
 
-    public function store(SaveDtyRollRequest $request, QrCodeService $qrCodeService): RedirectResponse
+    public function store(WeighDtyRollRequest $request, BobbinWeighingService $weighingService): RedirectResponse
     {
-        $roll = DtyRoll::create([
-            ...$request->validated(),
-            'kode_rol' => $qrCodeService->generateRollCode(),
-            'nomor_seri' => $qrCodeService->generateRollSerial(),
-            'qr_token' => $qrCodeService->generateToken(),
-            'status' => RollStatus::InStock,
-            'created_by' => $request->user()->id,
-        ]);
+        $roll = $weighingService->weigh((float) $request->validated('berat_gram'), $request->user());
 
         return redirect()->route('warehouse.rolls.label', $roll)
-            ->with('status', 'Data gulungan berhasil disimpan. Label QR siap dicetak.');
+            ->with('status', "Bobbin {$roll->nomor_seri} berhasil ditimbang. Stiker siap dicetak.");
     }
 
     public function edit(DtyRoll $roll): View
     {
-        abort_unless($roll->status === RollStatus::InStock, 403, 'Gulungan yang sudah dialokasikan tidak dapat diubah.');
+        abort_unless($roll->status === RollStatus::ReadyToPack, 403, 'Bobbin yang sudah dipacking tidak dapat diubah.');
+
+        $roll->loadMissing('productionBatch');
 
         return view('inventory.rolls.edit', compact('roll'));
     }
 
-    public function update(SaveDtyRollRequest $request, DtyRoll $roll): RedirectResponse
+    public function update(WeighDtyRollRequest $request, DtyRoll $roll): RedirectResponse
     {
-        abort_unless($roll->status === RollStatus::InStock, 403, 'Gulungan yang sudah dialokasikan tidak dapat diubah.');
+        abort_unless($roll->status === RollStatus::ReadyToPack, 403, 'Bobbin yang sudah dipacking tidak dapat diubah.');
 
-        $roll->update($request->validated());
+        $beratGram = (float) $request->validated('berat_gram');
+        $grade = BobbinWeightStandard::gradeFor($beratGram);
+
+        if ($grade === null) {
+            return back()->withErrors(['berat_gram' => 'Berat bobbin berada di luar standar grade.'])->withInput();
+        }
+
+        $roll->update([
+            'berat_gram' => $beratGram,
+            'grade' => $grade,
+        ]);
 
         return redirect()->route('warehouse.rolls.index')
-            ->with('status', 'Data gulungan berhasil diperbarui.');
+            ->with('status', 'Berat bobbin berhasil diperbarui.');
     }
 
     public function cancel(DtyRoll $roll): RedirectResponse
     {
-        abort_unless($roll->status === RollStatus::InStock, 403, 'Hanya gulungan tersedia yang dapat dibatalkan.');
+        $cancellable = $roll->status === RollStatus::ReadyToPack
+            || ($roll->status === RollStatus::InStock && $roll->dty_carton_id === null);
+
+        abort_unless($cancellable, 403, 'Hanya bobbin yang belum dipacking dapat dibatalkan.');
 
         $roll->update(['status' => RollStatus::Cancelled]);
 
-        return back()->with('status', 'Gulungan berhasil dibatalkan dan tetap tersimpan dalam riwayat.');
+        return back()->with('status', 'Bobbin berhasil dibatalkan dan tetap tersimpan dalam riwayat.');
     }
 
     public function label(DtyRoll $roll): View
     {
         abort_unless($roll->status !== RollStatus::Cancelled, 404);
 
-        $roll->loadMissing('carton');
+        $roll->loadMissing(['carton', 'productionBatch']);
 
         return view('inventory.rolls.label', [
             'roll' => $roll,

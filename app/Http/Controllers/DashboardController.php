@@ -33,6 +33,7 @@ class DashboardController extends Controller
         } elseif ($user->hasRole(UserRole::AdminGudang)) {
             $data += [
                 'rollStats' => [
+                    'ready_to_pack' => DtyRoll::where('status', RollStatus::ReadyToPack)->count(),
                     'in_stock' => DtyRoll::where('status', RollStatus::InStock)->count(),
                     'allocated' => DtyRoll::where('status', RollStatus::Allocated)->count(),
                     'loaded' => DtyRoll::where('status', RollStatus::Loaded)->count(),

@@ -1,6 +1,6 @@
 # PMT — Sistem Pelacakan DTY
 
-Aplikasi pelacakan rol benang DTY dari gudang sampai pelanggan: master data rol, QR code, surat jalan, validasi muatan, status perjalanan, bukti terima digital, laporan, dan audit.
+Aplikasi pelacakan bobbin benang DTY dari produksi sampai pelanggan: batch produksi, timbang bobbin, packing kardus, QR code, surat jalan, validasi muatan, status perjalanan, bukti terima digital, laporan, dan audit.
 
 Repositori ini dibangun bertahap mengikuti backlog Scrum 13 tiket (`DTY-001` s/d `DTY-013`). Sprint 1 (fondasi dan manajemen akses) sampai Sprint 5 (bukti terima digital dan rekap pengiriman) sudah selesai.
 
@@ -50,9 +50,19 @@ Dibuat oleh `UserSeeder`:
 
 Ubah kata sandi akun demo sebelum dipakai di lingkungan nyata.
 
-### Data demo pelanggan
+### Alur produksi dan packing
 
-`CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
+1. **Produksi** — buat batch dengan merge dan spesifikasi, lalu aktifkan.
+2. **Timbang bobbin** — masukkan berat; grade bobot, serial, dan QR dibuat otomatis.
+3. **Packing kardus** — scan 6 bobbin dengan merge/grade sama; net, unit, grade, HU, dan tanggal dihitung otomatis, gross diisi dari timbangan fisik.
+4. **Surat jalan** — logistik memilih bobbin yang sudah dipacking.
+5. **Scan muatan → driver → POD** — alur pengiriman dan bukti terima seperti sebelumnya.
+
+> Bobbin baru hanya lahir dari penimbangan batch aktif. Kardus baru hanya lahir dari packing; form input kardus/bobbin manual lama sudah dihapus.
+
+### Data demo produksi dan pelanggan
+
+`ProductionBatchSeeder` mengisi batch demo `4D9164` dengan spesifikasi `DTY 150/48 NI Z`. `CustomerSeeder` mengisi 6 pelanggan dummy (`CUST-0001` sampai `CUST-0006`), termasuk PT Demo Tekstil, PT Sinar Benang Nusantara, dan PT Karya Rajut Sentosa.
 
 ```bash
 php artisan db:seed --class=CustomerSeeder
@@ -69,7 +79,7 @@ php artisan db:seed --class=FleetSeeder
 ## Perintah berguna
 
 ```bash
-php artisan migrate:fresh --seed   # reset database + akun, pelanggan & armada demo
+php artisan migrate:fresh --seed   # reset database + akun, batch, pelanggan & armada demo
 php artisan test                   # seluruh test
 composer ci                        # Pint check + seluruh test
 composer lint                      # perbaiki format kode otomatis

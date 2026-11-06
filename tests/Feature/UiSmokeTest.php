@@ -84,14 +84,16 @@ class UiSmokeTest extends TestCase
     public function test_warehouse_pages_render(): void
     {
         $warehouse = $this->user(UserRole::AdminGudang);
-        $roll = DtyRoll::factory()->create(['status' => RollStatus::InStock, 'created_by' => $warehouse->id]);
+        $roll = DtyRoll::factory()->create(['status' => RollStatus::ReadyToPack, 'created_by' => $warehouse->id]);
         $carton = DtyCarton::factory()->create(['created_by' => $warehouse->id]);
         $order = $this->order($this->user(UserRole::Driver), DeliveryOrderStatus::Issued);
 
         $pages = [
             route('dashboard'),
+            route('warehouse.batches.index'),
+            route('warehouse.batches.create'),
+            route('warehouse.packing.create'),
             route('warehouse.cartons.index'),
-            route('warehouse.cartons.create'),
             route('warehouse.cartons.edit', $carton),
             route('warehouse.cartons.label', $carton),
             route('warehouse.rolls.index'),

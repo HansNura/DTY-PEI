@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum RollStatus: string
 {
+    case ReadyToPack = 'ready_to_pack';
     case InStock = 'in_stock';
     case Allocated = 'allocated';
     case Loaded = 'loaded';
@@ -13,6 +14,7 @@ enum RollStatus: string
     public function label(): string
     {
         return match ($this) {
+            self::ReadyToPack => 'Siap packing',
             self::InStock => 'Tersedia',
             self::Allocated => 'Dialokasikan',
             self::Loaded => 'Dimuat',

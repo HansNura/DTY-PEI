@@ -4,14 +4,10 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Enums\RollStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Inventory\SaveDtyCartonRequest;
+use App\Http\Requests\Inventory\UpdatePackedCartonRequest;
 use App\Models\DtyCarton;
-use App\Models\DtyRoll;
-use App\Services\QrCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DtyCartonController extends Controller
@@ -74,29 +70,6 @@ class DtyCartonController extends Controller
         ]);
     }
 
-    public function create(): View
-    {
-        return view('inventory.cartons.create');
-    }
-
-    public function store(SaveDtyCartonRequest $request, QrCodeService $qrCodeService): RedirectResponse
-    {
-        $carton = DB::transaction(function () use ($request, $qrCodeService) {
-            $carton = DtyCarton::create([
-                ...$request->validated(),
-                'qr_token' => $qrCodeService->generateToken(),
-                'created_by' => $request->user()->id,
-            ]);
-
-            $this->createRolls($carton, $qrCodeService);
-
-            return $carton;
-        });
-
-        return redirect()->route('warehouse.cartons.label', $carton)
-            ->with('status', "Kardus {$carton->nomor_hu} berhasil disimpan dengan {$carton->unit_bobbins} bobbin. Label siap dicetak.");
-    }
-
     public function edit(DtyCarton $carton): View
     {
         $this->ensureEditable($carton);
@@ -104,29 +77,11 @@ class DtyCartonController extends Controller
         return view('inventory.cartons.edit', compact('carton'));
     }
 
-    public function update(SaveDtyCartonRequest $request, DtyCarton $carton): RedirectResponse
+    public function update(UpdatePackedCartonRequest $request, DtyCarton $carton): RedirectResponse
     {
         $this->ensureEditable($carton);
 
-        $data = $request->validated();
-
-        if ((int) $data['unit_bobbins'] !== $carton->rolls()->count()) {
-            throw ValidationException::withMessages([
-                'unit_bobbins' => 'Jumlah bobbin tidak dapat diubah setelah kardus dibuat.',
-            ]);
-        }
-
-        DB::transaction(function () use ($carton, $data) {
-            $carton->update($data);
-            $carton->refresh();
-
-            $carton->rolls()->update([
-                'denier' => $data['denier'],
-                'filamen' => $data['filamen'],
-                'nomor_lot' => $data['nomor_merge'],
-                'berat_gram' => $carton->net_weight_per_bobbin_gram,
-            ]);
-        });
+        $carton->update($request->validated());
 
         return redirect()->route('warehouse.cartons.index')
             ->with('status', "Kardus {$carton->nomor_hu} berhasil diperbarui.");
@@ -140,26 +95,6 @@ class DtyCartonController extends Controller
             'carton' => $carton,
             'qrToken' => $carton->qr_token,
         ]);
-    }
-
-    private function createRolls(DtyCarton $carton, QrCodeService $qrCodeService): void
-    {
-        $beratPerBobbin = $carton->net_weight_per_bobbin_gram;
-
-        for ($index = 0; $index < $carton->unit_bobbins; $index++) {
-            DtyRoll::create([
-                'dty_carton_id' => $carton->id,
-                'kode_rol' => $qrCodeService->generateRollCode(),
-                'nomor_seri' => $qrCodeService->generateRollSerial($carton->production_date),
-                'denier' => $carton->denier,
-                'filamen' => $carton->filamen,
-                'berat_gram' => $beratPerBobbin,
-                'nomor_lot' => $carton->nomor_merge,
-                'qr_token' => $qrCodeService->generateToken(),
-                'status' => RollStatus::InStock,
-                'created_by' => $carton->created_by,
-            ]);
-        }
     }
 
     private function ensureEditable(DtyCarton $carton): void

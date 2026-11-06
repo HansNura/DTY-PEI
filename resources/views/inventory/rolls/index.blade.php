@@ -4,18 +4,18 @@
 
 @section('content')
     <div class="space-y-6">
-        <x-page-header title="Stok bobbin DTY" description="Daftar bobbin hasil input kardus atau input manual, lengkap dengan QR untuk validasi muatan.">
+        <x-page-header title="Stok bobbin DTY" description="Bobbin siap packing dan stok yang sudah masuk kardus, lengkap dengan serial dan QR.">
             <x-slot:actions>
                 <x-button href="{{ route('warehouse.cartons.index') }}" variant="secondary" icon="boxes">Kardus DTY</x-button>
-                <x-button href="{{ route('warehouse.rolls.create') }}" icon="plus">Tambah bobbin</x-button>
+                <x-button href="{{ route('warehouse.rolls.create') }}" icon="plus">Timbang bobbin</x-button>
             </x-slot:actions>
         </x-page-header>
 
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <x-stat-card label="Bobbin tersedia" :value="number_format($summary['in_stock'], 0, ',', '.')" icon="package" tone="success" hint="Siap dialokasikan" />
-            <x-stat-card label="Dialokasikan" :value="number_format($summary['allocated'], 0, ',', '.')" icon="clipboard" tone="warning" hint="Menunggu dimuat" />
-            <x-stat-card label="Dimuat" :value="number_format($summary['loaded'], 0, ',', '.')" icon="truck" tone="info" hint="Sedang dalam pengiriman" />
-            <x-stat-card label="Berat tersedia" :value="number_format($summary['available_weight_kg'], 2, ',', '.').' kg'" icon="package" tone="brand" hint="Total stok siap kirim" />
+            <x-stat-card label="Siap packing" :value="number_format($summary['ready_to_pack'], 0, ',', '.')" icon="package" tone="warning" hint="Belum masuk kardus" />
+            <x-stat-card label="Tersedia" :value="number_format($summary['in_stock'], 0, ',', '.')" icon="package" tone="success" hint="Sudah dipacking" />
+            <x-stat-card label="Dialokasikan" :value="number_format($summary['allocated'], 0, ',', '.')" icon="clipboard" tone="info" hint="Menunggu dimuat" />
+            <x-stat-card label="Berat siap kirim" :value="number_format($summary['available_weight_kg'], 2, ',', '.').' kg'" icon="download" tone="brand" hint="Siap packing + tersedia" />
         </div>
 
         <x-card padding="p-3 sm:p-4">
@@ -34,6 +34,7 @@
                     @php
                         $statusFilters = [
                             ['value' => '', 'label' => 'Semua', 'count' => $summary['total'], 'dot' => 'bg-slate-400'],
+                            ['value' => \App\Enums\RollStatus::ReadyToPack->value, 'label' => 'Siap packing', 'count' => $summary['ready_to_pack'], 'dot' => 'bg-indigo-500'],
                             ['value' => \App\Enums\RollStatus::InStock->value, 'label' => 'Tersedia', 'count' => $summary['in_stock'], 'dot' => 'bg-emerald-500'],
                             ['value' => \App\Enums\RollStatus::Allocated->value, 'label' => 'Dialokasikan', 'count' => $summary['allocated'], 'dot' => 'bg-amber-500'],
                             ['value' => \App\Enums\RollStatus::Loaded->value, 'label' => 'Dimuat', 'count' => $summary['loaded'], 'dot' => 'bg-sky-500'],
@@ -102,7 +103,7 @@
                                 <a href="{{ route('warehouse.cartons.label', $roll->carton) }}" class="font-mono text-xs font-medium text-brand-700 hover:text-brand-900">{{ $roll->carton->nomor_hu }}</a>
                                 <p class="text-[11px] text-slate-500">Merge {{ $roll->carton->nomor_merge }}</p>
                             @else
-                                <span class="text-xs text-slate-400">Input manual</span>
+                                <span class="text-xs text-slate-400">{{ $roll->productionBatch ? 'Siap packing' : 'Input manual' }}</span>
                             @endif
                         </x-td>
                         <x-td class="tabular-nums">{{ number_format($roll->denier) }} D / {{ number_format($roll->filamen) }} F</x-td>
@@ -118,14 +119,27 @@
                                 @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
                                     <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="ghost" size="sm" icon="printer">Label</x-button>
                                 @endif
-                                @if ($roll->status === \App\Enums\RollStatus::InStock)
+                                @if ($roll->status === \App\Enums\RollStatus::ReadyToPack)
                                     <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="ghost" size="sm" icon="edit">Edit</x-button>
                                     <x-confirm-button
                                         :action="route('warehouse.rolls.cancel', $roll)"
                                         method="PATCH"
-                                        title="Batalkan gulungan?"
-                                        :description="'Gulungan '.$roll->kode_rol.' akan ditandai batal. Riwayat tetap disimpan.'"
-                                        note="Gulungan tidak dapat dipakai di surat jalan setelah dibatalkan. Data dan riwayat scan tetap tersimpan."
+                                        title="Batalkan bobbin?"
+                                        :description="'Bobbin '.$roll->nomor_seri.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                        note="Bobbin tidak dapat dipacking atau dikirim setelah dibatalkan."
+                                        confirm-label="Ya, batalkan"
+                                        variant="ghost"
+                                        icon="ban"
+                                    >
+                                        Batalkan
+                                    </x-confirm-button>
+                                @elseif ($roll->status === \App\Enums\RollStatus::InStock && $roll->dty_carton_id === null)
+                                    <x-confirm-button
+                                        :action="route('warehouse.rolls.cancel', $roll)"
+                                        method="PATCH"
+                                        title="Batalkan bobbin?"
+                                        :description="'Bobbin '.$roll->nomor_seri.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                        note="Bobbin tidak dapat dipacking atau dikirim setelah dibatalkan."
                                         confirm-label="Ya, batalkan"
                                         variant="ghost"
                                         icon="ban"
@@ -161,20 +175,33 @@
                     <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
                         <p>Spesifikasi: <span class="font-medium text-slate-700">{{ $roll->denier }}D / {{ $roll->filamen }}F</span></p>
                         <p>Berat: <span class="font-medium text-slate-700">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</span></p>
-                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? 'Input manual' }}</span></p>
+                        <p class="col-span-2">Kardus: <span class="font-mono font-medium text-slate-700">{{ $roll->carton?->nomor_hu ?? ($roll->productionBatch ? 'Siap packing' : 'Input manual') }}</span></p>
                     </div>
                     <div class="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
                         @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
                             <x-button href="{{ route('warehouse.rolls.label', $roll) }}" variant="secondary" size="sm">Label</x-button>
                         @endif
-                        @if ($roll->status === \App\Enums\RollStatus::InStock)
+                        @if ($roll->status === \App\Enums\RollStatus::ReadyToPack)
                             <x-button href="{{ route('warehouse.rolls.edit', $roll) }}" variant="secondary" size="sm">Edit</x-button>
                             <x-confirm-button
                                 :action="route('warehouse.rolls.cancel', $roll)"
                                 method="PATCH"
-                                title="Batalkan gulungan?"
-                                :description="'Gulungan '.$roll->kode_rol.' akan ditandai batal. Riwayat tetap disimpan.'"
-                                note="Gulungan tidak dapat dipakai di surat jalan setelah dibatalkan. Data dan riwayat scan tetap tersimpan."
+                                title="Batalkan bobbin?"
+                                :description="'Bobbin '.$roll->nomor_seri.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                note="Bobbin tidak dapat dipacking atau dikirim setelah dibatalkan."
+                                confirm-label="Ya, batalkan"
+                                variant="ghost"
+                                icon="ban"
+                            >
+                                Batalkan
+                            </x-confirm-button>
+                        @elseif ($roll->status === \App\Enums\RollStatus::InStock && $roll->dty_carton_id === null)
+                            <x-confirm-button
+                                :action="route('warehouse.rolls.cancel', $roll)"
+                                method="PATCH"
+                                title="Batalkan bobbin?"
+                                :description="'Bobbin '.$roll->nomor_seri.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                note="Bobbin tidak dapat dipacking atau dikirim setelah dibatalkan."
                                 confirm-label="Ya, batalkan"
                                 variant="ghost"
                                 icon="ban"

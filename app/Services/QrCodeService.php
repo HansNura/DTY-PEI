@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\DtyCarton;
 use App\Models\DtyRoll;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
@@ -29,5 +30,26 @@ class QrCodeService
         return str_pad((string) $spindle, 5, '0', STR_PAD_LEFT)
             .self::BOBBIN_MACHINE_CODE
             .$productionDate->format('Ymd');
+    }
+
+    public function generateCartonHu(): string
+    {
+        $lastHu = DtyCarton::query()
+            ->where('nomor_hu', 'like', 'ADMG%')
+            ->orderByDesc('nomor_hu')
+            ->value('nomor_hu');
+
+        $next = 1;
+
+        if ($lastHu !== null && preg_match('/(\d+)$/', (string) $lastHu, $matches)) {
+            $next = ((int) $matches[1]) + 1;
+        }
+
+        do {
+            $hu = 'ADMG'.str_pad((string) $next, 8, '0', STR_PAD_LEFT);
+            $next++;
+        } while (DtyCarton::query()->where('nomor_hu', $hu)->exists());
+
+        return $hu;
     }
 }

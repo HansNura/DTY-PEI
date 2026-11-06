@@ -6,6 +6,7 @@ use App\Enums\RollStatus;
 use App\Enums\UserRole;
 use App\Models\DtyCarton;
 use App\Models\DtyRoll;
+use App\Models\ProductionBatch;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,100 +15,178 @@ class DtyCartonManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    private static int $serial = 20217;
+
     private function warehouseUser(): User
     {
-        return User::factory()->create(['role' => UserRole::AdminGudang]);
+        return User::factory()->role(UserRole::AdminGudang)->create();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function payload(array $overrides = []): array
+    private function batch(string $merge = '4D9164'): ProductionBatch
     {
-        return array_merge([
-            'nomor_hu' => 'admg00054918',
-            'nomor_merge' => '4d9164',
-            'grade' => 'we',
-            'production_date' => '2026-11-04',
-            'denier' => 150,
-            'filamen' => 48,
-            'intermingled' => '0',
-            'twist_direction' => 'Z',
-            'gross_weight_kg' => '35.56',
-            'net_weight_kg' => '32.91',
-            'unit_bobbins' => 6,
-            'pallet_number' => 'adp063296',
-        ], $overrides);
+        return ProductionBatch::factory()->create([
+            'nomor_merge' => $merge,
+            'is_active' => true,
+        ]);
     }
 
-    public function test_warehouse_user_can_create_carton_with_bobbins(): void
+    private function readyRoll(ProductionBatch $batch, float $weight = 5485, ?string $grade = 'AX'): DtyRoll
+    {
+        return DtyRoll::factory()->create([
+            'production_batch_id' => $batch->id,
+            'nomor_seri' => str_pad((string) self::$serial++, 5, '0', STR_PAD_LEFT).'0079'.'20261103',
+            'grade' => $grade,
+            'berat_gram' => $weight,
+            'nomor_lot' => $batch->nomor_merge,
+            'status' => RollStatus::ReadyToPack,
+            'created_by' => User::factory(),
+        ]);
+    }
+
+    private function scan(User $user, DtyRoll $roll)
+    {
+        return $this->actingAs($user)->postJson(route('warehouse.packing.scan'), [
+            'token' => $roll->nomor_seri,
+        ]);
+    }
+
+    public function test_packing_six_bobbins_creates_carton_with_aggregated_data(): void
     {
         $user = $this->warehouseUser();
+        $batch = $this->batch();
+        $rolls = collect(range(1, 6))->map(fn () => $this->readyRoll($batch));
 
-        $response = $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload());
-
-        $carton = DtyCarton::firstOrFail();
-        $response->assertRedirect(route('warehouse.cartons.label', $carton));
-
-        $this->assertSame('ADMG00054918', $carton->nomor_hu);
-        $this->assertSame('4D9164', $carton->nomor_merge);
-        $this->assertSame('WE', $carton->grade);
-        $this->assertSame('150/48 NI Z', $carton->specification);
-        $this->assertSame(6, $carton->rolls()->count());
-        $this->assertSame(5485.0, (float) $carton->net_weight_per_bobbin_gram);
-        $this->assertSame('AX', $carton->bobbin_weight_grade);
-
-        foreach ($carton->rolls as $roll) {
-            $this->assertSame(RollStatus::InStock, $roll->status);
-            $this->assertSame('4D9164', $roll->nomor_lot);
-            $this->assertSame($carton->id, $roll->dty_carton_id);
-            $this->assertSame(5485.0, (float) $roll->berat_gram);
-            $this->assertSame(64, strlen($roll->qr_token));
-            $this->assertMatchesRegularExpression('/^\d{5}0079\d{8}$/', $roll->nomor_seri);
+        foreach ($rolls as $roll) {
+            $this->scan($user, $roll)->assertOk()->assertJson(['success' => true]);
         }
 
-        $this->assertSame(6, DtyRoll::distinct('qr_token')->count('qr_token'));
-        $this->assertSame(6, DtyRoll::distinct('kode_rol')->count('kode_rol'));
-        $this->assertSame(6, DtyRoll::distinct('nomor_seri')->count('nomor_seri'));
+        $this->actingAs($user)
+            ->post(route('warehouse.packing.store'), [
+                'gross_weight_kg' => '35.56',
+                'pallet_number' => 'adp063296',
+            ])
+            ->assertRedirect();
+
+        $carton = DtyCarton::firstOrFail();
+
+        $this->assertMatchesRegularExpression('/^ADMG\d{8}$/', $carton->nomor_hu);
+        $this->assertSame($batch->nomor_merge, $carton->nomor_merge);
+        $this->assertSame('AX', $carton->grade);
+        $this->assertSame('ADP063296', $carton->pallet_number);
+        $this->assertSame(6, $carton->unit_bobbins);
+        $this->assertSame(32.91, (float) $carton->net_weight_kg);
+        $this->assertSame(35.56, (float) $carton->gross_weight_kg);
+        $this->assertSame(now()->toDateString(), $carton->production_date->toDateString());
+        $this->assertCount(6, $carton->rolls);
+        $this->assertTrue($carton->rolls->every(
+            fn (DtyRoll $roll): bool => $roll->status === RollStatus::InStock && $roll->dty_carton_id === $carton->id
+        ));
+
+        $this->actingAs($user)
+            ->get(route('warehouse.cartons.label', $carton))
+            ->assertOk()
+            ->assertSee($carton->nomor_hu)
+            ->assertSee($batch->nomor_merge)
+            ->assertSee('AX')
+            ->assertSee($rolls->first()->nomor_seri);
+    }
+
+    public function test_packing_rejects_bobbins_from_a_different_merge(): void
+    {
+        $user = $this->warehouseUser();
+        $first = $this->readyRoll($this->batch('4D9164'));
+        $other = $this->readyRoll($this->batch('4D9165'));
+
+        $this->scan($user, $first)->assertOk();
+        $this->scan($user, $other)
+            ->assertStatus(422)
+            ->assertJson(['success' => false])
+            ->assertJsonPath('summary.count', 1);
+    }
+
+    public function test_packing_rejects_a_different_bobbin_grade(): void
+    {
+        $user = $this->warehouseUser();
+        $batch = $this->batch();
+        $ax = $this->readyRoll($batch, 5485, 'AX');
+        $ae = $this->readyRoll($batch, 5250, 'AE');
+
+        $this->scan($user, $ax)->assertOk();
+        $this->scan($user, $ae)
+            ->assertStatus(422)
+            ->assertJson(['success' => false])
+            ->assertJsonPath('summary.count', 1);
+    }
+
+    public function test_packing_rejects_bobbin_that_is_already_packed(): void
+    {
+        $user = $this->warehouseUser();
+        $carton = DtyCarton::factory()->create();
+        $roll = $this->readyRoll($this->batch());
+        $roll->update(['dty_carton_id' => $carton->id, 'status' => RollStatus::InStock]);
+
+        $this->scan($user, $roll)
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_packing_requires_exactly_six_bobbins(): void
+    {
+        $user = $this->warehouseUser();
+        $batch = $this->batch();
+
+        foreach (range(1, 5) as $index) {
+            $this->scan($user, $this->readyRoll($batch))->assertOk();
+        }
+
+        $this->actingAs($user)
+            ->post(route('warehouse.packing.store'), ['gross_weight_kg' => '35.56'])
+            ->assertSessionHasErrors('packing');
+
+        $this->assertDatabaseCount('dty_cartons', 0);
     }
 
     public function test_ax_six_bobbin_gross_must_be_within_tolerance(): void
     {
         $user = $this->warehouseUser();
+        $batch = $this->batch();
+
+        foreach (range(1, 6) as $index) {
+            $this->scan($user, $this->readyRoll($batch))->assertOk();
+        }
 
         $this->actingAs($user)
-            ->post(route('warehouse.cartons.store'), $this->payload([
-                'grade' => 'AX',
-                'gross_weight_kg' => '37.00',
-            ]))
+            ->post(route('warehouse.packing.store'), ['gross_weight_kg' => '37.00'])
             ->assertSessionHasErrors('gross_weight_kg');
 
         $this->assertDatabaseCount('dty_cartons', 0);
 
         $this->actingAs($user)
-            ->post(route('warehouse.cartons.store'), $this->payload([
-                'grade' => 'AX',
-                'gross_weight_kg' => '35.56',
-            ]))
-            ->assertRedirect(route('warehouse.cartons.label', DtyCarton::firstOrFail()));
+            ->post(route('warehouse.packing.store'), ['gross_weight_kg' => '35.56'])
+            ->assertRedirect();
+
+        $this->assertDatabaseCount('dty_cartons', 1);
     }
 
     public function test_carton_index_shows_summary_filters_and_drawer(): void
     {
         $user = $this->warehouseUser();
-
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload())->assertRedirect();
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload([
+        DtyCarton::factory()->create([
+            'nomor_hu' => 'ADMG00054918',
+            'nomor_merge' => '4D9164',
+            'grade' => 'WE',
+            'production_date' => '2026-11-04',
+            'net_weight_kg' => 32.91,
+            'gross_weight_kg' => 35.56,
+        ]);
+        DtyCarton::factory()->create([
             'nomor_hu' => 'ADMG00055000',
             'nomor_merge' => '4D9165',
             'grade' => 'WA',
             'production_date' => '2026-10-15',
-            'net_weight_kg' => '31.50',
-            'gross_weight_kg' => '34.00',
-        ]))->assertRedirect();
-
-        $axCarton = DtyCarton::where('nomor_hu', 'ADMG00054918')->firstOrFail();
-        $aeCarton = DtyCarton::where('nomor_hu', 'ADMG00055000')->firstOrFail();
+            'net_weight_kg' => 31.50,
+            'gross_weight_kg' => 34.00,
+        ]);
 
         $this->actingAs($user)
             ->get(route('warehouse.cartons.index'))
@@ -122,112 +201,103 @@ class DtyCartonManagementTest extends TestCase
         $this->actingAs($user)
             ->get(route('warehouse.cartons.index', ['grade' => 'WA']))
             ->assertOk()
-            ->assertSee($aeCarton->nomor_hu)
-            ->assertDontSee($axCarton->nomor_hu);
+            ->assertSee('ADMG00055000')
+            ->assertDontSee('ADMG00054918');
 
         $this->actingAs($user)
             ->get(route('warehouse.cartons.index', ['weight_grade' => 'AE']))
             ->assertOk()
-            ->assertSee($aeCarton->nomor_hu)
-            ->assertDontSee($axCarton->nomor_hu);
+            ->assertSee('ADMG00055000')
+            ->assertDontSee('ADMG00054918');
 
         $this->actingAs($user)
             ->get(route('warehouse.cartons.index', ['month' => '2026-10']))
             ->assertOk()
-            ->assertSee($aeCarton->nomor_hu)
-            ->assertDontSee($axCarton->nomor_hu);
+            ->assertSee('ADMG00055000')
+            ->assertDontSee('ADMG00054918');
     }
 
-    public function test_net_weight_cannot_exceed_gross_weight(): void
-    {
-        $this->actingAs($this->warehouseUser())
-            ->post(route('warehouse.cartons.store'), $this->payload([
-                'gross_weight_kg' => '20.00',
-                'net_weight_kg' => '25.00',
-            ]))
-            ->assertSessionHasErrors('net_weight_kg');
-
-        $this->assertDatabaseCount('dty_cartons', 0);
-    }
-
-    public function test_hu_number_must_be_unique(): void
+    public function test_packed_carton_edit_only_updates_gross_pallet_and_notes(): void
     {
         $user = $this->warehouseUser();
-        DtyCarton::factory()->create(['nomor_hu' => 'ADMG00054918']);
+        $carton = DtyCarton::factory()->create([
+            'net_weight_kg' => 32.91,
+            'gross_weight_kg' => 35.56,
+        ]);
 
         $this->actingAs($user)
-            ->post(route('warehouse.cartons.store'), $this->payload())
-            ->assertSessionHasErrors('nomor_hu');
-    }
-
-    public function test_unit_bobbins_must_be_valid(): void
-    {
-        $this->actingAs($this->warehouseUser())
-            ->post(route('warehouse.cartons.store'), $this->payload(['unit_bobbins' => 0]))
-            ->assertSessionHasErrors('unit_bobbins');
-    }
-
-    public function test_update_recalculates_bobbin_weights_without_changing_count(): void
-    {
-        $user = $this->warehouseUser();
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload());
-        $carton = DtyCarton::firstOrFail();
-
-        $this->actingAs($user)
-            ->put(route('warehouse.cartons.update', $carton), $this->payload([
-                'net_weight_kg' => '30.00',
-                'gross_weight_kg' => '33.00',
-                'grade' => 'WA',
-            ]))
+            ->put(route('warehouse.cartons.update', $carton), [
+                'gross_weight_kg' => '36.00',
+                'pallet_number' => 'adp999999',
+                'catatan' => 'Koreksi timbangan.',
+                'net_weight_kg' => '1.00',
+                'unit_bobbins' => 1,
+            ])
             ->assertRedirect(route('warehouse.cartons.index'));
 
-        $this->assertSame('WA', $carton->fresh()->grade);
-        $this->assertSame(5000.0, (float) $carton->fresh()->net_weight_per_bobbin_gram);
-
-        foreach ($carton->rolls()->get() as $roll) {
-            $this->assertSame(5000.0, (float) $roll->berat_gram);
-        }
+        $carton->refresh();
+        $this->assertSame(36.0, (float) $carton->gross_weight_kg);
+        $this->assertSame('ADP999999', $carton->pallet_number);
+        $this->assertSame('Koreksi timbangan.', $carton->catatan);
+        $this->assertSame(32.91, (float) $carton->net_weight_kg);
+        $this->assertSame(6, $carton->unit_bobbins);
     }
 
-    public function test_unit_bobbins_cannot_be_changed_after_creation(): void
+    public function test_gross_must_be_greater_than_net_on_carton_edit(): void
     {
         $user = $this->warehouseUser();
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload());
-        $carton = DtyCarton::firstOrFail();
+        $carton = DtyCarton::factory()->create([
+            'net_weight_kg' => 32.91,
+            'gross_weight_kg' => 35.56,
+        ]);
 
         $this->actingAs($user)
-            ->put(route('warehouse.cartons.update', $carton), $this->payload(['unit_bobbins' => 5]))
-            ->assertSessionHasErrors('unit_bobbins');
-    }
-
-    public function test_allocated_carton_cannot_be_edited(): void
-    {
-        $user = $this->warehouseUser();
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload());
-        $carton = DtyCarton::firstOrFail();
-        $carton->rolls()->first()->update(['status' => RollStatus::Allocated]);
-
-        $this->actingAs($user)->get(route('warehouse.cartons.edit', $carton))->assertForbidden();
-        $this->actingAs($user)->put(route('warehouse.cartons.update', $carton), $this->payload())->assertForbidden();
+            ->put(route('warehouse.cartons.update', $carton), [
+                'gross_weight_kg' => '30.00',
+            ])
+            ->assertSessionHasErrors('gross_weight_kg');
     }
 
     public function test_carton_label_renders_identity_and_specification(): void
     {
         $user = $this->warehouseUser();
-        $this->actingAs($user)->post(route('warehouse.cartons.store'), $this->payload());
+        $batch = $this->batch();
+        $rolls = collect(range(1, 6))->map(fn () => $this->readyRoll($batch));
+
+        foreach ($rolls as $roll) {
+            $this->scan($user, $roll)->assertOk();
+        }
+
+        $this->actingAs($user)->post(route('warehouse.packing.store'), [
+            'gross_weight_kg' => '35.56',
+            'pallet_number' => 'ADP063296',
+        ]);
+
         $carton = DtyCarton::firstOrFail();
 
         $this->actingAs($user)
             ->get(route('warehouse.cartons.label', $carton))
             ->assertOk()
-            ->assertSee('ADMG00054918')
+            ->assertSee($carton->nomor_hu)
             ->assertSee('4D9164')
             ->assertSee('150/48 NI Z')
             ->assertSee('35.56')
             ->assertSee('32.91')
             ->assertSee('Grade bobot')
-            ->assertSee('AX')
-            ->assertSee($carton->rolls->first()->nomor_seri);
+            ->assertSee('AX');
+    }
+
+    public function test_allocated_carton_cannot_be_edited(): void
+    {
+        $user = $this->warehouseUser();
+        $carton = DtyCarton::factory()->create();
+        DtyRoll::factory()->create([
+            'dty_carton_id' => $carton->id,
+            'status' => RollStatus::Allocated,
+        ]);
+
+        $this->actingAs($user)->get(route('warehouse.cartons.edit', $carton))->assertForbidden();
+        $this->actingAs($user)->put(route('warehouse.cartons.update', $carton), ['gross_weight_kg' => '36.00'])->assertForbidden();
     }
 
     public function test_only_warehouse_users_can_access_carton_management(): void

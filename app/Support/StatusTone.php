@@ -16,6 +16,7 @@ class StatusTone
             'logistik' => 'info',
             'driver' => 'success',
 
+            'ready_to_pack' => 'info',
             'in_stock' => 'success',
             'allocated' => 'warning',
             'loaded' => 'info',

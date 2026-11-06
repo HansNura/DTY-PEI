@@ -33,6 +33,8 @@ class NavigationTest extends TestCase
             ->assertOk()
             ->assertSee('Kardus DTY')
             ->assertSee('Stok Bobbin')
+            ->assertSee('Packing Kardus')
+            ->assertSee('Produksi')
             ->assertSee('Scanner Muatan')
             ->assertDontSee('Live Tracking');
     }

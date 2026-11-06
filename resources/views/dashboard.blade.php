@@ -85,10 +85,10 @@
 
         @if ($user->hasRole(\App\Enums\UserRole::AdminGudang))
             <x-kpi-grid>
+                <x-stat-card label="Siap packing" :value="$rollStats['ready_to_pack']" icon="package" tone="warning" />
                 <x-stat-card label="Stok tersedia" :value="$rollStats['in_stock']" icon="package" tone="success" />
-                <x-stat-card label="Dialokasikan" :value="$rollStats['allocated']" icon="clipboard" tone="warning" />
+                <x-stat-card label="Dialokasikan" :value="$rollStats['allocated']" icon="clipboard" tone="info" />
                 <x-stat-card label="Dimuat" :value="$rollStats['loaded']" icon="truck" tone="info" />
-                <x-stat-card label="Dibatalkan" :value="$rollStats['cancelled']" icon="ban" tone="danger" />
             </x-kpi-grid>
 
             <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
@@ -126,8 +126,8 @@
 
                 <x-card title="Aksi cepat">
                     <div class="space-y-3">
-                        <x-button href="{{ route('warehouse.cartons.create') }}" class="w-full" icon="boxes">Tambah kardus DTY</x-button>
-                        <x-button href="{{ route('warehouse.rolls.create') }}" variant="secondary" class="w-full" icon="plus">Tambah bobbin manual</x-button>
+                        <x-button href="{{ route('warehouse.packing.create') }}" class="w-full" icon="boxes">Packing kardus</x-button>
+                        <x-button href="{{ route('warehouse.rolls.create') }}" variant="secondary" class="w-full" icon="plus">Timbang bobbin</x-button>
                         <x-button href="{{ route('warehouse.scans.index') }}" variant="secondary" class="w-full" icon="scan">Buka scanner muatan</x-button>
                     </div>
                     <div class="mt-5 grid grid-cols-2 gap-3 text-sm">

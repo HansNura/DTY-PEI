@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Gulungan DTY')
+@section('title', 'Edit Berat Bobbin')
 
 @section('content')
-    <div class="mx-auto max-w-2xl space-y-6">
-        <x-page-header title="Edit gulungan" :description="$roll->kode_rol.' · QR tetap sama.'">
+    <div class="mx-auto max-w-3xl space-y-6">
+        <x-page-header title="Edit berat bobbin" :description="$roll->nomor_seri.' · '.$roll->nomor_lot">
             <x-slot:actions>
                 <x-button href="{{ route('warehouse.rolls.index') }}" variant="ghost" icon="arrow-left">Kembali</x-button>
             </x-slot:actions>
@@ -13,7 +13,7 @@
         <form method="POST" action="{{ route('warehouse.rolls.update', $roll) }}" class="space-y-6">
             @csrf
             @method('PUT')
-            <x-card title="Spesifikasi gulungan">
+            <x-card title="Koreksi berat">
                 @include('inventory.rolls._form')
             </x-card>
 

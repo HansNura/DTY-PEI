@@ -16,8 +16,10 @@ class DtyRoll extends Model
 
     protected $fillable = [
         'dty_carton_id',
+        'production_batch_id',
         'kode_rol',
         'nomor_seri',
+        'grade',
         'denier',
         'filamen',
         'berat_gram',
@@ -45,6 +47,11 @@ class DtyRoll extends Model
         return $this->belongsTo(DtyCarton::class, 'dty_carton_id');
     }
 
+    public function productionBatch(): BelongsTo
+    {
+        return $this->belongsTo(ProductionBatch::class);
+    }
+
     public function deliveryOrderItem(): HasOne
     {
         return $this->hasOne(DeliveryOrderItem::class);
@@ -68,11 +75,15 @@ class DtyRoll extends Model
             return 'DTY '.$this->carton->specification;
         }
 
+        if ($this->productionBatch) {
+            return 'DTY '.$this->productionBatch->specification;
+        }
+
         return "DTY {$this->denier}/{$this->filamen} NI";
     }
 
     public function getBobbinWeightGradeAttribute(): ?string
     {
-        return BobbinWeightStandard::gradeFor((float) $this->berat_gram);
+        return $this->grade ?: BobbinWeightStandard::gradeFor((float) $this->berat_gram);
     }
 }

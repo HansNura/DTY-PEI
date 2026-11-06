@@ -27,50 +27,68 @@ Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint
 
 ## Sprint 2 — Master Data, QR, Pelanggan, Armada (sudah diimplementasikan)
 
+### `production_batches`
+
+| Kolom | Tipe | Keterangan |
+| --- | --- | --- |
+| id | bigint PK | |
+| nomor_merge | varchar(50) unique | Merge/lot produksi, contoh `4D9164` |
+| denier | integer | Spesifikasi DTY |
+| filamen | integer | Jumlah filamen |
+| intermingled | boolean | `false` = NI |
+| twist_direction | varchar(1) nullable | `Z` atau `S` |
+| production_date | date index | Tanggal produksi/doffing; dipakai untuk serial bobbin |
+| is_active | boolean index | Hanya satu batch aktif |
+| created_by | bigint FK users | Admin gudang |
+| created_at / updated_at | timestamp | |
+
+Batch aktif menjadi acuan form timbang bobbin. Merge dan spesifikasi ditentukan manual di sini, lalu diwariskan ke bobbin dan kardus.
+
 ### `dty_cartons`
 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
-| nomor_hu | varchar(50) unique | Carton / HU number, contoh `ADMG00054918` |
-| nomor_merge | varchar(50) index | Lot / merge number, contoh `4D9164` |
-| grade | varchar(10) | Grade produk, contoh `WE` |
-| production_date | date index | Tanggal produksi |
-| denier | integer | Denier benang |
-| filamen | integer | Jumlah filamen |
-| intermingled | boolean | `false` = NI (Non-Intermingled) |
-| twist_direction | varchar(1) nullable | `Z` atau `S` |
-| gross_weight_kg | decimal(10,2) | Berat kotor kardus + isi |
-| net_weight_kg | decimal(10,2) | Berat bersih benang |
-| unit_bobbins | smallint | Jumlah bobbin dalam kardus |
-| pallet_number | varchar(50) nullable | Nomor pallet, contoh `ADP063296` |
+| nomor_hu | varchar(50) unique | Carton / HU number, dibuat otomatis oleh sistem |
+| nomor_merge | varchar(50) index | Diwarisi dari batch/bobbin, contoh `4D9164` |
+| grade | varchar(10) | Grade bobot hasil agregasi (`AX`, `AE`, `A`, `B`); data lama bisa berisi grade produk `WE` |
+| production_date | date index | Tanggal packing otomatis |
+| denier | integer | Diwarisi dari batch |
+| filamen | integer | Diwarisi dari batch |
+| intermingled | boolean | Diwarisi dari batch |
+| twist_direction | varchar(1) nullable | Diwarisi dari batch |
+| gross_weight_kg | decimal(10,2) | Input timbangan fisik packing |
+| net_weight_kg | decimal(10,2) | Agregasi Σ berat bobbin |
+| unit_bobbins | smallint | Jumlah bobbin hasil scan |
+| pallet_number | varchar(50) nullable | Input operator |
 | qr_token | varchar(64) unique | QR identitas kardus |
 | catatan | text nullable | Catatan operator |
 | created_by | bigint FK users | Admin gudang pencatat |
 | created_at / updated_at | timestamp | |
 
-Satu kardus membuat `unit_bobbins` baris `dty_rolls` secara otomatis. Berat per bobbin = `net_weight_kg × 1000 ÷ unit_bobbins`.
-Kolom `grade` adalah grade produk (contoh `WE`). Grade bobot dihitung otomatis dari berat per bobbin: `AX` 5.350–5.600 g, `AE` 5.100–5.349 g, `A` 1.000–5.099 g, `B` 500–999 g. Untuk grade bobot `AX` dengan 6 bobbin, gross weight wajib 34,74–36,25 kg (target tengah 35,64 kg).
+Kardus tidak lagi membuat bobbin secara manual. Kardus lahir dari proses **packing** setelah 6 bobbin discan. Net, unit, grade, merge, spesifikasi, HU, dan tanggal adalah data agregasi/otomatis; hanya gross, pallet, dan catatan yang diinput manual.
 
 ### `dty_rolls`
 
 | Kolom | Tipe | Keterangan |
 | --- | --- | --- |
 | id | bigint PK | |
-| dty_carton_id | bigint FK dty_cartons nullable | Kardus asal; null untuk input manual lama |
+| dty_carton_id | bigint FK dty_cartons nullable | Kardus tujuan; null selama `ready_to_pack` |
+| production_batch_id | bigint FK production_batches nullable | Batch produksi asal |
 | kode_rol | varchar(50) unique | Kode internal rol |
 | nomor_seri | varchar(32) unique | Serial bobbin 17 digit: 5 digit spindle + `0079` + tanggal `YYYYMMDD`; payload QR label bobbin |
-| denier | integer | Spesifikasi DTY |
-| filamen | integer | Jumlah filamen |
-| berat_gram | decimal(10,2) | Berat bersih |
-| nomor_lot | varchar(50) index | Nomor lot produksi (mengikuti merge kardus) |
-| qr_token | varchar(64) unique | Token internal/legacy; label bobbin baru memakai `nomor_seri` sebagai payload QR |
-| status | varchar(20) index | `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled` |
+| grade | varchar(10) nullable index | Grade bobot saat ditimbang (`AX`, `AE`, `A`, `B`) |
+| denier | integer | Snapshot spesifikasi batch |
+| filamen | integer | Snapshot spesifikasi batch |
+| berat_gram | decimal(10,2) | Berat bersih hasil timbang |
+| nomor_lot | varchar(50) index | Merge/lot dari batch |
+| qr_token | varchar(64) unique | Token internal/legacy; label bobbin memakai `nomor_seri` |
+| status | varchar(20) index | `ready_to_pack`, `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled` |
 | created_by | bigint FK users | Admin gudang pencatat |
 | created_at / updated_at | timestamp | |
 
-Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu rol memiliki satu QR unik.
-`kode_rol` dan `nomor_seri` dibuat otomatis dan unik. Nomor seri mengikuti pola stiker pabrik: `20217` + `0079` + `20261103`. QR label bobbin membawa `nomor_seri`; pemindaian muatan dan POD tetap menerima `qr_token` lama. Gulungan hanya dapat dibatalkan saat masih `in_stock`, tanpa menghapus riwayatnya.
+Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`, `production_batch_id` → `production_batches.id`.
+Alur bobbin: `ready_to_pack` (hasil timbang) → `in_stock` (setelah packing) → `allocated` → `loaded` → `delivered`; `cancelled` hanya sebelum packing. Bobbin yang sudah masuk kardus tidak bisa dibatalkan sendiri.
 
 ### `customers`
 
