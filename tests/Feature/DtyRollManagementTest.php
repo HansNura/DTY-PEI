@@ -150,7 +150,9 @@ class DtyRollManagementTest extends TestCase
             ->assertSee('Contoh: 5485')
             ->assertSee('Contoh: 4D9164')
             ->assertSee('Grade bobot otomatis')
-            ->assertSee('AX 5.350–5.600 g');
+            ->assertSee('Rentang bobot')
+            ->assertSee('5.350–5.600 g')
+            ->assertSee('Target penuh');
     }
 
     public function test_only_warehouse_users_can_access_roll_management(): void
