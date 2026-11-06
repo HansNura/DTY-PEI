@@ -49,6 +49,7 @@
                     <div class="flex justify-between gap-3"><dt class="text-slate-500">Kode rol</dt><dd class="font-mono font-medium text-slate-900">{{ $roll->kode_rol }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-slate-500">Merge / lot</dt><dd class="font-medium text-slate-900">{{ $roll->nomor_lot }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-slate-500">Spesifikasi</dt><dd class="font-medium text-slate-900">{{ $roll->specification }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-slate-500">Grade bobot</dt><dd class="font-medium text-slate-900">{{ $roll->bobbin_weight_grade ?? 'Di luar standar' }}</dd></div>
                     @if ($roll->carton)
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Nomor HU</dt><dd class="font-mono font-medium text-slate-900">{{ $roll->carton->nomor_hu }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Pallet</dt><dd class="font-mono font-medium text-slate-900">{{ $roll->carton->pallet_number ?? '—' }}</dd></div>

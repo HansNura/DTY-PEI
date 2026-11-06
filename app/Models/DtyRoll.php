@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RollStatus;
+use App\Support\BobbinWeightStandard;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -68,5 +69,10 @@ class DtyRoll extends Model
         }
 
         return "DTY {$this->denier}/{$this->filamen} NI";
+    }
+
+    public function getBobbinWeightGradeAttribute(): ?string
+    {
+        return BobbinWeightStandard::gradeFor((float) $this->berat_gram);
     }
 }

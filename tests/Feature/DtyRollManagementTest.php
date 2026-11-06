@@ -32,6 +32,7 @@ class DtyRollManagementTest extends TestCase
         $this->assertSame(64, strlen($roll->qr_token));
         $this->assertSame(RollStatus::InStock, $roll->status);
         $this->assertSame($warehouseUser->id, $roll->created_by);
+        $this->assertSame('A', $roll->bobbin_weight_grade);
 
         $this->actingAs($warehouseUser)
             ->get(route('warehouse.rolls.label', $roll))
@@ -146,8 +147,10 @@ class DtyRollManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Contoh: 150')
             ->assertSee('Contoh: 48')
-            ->assertSee('Contoh: 2500')
-            ->assertSee('Contoh: 4D9164');
+            ->assertSee('Contoh: 5485')
+            ->assertSee('Contoh: 4D9164')
+            ->assertSee('Grade bobot otomatis')
+            ->assertSee('AX 5.350–5.600 g');
     }
 
     public function test_only_warehouse_users_can_access_roll_management(): void

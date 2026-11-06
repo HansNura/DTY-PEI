@@ -107,7 +107,12 @@
                         </x-td>
                         <x-td class="tabular-nums">{{ number_format($roll->denier) }} D / {{ number_format($roll->filamen) }} F</x-td>
                         <x-td class="tabular-nums">{{ number_format((float) $roll->berat_gram, 2, ',', '.') }} g</x-td>
-                        <x-td><x-status-badge :status="$roll->status" /></x-td>
+                        <x-td>
+                            <div class="space-y-1">
+                                <x-status-badge :status="$roll->status" />
+                                <p class="text-[10px] text-slate-500">Bobot {{ $roll->bobbin_weight_grade ?? '—' }}</p>
+                            </div>
+                        </x-td>
                         <x-td align="right">
                             <div class="flex items-center justify-end gap-2">
                                 @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
@@ -148,7 +153,10 @@
                             @endif
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                         </div>
-                        <x-status-badge :status="$roll->status" />
+                        <div class="text-right">
+                            <x-status-badge :status="$roll->status" />
+                            <p class="mt-1 text-[10px] text-slate-500">Bobot {{ $roll->bobbin_weight_grade ?? '—' }}</p>
+                        </div>
                     </div>
                     <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-500">
                         <p>Spesifikasi: <span class="font-medium text-slate-700">{{ $roll->denier }}D / {{ $roll->filamen }}F</span></p>
