@@ -11,26 +11,49 @@
             </x-slot:actions>
         </x-page-header>
 
-        <x-card padding="p-4">
-            <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_auto]">
-                <x-field name="q">
-                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, lot, atau nomor HU" aria-label="Cari gulungan" />
-                </x-field>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <x-stat-card label="Bobbin tersedia" :value="number_format($summary['in_stock'], 0, ',', '.')" icon="package" tone="success" hint="Siap dialokasikan" />
+            <x-stat-card label="Dialokasikan" :value="number_format($summary['allocated'], 0, ',', '.')" icon="clipboard" tone="warning" hint="Menunggu dimuat" />
+            <x-stat-card label="Dimuat" :value="number_format($summary['loaded'], 0, ',', '.')" icon="truck" tone="info" hint="Sedang dalam pengiriman" />
+            <x-stat-card label="Berat tersedia" :value="number_format($summary['available_weight_kg'], 2, ',', '.').' kg'" icon="package" tone="brand" hint="Total stok siap kirim" />
+        </div>
 
-                <x-field name="status">
+        <x-card padding="p-3 sm:p-4">
+            <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div class="relative min-w-0 flex-1">
+                    <x-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
+                </div>
+
+                <div class="lg:w-56">
                     <x-select id="status" name="status" aria-label="Filter status">
                         <option value="">Semua status</option>
                         @foreach ($statuses as $statusOption)
                             <option value="{{ $statusOption->value }}" @selected($status === $statusOption->value)>{{ $statusOption->label() }}</option>
                         @endforeach
                     </x-select>
-                </x-field>
-
-                <div class="flex items-end gap-2">
-                    <x-button type="submit" variant="secondary" icon="filter">Filter</x-button>
-                    <x-button href="{{ route('warehouse.rolls.index') }}" variant="ghost">Reset</x-button>
                 </div>
+
+                <x-button type="submit" icon="filter" class="w-full justify-center lg:w-auto">Terapkan</x-button>
             </form>
+
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                <p class="text-xs text-slate-500">
+                    Menampilkan <span class="font-semibold text-slate-700">{{ $rolls->total() }}</span> bobbin
+                    @if ($search !== '')
+                        untuk <span class="font-medium text-slate-700">“{{ $search }}”</span>
+                    @endif
+                    @if ($statusLabel)
+                        dengan status <span class="font-medium text-slate-700">{{ strtolower($statusLabel) }}</span>
+                    @endif
+                </p>
+
+                @if ($search !== '' || $status !== '')
+                    <a href="{{ route('warehouse.rolls.index') }}" class="inline-flex items-center gap-1 text-xs font-medium text-brand-700 transition hover:text-brand-900">
+                        <x-icon name="x" class="size-3.5" /> Reset filter
+                    </a>
+                @endif
+            </div>
         </x-card>
 
         <x-table class="hidden md:block" padding="p-0">
@@ -76,6 +99,7 @@
                                         method="PATCH"
                                         title="Batalkan gulungan?"
                                         :description="'Gulungan '.$roll->kode_rol.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                        note="Gulungan tidak dapat dipakai di surat jalan setelah dibatalkan. Data dan riwayat scan tetap tersimpan."
                                         confirm-label="Ya, batalkan"
                                         variant="ghost"
                                         icon="ban"
@@ -118,6 +142,7 @@
                                 method="PATCH"
                                 title="Batalkan gulungan?"
                                 :description="'Gulungan '.$roll->kode_rol.' akan ditandai batal. Riwayat tetap disimpan.'"
+                                note="Gulungan tidak dapat dipakai di surat jalan setelah dibatalkan. Data dan riwayat scan tetap tersimpan."
                                 confirm-label="Ya, batalkan"
                                 variant="ghost"
                                 icon="ban"

@@ -94,6 +94,56 @@ class DtyRollManagementTest extends TestCase
             ->assertSessionHasErrors(['denier', 'berat_gram', 'nomor_lot']);
     }
 
+    public function test_roll_index_shows_summary_and_filters(): void
+    {
+        $warehouseUser = User::factory()->role(UserRole::AdminGudang)->create();
+        $available = DtyRoll::factory()->create([
+            'status' => RollStatus::InStock,
+            'nomor_lot' => 'LOT-AVAILABLE',
+            'berat_gram' => 2500,
+        ]);
+        $allocated = DtyRoll::factory()->create([
+            'status' => RollStatus::Allocated,
+            'nomor_lot' => 'LOT-ALLOCATED',
+            'berat_gram' => 1000,
+        ]);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.index'))
+            ->assertOk()
+            ->assertSee('Bobbin tersedia')
+            ->assertViewHas('summary', fn (array $summary) => $summary['in_stock'] === 1
+                && $summary['allocated'] === 1
+                && (float) $summary['available_weight_kg'] === 2.5)
+            ->assertSee($available->kode_rol)
+            ->assertSee($allocated->kode_rol);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.index', ['q' => 'LOT-AVAILABLE']))
+            ->assertOk()
+            ->assertSee($available->kode_rol)
+            ->assertDontSee($allocated->kode_rol);
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.index', ['status' => RollStatus::Allocated->value]))
+            ->assertOk()
+            ->assertSee($allocated->kode_rol)
+            ->assertDontSee($available->kode_rol);
+    }
+
+    public function test_roll_form_has_placeholders(): void
+    {
+        $warehouseUser = User::factory()->role(UserRole::AdminGudang)->create();
+
+        $this->actingAs($warehouseUser)
+            ->get(route('warehouse.rolls.create'))
+            ->assertOk()
+            ->assertSee('Contoh: 150')
+            ->assertSee('Contoh: 48')
+            ->assertSee('Contoh: 2500')
+            ->assertSee('Contoh: 4D9164');
+    }
+
     public function test_only_warehouse_users_can_access_roll_management(): void
     {
         $logisticsUser = User::factory()->role(UserRole::Logistik)->create();

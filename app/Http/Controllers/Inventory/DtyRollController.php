@@ -32,9 +32,29 @@ class DtyRollController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $statusCounts = DtyRoll::query()
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $availableWeight = (float) DtyRoll::query()
+            ->where('status', RollStatus::InStock)
+            ->sum('berat_gram');
+
+        $summary = [
+            'in_stock' => (int) ($statusCounts[RollStatus::InStock->value] ?? 0),
+            'allocated' => (int) ($statusCounts[RollStatus::Allocated->value] ?? 0),
+            'loaded' => (int) ($statusCounts[RollStatus::Loaded->value] ?? 0),
+            'delivered' => (int) ($statusCounts[RollStatus::Delivered->value] ?? 0),
+            'cancelled' => (int) ($statusCounts[RollStatus::Cancelled->value] ?? 0),
+            'available_weight_kg' => round($availableWeight / 1000, 2),
+        ];
+
         return view('inventory.rolls.index', [
             'rolls' => $rolls,
             'statuses' => RollStatus::cases(),
+            'statusLabel' => RollStatus::tryFrom($status)?->label(),
+            'summary' => $summary,
             'search' => $search,
             'status' => $status,
         ]);
