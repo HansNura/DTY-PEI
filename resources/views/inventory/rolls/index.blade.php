@@ -33,7 +33,7 @@
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div class="relative min-w-0 flex-1">
                         <x-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                        <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, serial, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
+                        <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari nomor seri, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
                     </div>
 
                     <x-button type="submit" icon="search" class="w-full justify-center sm:w-auto">Cari</x-button>
@@ -92,7 +92,7 @@
 
             <thead class="bg-slate-50/70">
                 <tr>
-                    <x-th>Kode rol / Serial</x-th>
+                    <x-th>Nomor seri</x-th>
                     <x-th>Kardus</x-th>
                     <x-th>Spesifikasi</x-th>
                     <x-th>Berat</x-th>
@@ -104,10 +104,7 @@
                 @forelse ($rolls as $roll)
                     <tr class="hover:bg-slate-50/60">
                         <x-td>
-                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
-                            @if ($roll->nomor_seri)
-                                <p class="font-mono text-[10px] text-slate-500">{{ $roll->nomor_seri }}</p>
-                            @endif
+                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                         </x-td>
                         <x-td>
@@ -173,10 +170,7 @@
                 <x-card padding="p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
-                            @if ($roll->nomor_seri)
-                                <p class="font-mono text-[10px] text-slate-500">{{ $roll->nomor_seri }}</p>
-                            @endif
+                            <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                         </div>
                         <div class="text-right">
@@ -224,7 +218,7 @@
                     </div>
                 </x-card>
             @empty
-                <x-empty-state icon="package" title="Belum ada gulungan" description="Tambahkan gulungan DTY untuk mulai mencetak label QR." />
+                <x-empty-state icon="package" title="Belum ada bobbin" description="Timbang bobbin dari batch produksi aktif untuk mulai mencetak label QR." />
             @endforelse
             <x-pagination :paginator="$rolls" />
         </div>

@@ -34,7 +34,7 @@
                     this.loadedCount = data.loaded_count;
                     this.history.unshift({
                         time: new Date().toLocaleTimeString('id-ID'),
-                        roll: data.roll?.kode_rol ?? '—',
+                        roll: data.roll?.nomor_seri ?? '—',
                         lot: data.roll?.nomor_lot ?? '—',
                         result: data.result,
                         result_label: data.result_label,
@@ -189,7 +189,7 @@
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold" x-text="lastResult.message"></p>
                                     <template x-if="lastResult.roll">
-                                        <p class="mt-1 truncate font-mono text-xs" x-text="lastResult.roll.kode_rol + ' · Lot ' + lastResult.roll.nomor_lot + ' · ' + lastResult.roll.denier + 'D/' + lastResult.roll.filamen + 'F · ' + lastResult.roll.berat_gram + ' g'"></p>
+                                        <p class="mt-1 truncate font-mono text-xs" x-text="lastResult.roll.nomor_seri + ' · Lot ' + lastResult.roll.nomor_lot + ' · ' + lastResult.roll.denier + 'D/' + lastResult.roll.filamen + 'F · ' + lastResult.roll.berat_gram + ' g'"></p>
                                     </template>
                                 </div>
                                 <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" x-bind:class="badgeClass(lastResult.result)" x-text="lastResult.result_label"></span>
@@ -236,7 +236,7 @@
                     <thead class="bg-slate-50/70">
                         <tr>
                             <x-th>Status</x-th>
-                            <x-th>Kode rol</x-th>
+                            <x-th>Nomor seri</x-th>
                             <x-th>Nomor lot</x-th>
                             <x-th>Spesifikasi</x-th>
                             <x-th align="right">Berat (g)</x-th>
@@ -253,7 +253,7 @@
                                         <x-badge tone="neutral" dot>Menunggu</x-badge>
                                     @endif
                                 </x-td>
-                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->kode_rol }}</span></x-td>
+                                <x-td><span class="font-mono text-xs font-semibold text-slate-800">{{ $item->dtyRoll->nomor_seri ?? '—' }}</span></x-td>
                                 <x-td>{{ $item->dtyRoll->nomor_lot }}</x-td>
                                 <x-td class="tabular-nums">{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</x-td>
                                 <x-td align="right" class="tabular-nums">{{ number_format((float) $item->dtyRoll->berat_gram, 2) }}</x-td>

@@ -65,7 +65,7 @@
         <thead>
             <tr>
                 <th style="width:30px">No.</th>
-                <th>Kode Rol</th>
+                <th>Nomor Seri</th>
                 <th>Nomor Lot</th>
                 <th>Spesifikasi</th>
                 <th style="text-align:right">Berat (kg)</th>
@@ -75,7 +75,7 @@
             @foreach ($order->items as $i => $item)
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td style="font-family:monospace; font-size:11px">{{ $item->dtyRoll->kode_rol }}</td>
+                    <td style="font-family:monospace; font-size:11px">{{ $item->dtyRoll->nomor_seri ?? '—' }}</td>
                     <td>{{ $item->dtyRoll->nomor_lot }}</td>
                     <td>{{ $item->dtyRoll->denier }}D / {{ $item->dtyRoll->filamen }}F</td>
                     <td style="text-align:right">{{ number_format($item->berat_kg, 2) }}</td>

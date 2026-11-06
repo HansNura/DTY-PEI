@@ -21,8 +21,7 @@ class DtyRollController extends Controller
         $rolls = DtyRoll::query()
             ->with(['carton', 'productionBatch'])
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
-                $query->where('kode_rol', 'like', "%{$search}%")
-                    ->orWhere('nomor_seri', 'like', "%{$search}%")
+                $query->where('nomor_seri', 'like', "%{$search}%")
                     ->orWhere('nomor_lot', 'like', "%{$search}%")
                     ->orWhereHas('carton', fn ($cartonQuery) => $cartonQuery
                         ->where('nomor_hu', 'like', "%{$search}%")
@@ -72,7 +71,6 @@ class DtyRollController extends Controller
         return view('inventory.rolls.create', [
             'activeBatch' => $activeBatch,
             'previewSerial' => $preview['serial'],
-            'previewKodeRol' => $preview['code'],
         ]);
     }
 
@@ -82,7 +80,6 @@ class DtyRollController extends Controller
             (float) $request->validated('berat_gram'),
             $request->user(),
             $request->validated('nomor_seri'),
-            $request->validated('kode_rol'),
         );
 
         if ($roll->status === RollStatus::Waste) {

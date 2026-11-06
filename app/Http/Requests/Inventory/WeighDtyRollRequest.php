@@ -20,7 +20,6 @@ class WeighDtyRollRequest extends FormRequest
         return [
             'berat_gram' => ['required', 'numeric', 'gt:0', 'decimal:0,2', 'max:99999'],
             'nomor_seri' => ['nullable', 'string', 'max:32', 'unique:dty_rolls,nomor_seri'],
-            'kode_rol' => ['nullable', 'string', 'max:50', 'unique:dty_rolls,kode_rol'],
         ];
     }
 

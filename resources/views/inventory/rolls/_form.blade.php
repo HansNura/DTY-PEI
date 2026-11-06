@@ -25,16 +25,10 @@
     @if ($isEdit)
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identitas bobbin</p>
-            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</dt>
-                    <dd class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ $roll->nomor_seri ?? '—' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Kode rol</dt>
-                    <dd class="mt-1 font-mono text-xs font-medium text-slate-700">{{ $roll->kode_rol }}</dd>
-                </div>
-            </dl>
+            <div class="mt-3">
+                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</p>
+                <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
+            </div>
         </div>
     @elseif (! empty($previewSerial))
         <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -42,19 +36,12 @@
                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identitas bobbin</p>
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pratinjau otomatis</span>
             </div>
-            <dl class="mt-3 grid gap-3 sm:grid-cols-2">
-                <div>
-                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</dt>
-                    <dd class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ old('nomor_seri', $previewSerial) }}</dd>
-                </div>
-                <div>
-                    <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Kode rol</dt>
-                    <dd class="mt-1 font-mono text-xs font-medium text-slate-700">{{ old('kode_rol', $previewKodeRol) }}</dd>
-                </div>
-            </dl>
+            <div class="mt-3">
+                <p class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri</p>
+                <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ old('nomor_seri', $previewSerial) }}</p>
+            </div>
             <input type="hidden" name="nomor_seri" value="{{ old('nomor_seri', $previewSerial) }}">
-            <input type="hidden" name="kode_rol" value="{{ old('kode_rol', $previewKodeRol) }}">
-            <p class="mt-2 text-[10px] text-slate-400">Nilai ini dipakai saat bobbin disimpan.</p>
+            <p class="mt-2 text-[10px] text-slate-400">Nomor seri ini dipakai saat bobbin disimpan.</p>
         </div>
     @endif
 
@@ -153,7 +140,7 @@
 
     @if ($isEdit)
         <div class="rounded-xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
-            Kode rol, nomor seri, merge, dan spesifikasi tidak berubah saat berat dikoreksi.
+            Nomor seri, merge, dan spesifikasi tidak berubah saat berat dikoreksi.
         </div>
     @endif
 </div>

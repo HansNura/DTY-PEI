@@ -126,14 +126,13 @@
                             @forelse ($carton->rolls as $roll)
                                 <li class="flex items-center justify-between gap-3 py-2.5">
                                     <div class="min-w-0">
-                                        <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? $roll->kode_rol }}</p>
-                                        <p class="font-mono text-[10px] text-slate-400">{{ $roll->kode_rol }}</p>
+                                        <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? '—' }}</p>
                                         <p class="text-[10px] text-slate-500">Lot {{ $roll->nomor_lot }} · {{ number_format((float) $roll->berat_gram, 0, ',', '.') }} g · Grade {{ $roll->bobbin_weight_grade ?? '—' }}</p>
                                     </div>
                                     <div class="flex shrink-0 items-center gap-1.5">
                                         <x-status-badge :status="$roll->status" />
                                         @if ($roll->status !== \App\Enums\RollStatus::Cancelled)
-                                            <a href="{{ route('warehouse.rolls.label', $roll) }}" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700" aria-label="Cetak label {{ $roll->nomor_seri ?? $roll->kode_rol }}">
+                                            <a href="{{ route('warehouse.rolls.label', $roll) }}" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700" aria-label="Cetak label {{ $roll->nomor_seri ?? 'bobbin' }}">
                                                 <x-icon name="printer" class="size-3.5" />
                                             </a>
                                         @endif

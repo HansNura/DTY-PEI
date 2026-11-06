@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @php
-    $serial = $roll->nomor_seri ?? $roll->kode_rol;
+    $serial = $roll->nomor_seri ?? '—';
     $carton = $roll->carton;
 @endphp
 
@@ -103,10 +103,6 @@
                         <div class="sm:col-span-2 rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
                             <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Nomor seri · payload QR</dt>
                             <dd class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">{{ $serial }}</dd>
-                        </div>
-                        <div class="sm:col-span-2 rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
-                            <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Kode rol internal</dt>
-                            <dd class="mt-1 font-mono text-xs font-medium text-slate-700">{{ $roll->kode_rol }}</dd>
                         </div>
                         <div class="rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-inset ring-slate-100">
                             <dt class="text-[10px] font-medium uppercase tracking-wide text-slate-500">Merge / lot</dt>

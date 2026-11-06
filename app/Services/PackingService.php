@@ -65,7 +65,6 @@ class PackingService
             'rolls' => $rolls->map(fn (DtyRoll $roll): array => [
                 'id' => $roll->id,
                 'nomor_seri' => $roll->nomor_seri,
-                'kode_rol' => $roll->kode_rol,
                 'berat_gram' => (float) $roll->berat_gram,
                 'grade' => $roll->grade,
                 'nomor_lot' => $roll->nomor_lot,
