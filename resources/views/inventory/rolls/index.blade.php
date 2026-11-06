@@ -19,22 +19,40 @@
         </div>
 
         <x-card padding="p-3 sm:p-4">
-            <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div class="relative min-w-0 flex-1">
-                    <x-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, serial, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
+            <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="space-y-3">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div class="relative min-w-0 flex-1">
+                        <x-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                        <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, serial, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
+                    </div>
+
+                    <x-button type="submit" icon="search" class="w-full justify-center sm:w-auto">Cari</x-button>
                 </div>
 
-                <div class="lg:w-56">
-                    <x-select id="status" name="status" aria-label="Filter status">
-                        <option value="">Semua status</option>
-                        @foreach ($statuses as $statusOption)
-                            <option value="{{ $statusOption->value }}" @selected($status === $statusOption->value)>{{ $statusOption->label() }}</option>
-                        @endforeach
-                    </x-select>
-                </div>
+                <fieldset class="flex flex-wrap items-center gap-2">
+                    <legend class="sr-only">Filter status bobbin</legend>
+                    @php
+                        $statusFilters = [
+                            ['value' => '', 'label' => 'Semua', 'count' => $summary['total'], 'dot' => 'bg-slate-400'],
+                            ['value' => \App\Enums\RollStatus::InStock->value, 'label' => 'Tersedia', 'count' => $summary['in_stock'], 'dot' => 'bg-emerald-500'],
+                            ['value' => \App\Enums\RollStatus::Allocated->value, 'label' => 'Dialokasikan', 'count' => $summary['allocated'], 'dot' => 'bg-amber-500'],
+                            ['value' => \App\Enums\RollStatus::Loaded->value, 'label' => 'Dimuat', 'count' => $summary['loaded'], 'dot' => 'bg-sky-500'],
+                            ['value' => \App\Enums\RollStatus::Delivered->value, 'label' => 'Terkirim', 'count' => $summary['delivered'], 'dot' => 'bg-teal-500'],
+                            ['value' => \App\Enums\RollStatus::Cancelled->value, 'label' => 'Dibatalkan', 'count' => $summary['cancelled'], 'dot' => 'bg-rose-500'],
+                        ];
+                    @endphp
 
-                <x-button type="submit" icon="filter" class="w-full justify-center lg:w-auto">Terapkan</x-button>
+                    @foreach ($statusFilters as $filter)
+                        <label class="cursor-pointer select-none">
+                            <input type="radio" name="status" value="{{ $filter['value'] }}" class="peer sr-only" @checked($status === $filter['value']) onchange="this.form.requestSubmit()" />
+                            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 peer-checked:border-brand-200 peer-checked:bg-brand-50 peer-checked:text-brand-700 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-500/40">
+                                <span class="size-1.5 rounded-full {{ $filter['dot'] }}"></span>
+                                {{ $filter['label'] }}
+                                <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-slate-500">{{ number_format($filter['count'], 0, ',', '.') }}</span>
+                            </span>
+                        </label>
+                    @endforeach
+                </fieldset>
             </form>
 
             <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">

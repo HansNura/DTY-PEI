@@ -115,7 +115,10 @@ class DtyRollManagementTest extends TestCase
             ->get(route('warehouse.rolls.index'))
             ->assertOk()
             ->assertSee('Bobbin tersedia')
-            ->assertViewHas('summary', fn (array $summary) => $summary['in_stock'] === 1
+            ->assertSee('Dialokasikan')
+            ->assertSee('Semua')
+            ->assertViewHas('summary', fn (array $summary) => $summary['total'] === 2
+                && $summary['in_stock'] === 1
                 && $summary['allocated'] === 1
                 && (float) $summary['available_weight_kg'] === 2.5)
             ->assertSee($available->kode_rol)
