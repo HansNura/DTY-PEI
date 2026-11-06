@@ -28,6 +28,7 @@ class DtyRollManagementTest extends TestCase
 
         $response->assertRedirect(route('warehouse.rolls.label', $roll));
         $this->assertSame(30, strlen($roll->kode_rol));
+        $this->assertMatchesRegularExpression('/^\d{5}0079\d{8}$/', $roll->nomor_seri);
         $this->assertSame(64, strlen($roll->qr_token));
         $this->assertSame(RollStatus::InStock, $roll->status);
         $this->assertSame($warehouseUser->id, $roll->created_by);
@@ -36,8 +37,10 @@ class DtyRollManagementTest extends TestCase
             ->get(route('warehouse.rolls.label', $roll))
             ->assertOk()
             ->assertSee('data-qr-code', false)
-            ->assertSee('data-qr-token="'.$roll->qr_token.'"', false)
-            ->assertSee($roll->kode_rol);
+            ->assertSee('data-qr-token="'.$roll->nomor_seri.'"', false)
+            ->assertSee($roll->nomor_seri)
+            ->assertSee('DTY 150/48 NI')
+            ->assertSee('Merge / Lot');
     }
 
     public function test_warehouse_user_can_update_and_cancel_only_available_rolls(): void

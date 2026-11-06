@@ -63,6 +63,7 @@ class DeliveryWorkflowTest extends TestCase
     {
         Storage::fake('local');
         [$driver, $order, $roll] = $this->makeOrder();
+        $roll->update(['nomor_seri' => '20217007920261103']);
 
         $this->actingAs($driver);
         $this->get(route('driver.deliveries.show', $order))
@@ -84,7 +85,7 @@ class DeliveryWorkflowTest extends TestCase
 
         $this->post(route('driver.deliveries.confirm', $order), [
             'received_by_name' => 'Sari Penerima',
-            'scanned_tokens' => [$roll->qr_token],
+            'scanned_tokens' => [$roll->nomor_seri],
             'signature' => $this->signatureData(),
         ])->assertRedirect(route('driver.deliveries.show', $order));
 

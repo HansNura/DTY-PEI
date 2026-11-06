@@ -98,6 +98,7 @@ Aturan komponen:
 
 - `resources/views/logistics/orders/print.blade.php` adalah halaman cetak mandiri; jangan ubah strukturnya.
 - Label thermal memakai teknik `visibility` di `inventory/rolls/label.blade.php`; pertahankan ukuran 50 × 30 mm dan `@page`.
+- Label bobbin memakai `nomor_seri` sebagai payload QR; `qr_token` dipertahankan hanya untuk kompatibilitas label lama dan pemindaian.
 - Jangan menambahkan elemen layout ke area cetak.
 
 ## Aksesibilitas dan performa

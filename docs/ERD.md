@@ -58,17 +58,18 @@ Satu kardus membuat `unit_bobbins` baris `dty_rolls` secara otomatis. Berat per 
 | id | bigint PK | |
 | dty_carton_id | bigint FK dty_cartons nullable | Kardus asal; null untuk input manual lama |
 | kode_rol | varchar(50) unique | Kode internal rol |
+| nomor_seri | varchar(32) unique | Serial bobbin 17 digit: 5 digit spindle + `0079` + tanggal `YYYYMMDD`; payload QR label bobbin |
 | denier | integer | Spesifikasi DTY |
 | filamen | integer | Jumlah filamen |
 | berat_gram | decimal(10,2) | Berat bersih |
 | nomor_lot | varchar(50) index | Nomor lot produksi (mengikuti merge kardus) |
-| qr_token | varchar(64) unique | Payload QR code |
+| qr_token | varchar(64) unique | Token internal/legacy; label bobbin baru memakai `nomor_seri` sebagai payload QR |
 | status | varchar(20) index | `in_stock`, `allocated`, `loaded`, `delivered`, `cancelled` |
 | created_by | bigint FK users | Admin gudang pencatat |
 | created_at / updated_at | timestamp | |
 
 Relasi: `created_by` → `users.id`, `dty_carton_id` → `dty_cartons.id`. Satu rol memiliki satu QR unik.
-`kode_rol` dan `qr_token` dibuat otomatis dan unik. QR membawa token acak 256-bit; gulungan hanya dapat dibatalkan saat masih `in_stock`, tanpa menghapus riwayatnya.
+`kode_rol` dan `nomor_seri` dibuat otomatis dan unik. Nomor seri mengikuti pola stiker pabrik: `20217` + `0079` + `20261103`. QR label bobbin membawa `nomor_seri`; pemindaian muatan dan POD tetap menerima `qr_token` lama. Gulungan hanya dapat dibatalkan saat masih `in_stock`, tanpa menghapus riwayatnya.
 
 ### `customers`
 

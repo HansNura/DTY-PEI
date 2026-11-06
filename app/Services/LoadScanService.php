@@ -42,7 +42,12 @@ class LoadScanService
             }
 
             $trimmedToken = trim($qrToken);
-            $roll = DtyRoll::where('qr_token', $trimmedToken)->lockForUpdate()->first();
+            $roll = DtyRoll::query()
+                ->where(fn ($query) => $query
+                    ->where('qr_token', $trimmedToken)
+                    ->orWhere('nomor_seri', $trimmedToken))
+                ->lockForUpdate()
+                ->first();
 
             if (! $roll) {
                 LoadScan::create([

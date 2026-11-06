@@ -62,10 +62,12 @@ class DtyCartonManagementTest extends TestCase
             $this->assertSame($carton->id, $roll->dty_carton_id);
             $this->assertSame(5485.0, (float) $roll->berat_gram);
             $this->assertSame(64, strlen($roll->qr_token));
+            $this->assertMatchesRegularExpression('/^\d{5}0079\d{8}$/', $roll->nomor_seri);
         }
 
         $this->assertSame(6, DtyRoll::distinct('qr_token')->count('qr_token'));
         $this->assertSame(6, DtyRoll::distinct('kode_rol')->count('kode_rol'));
+        $this->assertSame(6, DtyRoll::distinct('nomor_seri')->count('nomor_seri'));
     }
 
     public function test_net_weight_cannot_exceed_gross_weight(): void
@@ -154,7 +156,8 @@ class DtyCartonManagementTest extends TestCase
             ->assertSee('4D9164')
             ->assertSee('150/48 NI Z')
             ->assertSee('35.56')
-            ->assertSee('32.91');
+            ->assertSee('32.91')
+            ->assertSee($carton->rolls->first()->nomor_seri);
     }
 
     public function test_only_warehouse_users_can_access_carton_management(): void

@@ -49,17 +49,24 @@ class ProofOfDeliveryService
                 }
 
                 $expectedRolls = $lockedOrder->items()
-                    ->with('roll:id,qr_token,status')
+                    ->with('roll:id,qr_token,nomor_seri,status')
                     ->get()
                     ->pluck('roll')
-                    ->keyBy('qr_token');
+                    ->keyBy('id');
                 $seenTokens = [];
                 $validRollIds = [];
                 $scans = [];
 
                 foreach ($data['scanned_tokens'] as $token) {
-                    $roll = $expectedRolls->get($token);
-                    $knownRoll = $roll ?? DtyRoll::query()->where('qr_token', $token)->first(['id', 'qr_token']);
+                    $roll = $expectedRolls->first(
+                        fn (DtyRoll $expectedRoll): bool => $expectedRoll->qr_token === $token
+                            || $expectedRoll->nomor_seri === $token
+                    );
+                    $knownRoll = $roll ?? DtyRoll::query()
+                        ->where(fn ($query) => $query
+                            ->where('qr_token', $token)
+                            ->orWhere('nomor_seri', $token))
+                        ->first(['id', 'qr_token', 'nomor_seri']);
                     $result = 'valid';
 
                     if (isset($seenTokens[$token])) {
@@ -85,8 +92,8 @@ class ProofOfDeliveryService
                 }
 
                 DeliveryOrderReceiptScan::query()->insert($scans);
-                $missingRolls = $expectedRolls->keys()->filter(
-                    fn (string $token): bool => ! in_array($expectedRolls->get($token)->id, $validRollIds, true)
+                $missingRolls = $expectedRolls->filter(
+                    fn (DtyRoll $expectedRoll): bool => ! in_array($expectedRoll->id, $validRollIds, true)
                 );
                 $hasInvalidScan = collect($scans)->contains(fn (array $scan): bool => $scan['result'] !== 'valid');
 

@@ -22,6 +22,7 @@ class DtyRollController extends Controller
             ->with('carton')
             ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search) {
                 $query->where('kode_rol', 'like', "%{$search}%")
+                    ->orWhere('nomor_seri', 'like', "%{$search}%")
                     ->orWhere('nomor_lot', 'like', "%{$search}%")
                     ->orWhereHas('carton', fn ($cartonQuery) => $cartonQuery
                         ->where('nomor_hu', 'like', "%{$search}%")
@@ -70,6 +71,7 @@ class DtyRollController extends Controller
         $roll = DtyRoll::create([
             ...$request->validated(),
             'kode_rol' => $qrCodeService->generateRollCode(),
+            'nomor_seri' => $qrCodeService->generateRollSerial(),
             'qr_token' => $qrCodeService->generateToken(),
             'status' => RollStatus::InStock,
             'created_by' => $request->user()->id,
@@ -109,9 +111,11 @@ class DtyRollController extends Controller
     {
         abort_unless($roll->status !== RollStatus::Cancelled, 404);
 
+        $roll->loadMissing('carton');
+
         return view('inventory.rolls.label', [
             'roll' => $roll,
-            'qrToken' => $roll->qr_token,
+            'qrToken' => $roll->nomor_seri ?? $roll->qr_token,
         ]);
     }
 }

@@ -22,7 +22,7 @@
             <form method="GET" action="{{ route('warehouse.rolls.index') }}" class="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div class="relative min-w-0 flex-1">
                     <x-icon name="search" class="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
+                    <x-input id="q" name="q" type="search" value="{{ $search }}" placeholder="Cari kode rol, serial, lot, nomor HU, atau merge" aria-label="Cari gulungan" class="pl-10" />
                 </div>
 
                 <div class="lg:w-56">
@@ -61,7 +61,7 @@
 
             <thead class="bg-slate-50/70">
                 <tr>
-                    <x-th>Kode rol / Lot</x-th>
+                    <x-th>Kode rol / Serial</x-th>
                     <x-th>Kardus</x-th>
                     <x-th>Spesifikasi</x-th>
                     <x-th>Berat</x-th>
@@ -74,6 +74,9 @@
                     <tr class="hover:bg-slate-50/60">
                         <x-td>
                             <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
+                            @if ($roll->nomor_seri)
+                                <p class="font-mono text-[10px] text-slate-500">{{ $roll->nomor_seri }}</p>
+                            @endif
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                         </x-td>
                         <x-td>
@@ -122,6 +125,9 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->kode_rol }}</p>
+                            @if ($roll->nomor_seri)
+                                <p class="font-mono text-[10px] text-slate-500">{{ $roll->nomor_seri }}</p>
+                            @endif
                             <p class="text-xs text-slate-500">Lot {{ $roll->nomor_lot }}</p>
                         </div>
                         <x-status-badge :status="$roll->status" />

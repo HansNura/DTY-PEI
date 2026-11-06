@@ -78,6 +78,27 @@ class LoadScanTest extends TestCase
         $this->assertSame(DeliveryOrderStatus::Loading->value, $order->fresh()->status->value);
     }
 
+    public function test_scanning_by_bobbin_serial_is_accepted(): void
+    {
+        $checker = $this->warehouseUser();
+        [$order, $rolls] = $this->makeOrderWithRolls(1);
+        $targetRoll = $rolls->first();
+        $targetRoll->update(['nomor_seri' => '20217007920261103']);
+
+        $response = $this->actingAs($checker)
+            ->postJson(route('warehouse.scans.scan', $order), ['qr_token' => $targetRoll->nomor_seri]);
+
+        $response->assertOk()
+            ->assertJson(['success' => true, 'result' => LoadScanResult::Valid->value]);
+
+        $this->assertSame(RollStatus::Loaded->value, $targetRoll->fresh()->status->value);
+        $this->assertDatabaseHas('load_scans', [
+            'delivery_order_id' => $order->id,
+            'dty_roll_id' => $targetRoll->id,
+            'result' => LoadScanResult::Valid->value,
+        ]);
+    }
+
     public function test_scanning_roll_not_in_do_returns_wrong_do(): void
     {
         $checker = $this->warehouseUser();

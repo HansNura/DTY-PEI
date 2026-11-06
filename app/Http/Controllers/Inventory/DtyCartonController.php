@@ -114,6 +114,7 @@ class DtyCartonController extends Controller
             DtyRoll::create([
                 'dty_carton_id' => $carton->id,
                 'kode_rol' => $qrCodeService->generateRollCode(),
+                'nomor_seri' => $qrCodeService->generateRollSerial($carton->production_date),
                 'denier' => $carton->denier,
                 'filamen' => $carton->filamen,
                 'berat_gram' => $beratPerBobbin,

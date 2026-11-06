@@ -16,6 +16,7 @@ class DtyRoll extends Model
     protected $fillable = [
         'dty_carton_id',
         'kode_rol',
+        'nomor_seri',
         'denier',
         'filamen',
         'berat_gram',
@@ -58,5 +59,14 @@ class DtyRoll extends Model
         $hundredthsOfKg = intdiv((int) str_replace('.', '', (string) $this->berat_gram) + 500, 1000);
 
         return intdiv($hundredthsOfKg, 100).'.'.str_pad((string) ($hundredthsOfKg % 100), 2, '0', STR_PAD_LEFT);
+    }
+
+    public function getSpecificationAttribute(): string
+    {
+        if ($this->carton) {
+            return 'DTY '.$this->carton->specification;
+        }
+
+        return "DTY {$this->denier}/{$this->filamen} NI";
     }
 }
