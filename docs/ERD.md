@@ -50,6 +50,7 @@ Dokumen ini menjadi acuan skema basis data lintas sprint. Sprint 1 sampai Sprint
 | created_at / updated_at | timestamp | |
 
 Satu kardus membuat `unit_bobbins` baris `dty_rolls` secara otomatis. Berat per bobbin = `net_weight_kg × 1000 ÷ unit_bobbins`.
+Kolom `grade` adalah grade produk (contoh `WE`). Grade bobot dihitung otomatis dari berat per bobbin: `AX` 5.350–5.600 g, `AE` 5.100–5.349 g, `A` 1.000–5.099 g, `B` 500–999 g. Untuk grade bobot `AX` dengan 6 bobbin, gross weight wajib 34,74–36,25 kg (target tengah 35,64 kg).
 
 ### `dty_rolls`
 

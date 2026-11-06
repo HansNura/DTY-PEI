@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RollStatus;
+use App\Support\BobbinWeightStandard;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,6 +67,11 @@ class DtyCarton extends Model
         }
 
         return round(((float) $this->net_weight_kg * 1000) / $this->unit_bobbins, 2);
+    }
+
+    public function getBobbinWeightGradeAttribute(): ?string
+    {
+        return BobbinWeightStandard::gradeFor($this->net_weight_per_bobbin_gram);
     }
 
     public function getStatusAttribute(): RollStatus

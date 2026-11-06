@@ -3,9 +3,11 @@
 namespace App\Http\Requests\Inventory;
 
 use App\Enums\UserRole;
+use App\Support\BobbinWeightStandard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class SaveDtyCartonRequest extends FormRequest
 {
@@ -51,6 +53,36 @@ class SaveDtyCartonRequest extends FormRequest
             'twist_direction' => $this->filled('twist_direction') ? Str::upper((string) $this->input('twist_direction')) : null,
             'intermingled' => $this->boolean('intermingled'),
         ]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $unitBobbins = (int) $this->input('unit_bobbins');
+            $netWeight = (float) $this->input('net_weight_kg');
+            $grossWeight = (float) $this->input('gross_weight_kg');
+
+            if ($unitBobbins < 1) {
+                return;
+            }
+
+            $perBobbin = ($netWeight * 1000) / $unitBobbins;
+            $grade = BobbinWeightStandard::gradeFor($perBobbin);
+            $range = $grade !== null
+                ? BobbinWeightStandard::grossRangeFor($grade, $unitBobbins)
+                : null;
+
+            if ($range !== null && ($grossWeight < $range['min'] || $grossWeight > $range['max'])) {
+                $validator->errors()->add(
+                    'gross_weight_kg',
+                    'Untuk Grade AX dengan 6 bobbin, gross weight harus antara 34,74 dan 36,25 kg.',
+                );
+            }
+        });
     }
 
     /**

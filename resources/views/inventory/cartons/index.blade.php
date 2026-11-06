@@ -45,7 +45,10 @@
                             @endif
                         </x-td>
                         <x-td class="tabular-nums">{{ $carton->specification }}</x-td>
-                        <x-td><x-badge tone="brand">{{ $carton->grade }}</x-badge></x-td>
+                        <x-td>
+                            <x-badge tone="brand">{{ $carton->grade }}</x-badge>
+                            <p class="mt-1 text-[10px] text-slate-500">Bobot: {{ $carton->bobbin_weight_grade ?? '—' }}</p>
+                        </x-td>
                         <x-td>{{ $carton->production_date->translatedFormat('d M Y') }}</x-td>
                         <x-td class="tabular-nums">{{ number_format((float) $carton->net_weight_kg, 2, ',', '.') }} / {{ number_format((float) $carton->gross_weight_kg, 2, ',', '.') }} kg</x-td>
                         <x-td class="tabular-nums">{{ $carton->rolls->count() }} / {{ $carton->unit_bobbins }}</x-td>

@@ -55,6 +55,7 @@ class DtyCartonManagementTest extends TestCase
         $this->assertSame('150/48 NI Z', $carton->specification);
         $this->assertSame(6, $carton->rolls()->count());
         $this->assertSame(5485.0, (float) $carton->net_weight_per_bobbin_gram);
+        $this->assertSame('AX', $carton->bobbin_weight_grade);
 
         foreach ($carton->rolls as $roll) {
             $this->assertSame(RollStatus::InStock, $roll->status);
@@ -68,6 +69,27 @@ class DtyCartonManagementTest extends TestCase
         $this->assertSame(6, DtyRoll::distinct('qr_token')->count('qr_token'));
         $this->assertSame(6, DtyRoll::distinct('kode_rol')->count('kode_rol'));
         $this->assertSame(6, DtyRoll::distinct('nomor_seri')->count('nomor_seri'));
+    }
+
+    public function test_ax_six_bobbin_gross_must_be_within_tolerance(): void
+    {
+        $user = $this->warehouseUser();
+
+        $this->actingAs($user)
+            ->post(route('warehouse.cartons.store'), $this->payload([
+                'grade' => 'AX',
+                'gross_weight_kg' => '37.00',
+            ]))
+            ->assertSessionHasErrors('gross_weight_kg');
+
+        $this->assertDatabaseCount('dty_cartons', 0);
+
+        $this->actingAs($user)
+            ->post(route('warehouse.cartons.store'), $this->payload([
+                'grade' => 'AX',
+                'gross_weight_kg' => '35.56',
+            ]))
+            ->assertRedirect(route('warehouse.cartons.label', DtyCarton::firstOrFail()));
     }
 
     public function test_net_weight_cannot_exceed_gross_weight(): void
@@ -157,6 +179,8 @@ class DtyCartonManagementTest extends TestCase
             ->assertSee('150/48 NI Z')
             ->assertSee('35.56')
             ->assertSee('32.91')
+            ->assertSee('Grade bobot')
+            ->assertSee('AX')
             ->assertSee($carton->rolls->first()->nomor_seri);
     }
 

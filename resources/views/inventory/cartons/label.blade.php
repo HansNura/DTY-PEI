@@ -67,6 +67,7 @@
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Lot / merge</dt><dd class="font-mono font-medium text-slate-900">{{ $carton->nomor_merge }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Spesifikasi</dt><dd class="font-medium text-slate-900">DTY {{ $carton->specification }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Grade</dt><dd class="font-medium text-slate-900">{{ $carton->grade }}</dd></div>
+                        <div class="flex justify-between gap-3"><dt class="text-slate-500">Grade bobot</dt><dd class="font-medium text-slate-900">{{ $carton->bobbin_weight_grade ?? 'Di luar standar' }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Produksi</dt><dd class="font-medium text-slate-900">{{ $carton->production_date->translatedFormat('d M Y') }}</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Net / gross</dt><dd class="font-medium tabular-nums text-slate-900">{{ number_format((float) $carton->net_weight_kg, 2, ',', '.') }} / {{ number_format((float) $carton->gross_weight_kg, 2, ',', '.') }} kg</dd></div>
                         <div class="flex justify-between gap-3"><dt class="text-slate-500">Per bobbin</dt><dd class="font-medium tabular-nums text-slate-900">{{ number_format($carton->net_weight_per_bobbin_gram, 2, ',', '.') }} g</dd></div>
