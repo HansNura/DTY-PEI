@@ -145,4 +145,4 @@ Alur branch, commit, pull/push, review, konflik, dan serah terima sprint ada di 
 | 3 | DTY-006 s/d DTY-007 | Selesai |
 | 4 | DTY-008 s/d DTY-009 | Selesai |
 | 5 | DTY-010 s/d DTY-011 | Selesai |
-| 6 | DTY-012 s/d DTY-013 | Belum dimulai |
+| 6 | DTY-012 s/d DTY-013 | Selesai |
