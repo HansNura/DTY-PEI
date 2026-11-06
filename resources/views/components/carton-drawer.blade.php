@@ -127,6 +127,7 @@
                                 <li class="flex items-center justify-between gap-3 py-2.5">
                                     <div class="min-w-0">
                                         <p class="font-mono text-xs font-semibold text-slate-800">{{ $roll->nomor_seri ?? $roll->kode_rol }}</p>
+                                        <p class="font-mono text-[10px] text-slate-400">{{ $roll->kode_rol }}</p>
                                         <p class="text-[10px] text-slate-500">Lot {{ $roll->nomor_lot }} · {{ number_format((float) $roll->berat_gram, 0, ',', '.') }} g · Grade {{ $roll->bobbin_weight_grade ?? '—' }}</p>
                                     </div>
                                     <div class="flex shrink-0 items-center gap-1.5">
